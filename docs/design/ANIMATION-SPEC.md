@@ -1,6 +1,11 @@
 # Animation Spec — Dark Premium Editorial
 
-> Implementation: `design/mockup/design-system.css` (§8 Motion) + `design/mockup/interaction.js`
+> **ขอบเขต (v2):** Motion ทั้งหมดในเอกสารนี้ใช้กับ **Welcome Page เท่านั้น**
+> Dashboard (Office / Teacher), ตาราง และแบบฟอร์ม: ไม่มี transition เข้า-ออก ไม่มี count-up ไม่มี parallax ไม่มี scroll reveal
+> อนุญาตเฉพาะ hover / focus / pressed state (สีพื้นหลัง, เส้นขอบ) ที่ไม่ขยับ layout
+> แผนภูมิใน Dashboard แสดงค่าสุดท้ายทันที (draw animation ผูกกับ `.scene.is-entering` จึงไม่ทำงานนอก Hero)
+
+> Implementation: `docs/design/mockup/design-system.css` (§8 Motion) + `docs/design/mockup/interaction.js`
 > ใช้ CSS keyframes + class (`is-leaving` / `is-entering`) และ `requestAnimationFrame` เฉพาะแถบโค้ง / count-up / parallax — ไม่มี library
 
 ## 1. Easing & Duration Tokens

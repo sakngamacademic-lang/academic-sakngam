@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06070d" />
+    <meta name="robots" content="noindex" />
+    <title>MOCKUP · แดชบอร์ดฝ่ายวิชาการ — Sak Ngam Academic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body data-page="dashboard" style="--accent:#8b7cf6">
+    <a class="skip-link" href="#main">ข้ามไปยังเนื้อหา</a>
+    <div class="app">
+      <!-- Sidebar -->
+      <aside class="side" id="sidebar" aria-label="เมนูฝ่ายวิชาการ">
+        <div class="side__head">
+          <a class="brand" href="welcome.html">
+            <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5-9-5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></svg></span>
+            <span class="brand__text"><span class="brand__name">โรงเรียนสักงามวิทยา</span><span class="brand__sub">ฝ่ายวิชาการ</span></span>
+          </a>
+          <button type="button" class="icon-btn side__close" data-drawer-close aria-label="ปิดเมนู">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <nav class="side__nav">
+          <a class="side__link" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></svg>แดชบอร์ด</a>
+          <p class="side__group">ภาระงานเอกสาร</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>รายการงาน / มอบหมาย</a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></svg>ตรวจรับเอกสาร<span class="side__badge">17</span></a>
+          <p class="side__group">ทะเบียน</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></svg>ครู</a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .6 3.2 2.2 3.8 5" /></svg>นักเรียน</a>
+          <p class="side__group">ข้อมูลพื้นฐาน</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="3" /><path d="M8 2v4M16 2v4M3 10h18" /></svg>ปีการศึกษา / ภาคเรียน</a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></svg>ห้องเรียน / ระดับชั้น</a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="3" /><circle cx="17" cy="7" r="3" /><circle cx="7" cy="17" r="3" /><circle cx="17" cy="17" r="3" /></svg>กลุ่มสาระการเรียนรู้</a>
+          <p class="side__group">วิชาการ</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /></svg>หลักสูตร<span class="side__soon">เร็ว ๆ นี้</span></a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>วัดและประเมินผล<span class="side__soon">เร็ว ๆ นี้</span></a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V7z" /></svg>ติดตาม 0 / ร / มส<span class="side__soon">เร็ว ๆ นี้</span></a>
+        </nav>
+        <div class="side__foot">
+          <a class="side__link" href="teacher-dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3" /></svg>ไประบบครู</a>
+          <div class="side__user"><span class="userchip__avatar" aria-hidden="true">หว</span><span><b>หัวหน้าวิชาการ (ตัวอย่าง)</b><small>หัวหน้าฝ่ายวิชาการ · ครูผู้สอน</small></span></div>
+        </div>
+      </aside>
+      <div class="scrim" data-drawer-close hidden></div>
+
+      <!-- Main -->
+      <div class="app__main">
+        <header class="app__top">
+          <button type="button" class="icon-btn app__menu" data-drawer-open aria-controls="sidebar" aria-expanded="false" aria-label="เปิดเมนู">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="app__title">
+            <h1>แดชบอร์ดฝ่ายวิชาการ</h1>
+            <p>ภาคเรียนที่ 2/2569 · สัปดาห์ที่ 3</p>
+          </div>
+          <div class="app__tools">
+            <span class="pill pill--demo">Demo · ข้อมูลจำลอง</span>
+            <button type="button" class="icon-btn" aria-label="การแจ้งเตือน 3 รายการ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" /></svg><span class="dot-badge"></span></button>
+          </div>
+        </header>
+
+        <main class="app__content" id="main">
+          <!-- Quick actions -->
+          <section class="qa" aria-label="ทางลัด">
+            <a class="qa__item qa__item--primary" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>สร้างภาระงาน</a>
+            <a class="qa__item" href="#queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9" /></svg>เปิดคิวตรวจรับ</a>
+            <a class="qa__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></svg>นำเข้า Excel</a>
+            <a class="qa__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>ออกรายงาน</a>
+          </section>
+
+          <!-- Stats -->
+          <section class="stats" aria-label="สถิติภาพรวม">
+            <div class="stat"><p class="stat__label">ครูผู้สอน</p><p class="stat__value">48</p><p class="stat__hint">บัญชีใช้งาน 46</p></div>
+            <div class="stat"><p class="stat__label">นักเรียน</p><p class="stat__value">812</p><p class="stat__hint">24 ห้องเรียน</p></div>
+            <div class="stat stat--accent"><p class="stat__label">เอกสารรอตรวจ</p><p class="stat__value">17</p><p class="stat__hint">เก่าที่สุด 3 วัน</p></div>
+            <div class="stat stat--alert"><p class="stat__label">เลยกำหนดส่ง</p><p class="stat__value">9</p><p class="stat__hint">จาก 5 งาน</p></div>
+          </section>
+
+          <div class="dash-grid">
+            <!-- Action list -->
+            <section class="box" aria-labelledby="todo-title">
+              <header class="box__head"><h2 id="todo-title">งานที่ต้องดำเนินการ</h2><span class="box__meta">5 รายการ</span></header>
+              <ul class="todo">
+                <li><span class="tag tag--late">ด่วน</span><span class="todo__text"><b>ตรวจรับเอกสารที่ค้างเกิน 3 วัน</b>6 ฉบับ · บันทึกหลังการสอน</span><a class="btn btn--ghost btn--sm" href="#queue">ตรวจ</a></li>
+                <li><span class="tag tag--fix">ติดตาม</span><span class="todo__text"><b>แจ้งเตือนครูที่ยังไม่ส่งโครงการสอน</b>2 คน · เลยกำหนด 3 วัน</span><a class="btn btn--ghost btn--sm" href="#">แจ้งเตือน</a></li>
+                <li><span class="tag tag--todo">วางแผน</span><span class="todo__text"><b>สร้างงาน “บันทึกหลังการสอน เดือนที่ 2”</b>กำหนดเปิด 1 ธ.ค.</span><a class="btn btn--ghost btn--sm" href="#">สร้าง</a></li>
+                <li><span class="tag tag--wait">ข้อมูล</span><span class="todo__text"><b>ยืนยันครูที่ปรึกษา ม.4/2</b>ยังไม่กำหนด</span><a class="btn btn--ghost btn--sm" href="#">กำหนด</a></li>
+              </ul>
+            </section>
+
+            <!-- Chart: submissions -->
+            <section class="box" aria-labelledby="chart1-title">
+              <header class="box__head"><h2 id="chart1-title">ความคืบหน้าการส่งเอกสาร</h2><span class="box__meta">ร้อยละของครูที่ส่งแล้ว</span></header>
+              <div class="chart" data-chart="bars" data-values="96,83,65,19" data-labels="โครงการสอน|บันทึกฯ ด.1|แผนฯ|วิจัยฯ"
+                data-label="ร้อยละครูที่ส่งแล้ว: โครงการสอน 96, บันทึกหลังสอนเดือน 1 83, แผนการจัดการเรียนรู้ 65, วิจัยในชั้นเรียน 19"></div>
+            </section>
+
+            <!-- Chart: monitoring -->
+            <section class="box" aria-labelledby="chart2-title">
+              <header class="box__head"><h2 id="chart2-title">ผลการเรียนที่ต้องติดตาม</h2><span class="box__meta">ภาคเรียนที่ 1/2569</span></header>
+              <div class="donut-row">
+                <div class="chart" data-chart="donut" data-values="31,19,9" data-colors="var(--rose)|var(--amber)|var(--violet)" data-center="รายการ"
+                  data-label="ต้องติดตาม 59 รายการ: 0 31, ร 19, มส 9"></div>
+                <ul class="legend legend--stack">
+                  <li style="--c:var(--rose)">ติด 0 <b>31</b></li>
+                  <li style="--c:var(--amber)">ติด ร <b>19</b></li>
+                  <li style="--c:var(--violet)">ติด มส <b>9</b></li>
+                </ul>
+              </div>
+            </section>
+          </div>
+
+          <!-- Data table -->
+          <section class="box" id="queue" aria-labelledby="queue-title">
+            <header class="box__head box__head--wrap">
+              <h2 id="queue-title">คิวตรวจรับเอกสาร</h2>
+              <div class="toolbar" data-table-filter="queue-table">
+                <input type="search" class="input" placeholder="ค้นหาชื่อครูหรือชื่องาน" aria-label="ค้นหาในคิวตรวจรับ" data-filter-text />
+                <div class="chips" role="group" aria-label="กรองตามสถานะ">
+                  <button type="button" class="chip" aria-pressed="true" data-filter-status="">ทั้งหมด</button>
+                  <button type="button" class="chip" aria-pressed="false" data-filter-status="wait">รอตรวจ</button>
+                  <button type="button" class="chip" aria-pressed="false" data-filter-status="fix">ส่งกลับแก้ไข</button>
+                  <button type="button" class="chip" aria-pressed="false" data-filter-status="late">เลยกำหนด</button>
+                </div>
+              </div>
+            </header>
+            <div class="table-wrap">
+              <table class="table" id="queue-table">
+                <caption class="sr-only">คิวตรวจรับเอกสาร (ข้อมูลจำลอง)</caption>
+                <thead>
+                  <tr><th scope="col">ครู</th><th scope="col">งาน</th><th scope="col">ฉบับ</th><th scope="col">ส่งเมื่อ</th><th scope="col">สถานะ</th><th scope="col"><span class="sr-only">จัดการ</span></th></tr>
+                </thead>
+                <tbody>
+                  <tr data-status="wait"><td data-label="ครู"><b>ครูตัวอย่าง ก</b><small>คณิตศาสตร์</small></td><td data-label="งาน">แผนการจัดการเรียนรู้ ภาคเรียนที่ 2</td><td data-label="ฉบับ" class="num">1</td><td data-label="ส่งเมื่อ">วันนี้ 09:12</td><td data-label="สถานะ"><span class="tag tag--wait">รอตรวจ</span></td><td><a class="btn btn--ghost btn--sm" href="#">ตรวจ</a></td></tr>
+                  <tr data-status="wait"><td data-label="ครู"><b>ครูตัวอย่าง ข</b><small>วิทยาศาสตร์ฯ</small></td><td data-label="งาน">บันทึกหลังการสอน เดือนที่ 1</td><td data-label="ฉบับ" class="num">2</td><td data-label="ส่งเมื่อ">เมื่อวาน</td><td data-label="สถานะ"><span class="tag tag--wait">รอตรวจ</span></td><td><a class="btn btn--ghost btn--sm" href="#">ตรวจ</a></td></tr>
+                  <tr data-status="fix"><td data-label="ครู"><b>ครูตัวอย่าง ค</b><small>ภาษาไทย</small></td><td data-label="งาน">โครงการสอนรายวิชา</td><td data-label="ฉบับ" class="num">1</td><td data-label="ส่งเมื่อ">3 วันก่อน</td><td data-label="สถานะ"><span class="tag tag--fix">ส่งกลับแก้ไข</span></td><td><a class="btn btn--ghost btn--sm" href="#">ดู</a></td></tr>
+                  <tr data-status="late"><td data-label="ครู"><b>ครูตัวอย่าง ง</b><small>ภาษาต่างประเทศ</small></td><td data-label="งาน">โครงการสอนรายวิชา</td><td data-label="ฉบับ" class="num">–</td><td data-label="ส่งเมื่อ">ยังไม่ส่ง</td><td data-label="สถานะ"><span class="tag tag--late">เลยกำหนด 3 วัน</span></td><td><a class="btn btn--ghost btn--sm" href="#">แจ้งเตือน</a></td></tr>
+                  <tr data-status="wait"><td data-label="ครู"><b>ครูตัวอย่าง จ</b><small>ศิลปะ</small></td><td data-label="งาน">บันทึกหลังการสอน เดือนที่ 1</td><td data-label="ฉบับ" class="num">1</td><td data-label="ส่งเมื่อ">3 วันก่อน</td><td data-label="สถานะ"><span class="tag tag--wait">รอตรวจ</span></td><td><a class="btn btn--ghost btn--sm" href="#">ตรวจ</a></td></tr>
+                </tbody>
+              </table>
+              <p class="table-empty" hidden data-table-empty>ไม่พบรายการที่ตรงกับตัวกรอง</p>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="interaction.js"></script>
+  </body>
+</html>

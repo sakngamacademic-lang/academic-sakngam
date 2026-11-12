@@ -1439,3 +1439,786 @@ a.card:hover {
     transform: none;
   }
 }
+
+/* =============================================================================
+   11. ส่วนขยาย: ปุ่ม/ฟอร์มร่วม
+   ============================================================================= */
+.btn--sm {
+  min-height: 2.25rem;
+  padding: 0.3rem 0.9rem;
+  font-size: var(--fs-xs);
+}
+.btn--lg {
+  min-height: 3.25rem;
+  padding: 0.7rem 1.75rem;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.btn--block {
+  width: 100%;
+}
+.icon-btn {
+  position: relative;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+}
+.icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+.icon-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.dot-badge {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--rose);
+  box-shadow: 0 0 0 2px var(--bg-1);
+}
+.form {
+  display: grid;
+  gap: var(--sp-4);
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+.field label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.input,
+.field input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-0);
+  color: var(--text-1);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+.input:focus,
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+textarea.input {
+  min-height: auto;
+  resize: vertical;
+}
+.form__error {
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--rose);
+  background: color-mix(in oklab, var(--rose) 12%, transparent);
+}
+.link-btn {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.text-alert {
+  color: var(--rose);
+}
+code {
+  font-size: 0.92em;
+  padding: 0.05em 0.35em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* =============================================================================
+   12. Welcome page
+   ============================================================================= */
+.topbar .btn--sm svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+.cta-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  margin-top: var(--sp-7);
+  padding: var(--sp-6);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line-strong);
+  background: radial-gradient(120% 160% at 0% 0%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 60%), var(--bg-1);
+}
+.cta-band h3 {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+}
+.cta-band p {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.footnote__review {
+  display: block;
+  margin-top: var(--sp-2);
+}
+@media (max-width: 767.98px) {
+  .topbar .btn--sm span {
+    /* มือถือ: ปุ่มบนแถบสั้นลง ปุ่มใหญ่ยังอยู่ในทุกฉาก */
+    font-size: 0;
+  }
+  .topbar .btn--sm span::after {
+    content: "เข้าสู่ระบบ";
+    font-size: var(--fs-xs);
+  }
+  .topbar .pill--demo {
+    display: none;
+  }
+}
+
+/* =============================================================================
+   13. Login (mock)
+   ============================================================================= */
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--gutter);
+  background: radial-gradient(90% 70% at 20% 0%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 60%), var(--bg-0);
+}
+.auth__back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  max-width: 26rem;
+  width: 100%;
+  margin-inline: auto;
+}
+.auth__back svg {
+  width: 1rem;
+  height: 1rem;
+}
+.auth__card {
+  width: min(100%, 26rem);
+  padding: var(--sp-6);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-float);
+}
+.auth__card h1 {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.auth__sub {
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.auth__link {
+  justify-self: center;
+  font-size: var(--fs-sm);
+  color: var(--accent);
+}
+.auth__note {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.auth__mock {
+  max-width: 26rem;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* =============================================================================
+   14. Functional Dashboard (Office + Teacher)
+   หลักการ: เร็ว อ่านง่าย ไม่มี animation ยกเว้น hover/focus · ไม่มี blur หนัก
+   ============================================================================= */
+body[data-page="dashboard"] {
+  background: var(--bg-0);
+}
+.app {
+  min-height: 100dvh;
+}
+.side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 50;
+  width: 17rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line);
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+.side.is-open {
+  transform: none;
+  visibility: visible;
+  box-shadow: var(--shadow-float);
+}
+.side__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+.side__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3);
+}
+.side__group {
+  margin: var(--sp-4) var(--sp-3) var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.side__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 2.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.side__link svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.side__link:hover {
+  background: var(--surface-hover);
+  color: var(--text-1);
+}
+.side__link[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--text-1);
+  font-weight: 500;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.side__badge {
+  margin-left: auto;
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: center;
+}
+.side__soon {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: var(--text-3);
+}
+.side__foot {
+  padding: var(--sp-3);
+  border-top: 1px solid var(--line);
+}
+.side__user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.side__user b {
+  display: block;
+  font-weight: 500;
+}
+.side__user small {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+}
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(0, 0, 0, 0.55);
+}
+.app__top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--topbar-h);
+  padding: var(--sp-2) var(--gutter);
+  background: color-mix(in oklab, var(--bg-0) 90%, transparent);
+  border-bottom: 1px solid var(--line);
+}
+.app__title {
+  min-width: 0;
+  line-height: 1.3;
+}
+.app__title h1 {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app__title p {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.app__tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.app__content {
+  display: grid;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--gutter) var(--sp-7);
+  max-width: 96rem;
+}
+
+/* Quick actions */
+.qa {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+.qa__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 3rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.qa__item svg {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--accent);
+}
+.qa__item:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-solid);
+}
+.qa__item--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.qa__item--primary svg {
+  color: inherit;
+}
+.qa__item--primary:hover {
+  background: color-mix(in oklab, var(--accent) 88%, #fff);
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+.stat {
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+}
+.stat__label {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.stat__value {
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.stat__hint {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.stat--accent {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+.stat--accent .stat__value {
+  color: var(--accent);
+}
+.stat--alert {
+  border-color: color-mix(in oklab, var(--rose) 45%, transparent);
+}
+.stat--alert .stat__value {
+  color: var(--rose);
+}
+.stat--link:hover {
+  background: var(--surface-solid);
+}
+
+/* Boxes */
+.dash-grid {
+  display: grid;
+  gap: var(--sp-5);
+}
+.box {
+  min-width: 0;
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+}
+.box--highlight {
+  border-color: color-mix(in oklab, var(--amber) 45%, transparent);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--amber) 7%, transparent), transparent), var(--bg-1);
+}
+.box__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.box__head--wrap {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.box__head h2 {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.box__meta {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.todo {
+  display: grid;
+}
+.todo li {
+  display: grid;
+  grid-template-columns: 4.75rem minmax(0, 1fr) auto; /* คอลัมน์ tag กว้างคงที่ ให้ข้อความตรงแนว */
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--line);
+}
+.todo li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.todo__text {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.todo__text b {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-1);
+}
+.donut-row {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) 1fr;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.legend--stack {
+  display: grid;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+.legend--stack b {
+  margin-left: auto;
+  padding-left: var(--sp-3);
+  font-variant-numeric: tabular-nums;
+}
+.legend--stack li {
+  display: flex;
+  white-space: nowrap;
+}
+
+/* Toolbar + chips */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.toolbar .input {
+  width: min(100%, 17rem);
+  min-height: 2.25rem;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.chip {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.8rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text-1);
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.table th {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+.table td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.table tbody tr:hover {
+  background: var(--surface-hover);
+}
+.table td small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.table td b {
+  font-weight: 500;
+}
+.table td:last-child {
+  text-align: right;
+}
+.table-empty {
+  padding: var(--sp-5);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+/* Teacher: feedback + tabs + tasks */
+.feedback {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: center;
+}
+.feedback__task {
+  margin-bottom: var(--sp-2);
+  font-weight: 500;
+}
+.seg-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--bg-0);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.seg-tabs [role="tab"] {
+  flex: 1 0 auto;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.seg-tabs [role="tab"] span {
+  margin-left: 0.25rem;
+  padding: 0 0.45rem;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  background: rgba(255, 255, 255, 0.08);
+}
+.seg-tabs [role="tab"][aria-selected="true"] {
+  background: var(--surface-solid);
+  color: var(--text-1);
+  font-weight: 500;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.tasklist[hidden] {
+  display: none;
+}
+.tasklist li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--line);
+}
+.tasklist li:first-child {
+  border-top: 0;
+}
+.task__main {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+}
+.task__main b {
+  display: block;
+  font-weight: 500;
+  font-size: var(--fs-sm);
+}
+.task__main small {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.task__main a {
+  color: var(--accent);
+}
+.tasklist .btn,
+.tasklist .tag {
+  flex: none;
+}
+
+/* Responsive dashboard */
+@media (max-width: 639.98px) {
+  /* ตารางกลายเป็นการ์ดบนมือถือ — ไม่ต้องเลื่อนแนวนอน */
+  .table thead {
+    display: none;
+  }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+  }
+  .table tr {
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: 0.2rem 0;
+    border: 0;
+    text-align: right;
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-size: var(--fs-xs);
+    color: var(--text-3);
+    text-align: left;
+  }
+  .table td:first-child {
+    display: block;
+    text-align: left;
+  }
+  .table td:first-child::before,
+  .table td:last-child::before {
+    content: none;
+  }
+  .table td:last-child {
+    justify-content: flex-start;
+    padding-top: var(--sp-2);
+  }
+  .app__tools .pill--demo {
+    display: none;
+  }
+  .donut-row {
+    grid-template-columns: minmax(0, 8rem) 1fr;
+    gap: var(--sp-4);
+  }
+  .tasklist li {
+    flex-wrap: wrap;
+  }
+}
+@media (min-width: 768px) {
+  .qa {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .dash-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dash-grid > :first-child {
+    grid-column: 1 / -1;
+  }
+  .dash-grid--teacher > :first-child {
+    grid-column: auto;
+  }
+  .feedback {
+    grid-template-columns: 1fr auto;
+  }
+}
+@media (min-width: 1100px) {
+  .dash-grid {
+    grid-template-columns: 1.3fr 1fr 1fr;
+  }
+  .dash-grid > :first-child {
+    grid-column: auto;
+  }
+  .dash-grid--teacher {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+/* Desktop: sidebar ติดถาวร */
+@media (min-width: 1024px) {
+  .side {
+    transform: none;
+    visibility: visible;
+  }
+  .side__close,
+  .app__menu,
+  .scrim {
+    display: none !important;
+  }
+  .app__main {
+    margin-left: 17rem;
+  }
+}
+
+.todo li > .tag {
+  justify-self: start;
+}

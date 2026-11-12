@@ -404,6 +404,94 @@
     });
   }
 
+  /* -------------------------------------------------- Welcome: auth-aware CTA */
+  // Production: status จาก AuthProvider + defaultPortalPath(roles) (Phase 1.3) — ผู้ใช้ไม่เลือกบทบาทเอง
+  // Mockup: จำลองสถานะด้วย ?session=office|teacher (สำหรับผู้ตรวจ mockup เท่านั้น ไม่ใช่ UI ให้ผู้ใช้เลือก)
+  function initAuthCta() {
+    const ctas = $$("[data-auth-cta]");
+    if (!ctas.length) return;
+    const session = new URLSearchParams(location.search).get("session");
+    const target = session === "office" ? "office-dashboard.html" : session === "teacher" ? "teacher-dashboard.html" : "login.html";
+    ctas.forEach((a) => {
+      a.href = target;
+      if (session) a.setAttribute("aria-description", "คุณเข้าสู่ระบบอยู่แล้ว ระบบจะพาไปยังพื้นที่ทำงานของคุณ");
+    });
+  }
+
+  function initMockLogin() {
+    const loginForm = doc.querySelector("[data-mock-login]");
+    if (!loginForm) return;
+    const err = loginForm.querySelector("[data-login-error]");
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = loginForm.email.value.trim();
+      if (!email || !loginForm.password.value) {
+        err.hidden = false;
+        err.textContent = "กรุณากรอกอีเมลและรหัสผ่าน";
+        return;
+      }
+      // จำลอง: บทบาทมาจาก "ฐานข้อมูล" ไม่ใช่จากผู้ใช้
+      location.href = /^teacher/i.test(email) ? "teacher-dashboard.html" : "office-dashboard.html";
+    });
+  }
+
+  /* ------------------------------------------------- Dashboard: sidebar drawer */
+  function initDrawer() {
+    const side = doc.getElementById("sidebar");
+    const openBtn = doc.querySelector("[data-drawer-open]");
+    if (!side || !openBtn) return;
+    const scrim = doc.querySelector(".scrim");
+    const setOpen = (on) => {
+      side.classList.toggle("is-open", on);
+      if (scrim) scrim.hidden = !on;
+      openBtn.setAttribute("aria-expanded", String(on));
+      if (on) side.querySelector("a, button")?.focus();
+      else openBtn.focus();
+    };
+    openBtn.addEventListener("click", () => setOpen(true));
+    $$("[data-drawer-close]").forEach((el) => el.addEventListener("click", () => setOpen(false)));
+    doc.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && side.classList.contains("is-open")) setOpen(false);
+    });
+  }
+
+  /* ---------------------------------------------- Dashboard: table search/filter */
+  function initTableFilter() {
+    $$("[data-table-filter]").forEach((bar) => {
+      const table = doc.getElementById(bar.dataset.tableFilter);
+      if (!table) return;
+      const text = bar.querySelector("[data-filter-text]");
+      const chips = $$("[data-filter-status]", bar);
+      const empty = table.parentElement.querySelector("[data-table-empty]");
+      let status = "";
+      const apply = () => {
+        const q = (text?.value || "").trim().toLowerCase();
+        let shown = 0;
+        $$("tbody tr", table).forEach((tr) => {
+          const ok = (!status || tr.dataset.status === status) && (!q || tr.textContent.toLowerCase().includes(q));
+          tr.hidden = !ok;
+          if (ok) shown++;
+        });
+        if (empty) empty.hidden = shown > 0;
+      };
+      text?.addEventListener("input", apply);
+      chips.forEach((c) =>
+        c.addEventListener("click", () => {
+          status = c.dataset.filterStatus;
+          chips.forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+          apply();
+        }),
+      );
+    });
+  }
+
+  /* ------------------------------------- Dashboard: การ์ดสถิติเปิดแท็บที่ตรงกัน */
+  function initStatTabs() {
+    $$("[data-open-tab]").forEach((a) =>
+      a.addEventListener("click", () => doc.getElementById(a.dataset.openTab)?.click()),
+    );
+  }
+
   /* -------------------------------------------------------------------- Boot */
   renderCharts();
   initTabs();
@@ -412,4 +500,9 @@
     initParallax(hero);
   });
   initReveal();
+  initAuthCta();
+  initMockLogin();
+  initDrawer();
+  initTableFilter();
+  initStatTabs();
 })();

@@ -1,6 +1,6 @@
 # Design System — Dark Premium Editorial
 
-> แหล่งจริงของค่าทั้งหมด: `design/mockup/design-system.css` (CSS Custom Properties)
+> แหล่งจริงของค่าทั้งหมด: `docs/design/mockup/design-system.css` (CSS Custom Properties)
 > สถานะ: MOCKUP รออนุมัติ — ยังไม่ใช้กับ `src/`
 
 ## 1. สี
@@ -72,6 +72,24 @@
 | Progress | `.progress__seg.is-done/.is-current`, `.progress__toggle[aria-pressed]` | |
 | Sections | `.section`, `.cards/.card`, `.timeline`, `.reveal` | |
 | Buttons | `.btn--primary`, `.btn--ghost` | สูงขั้นต่ำ 44px |
+
+### Dashboard components (v2 — ใช้ tokens ชุดเดียวกับ Welcome)
+
+| Component | Class | หมายเหตุ |
+|---|---|---|
+| App shell | `.app`, `.side`, `.side__link[aria-current=page]`, `.side__badge`, `.side__soon`, `.scrim`, `.app__top`, `.app__content` | Sidebar ติดถาวร ≥1024px, drawer บนจอเล็ก |
+| Quick actions | `.qa`, `.qa__item`, `.qa__item--primary` | ปุ่มหลักหนึ่งปุ่มต่อหน้า |
+| Stats | `.stats`, `.stat`, `.stat--accent`, `.stat--alert`, `.stat--link` | ตัวเลข tabular, สีเฉพาะที่ต้องสนใจ |
+| Box | `.box`, `.box--highlight`, `.box__head`, `.box__meta` | พื้นทึบ `--bg-1` ไม่ใช้ blur (อ่านง่าย เร็ว) |
+| Action list | `.todo`, `.tasklist`, `.task__main` | ทุกแถวมีปุ่มทำต่อ |
+| Filter | `.toolbar`, `.input`, `.chips`, `.chip[aria-pressed]` | |
+| Table | `.table-wrap`, `.table`, `td[data-label]`, `.table-empty` | < 640px แปลงเป็นการ์ดต่อแถว |
+| Tabs | `.seg-tabs [role=tab]` | segmented control พร้อมตัวนับ |
+| Form | `.form`, `.field`, `.input`, `.dropzone`, `.form__error` | |
+| Auth | `.auth`, `.auth__card` | หน้า Login ใช้ระบบเดียวกัน |
+| Welcome extras | `.cta-band`, `.btn--lg`, `.btn--sm` | |
+
+กฎ: Dashboard **ไม่ใช้** `.hero`, `.scene`, `.reveal`, parallax หรือ count-up — ใช้ได้เฉพาะ Welcome
 
 ## 5. Charts
 

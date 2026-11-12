@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06070d" />
+    <meta name="robots" content="noindex" />
+    <title>MOCKUP · Welcome — Sak Ngam Academic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body data-page="welcome">
+    <a class="skip-link" href="#main">ข้ามไปยังเนื้อหา</a>
+
+    <header class="topbar">
+      <a class="brand" href="welcome.html" aria-label="Sak Ngam Academic หน้าแรก">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5-9-5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">Sak Ngam Academic</span>
+          <span class="brand__sub">โรงเรียนสักงามวิทยา</span>
+        </span>
+      </a>
+      <nav class="topnav" aria-label="ความสามารถของระบบ">
+        <button type="button" data-goto="0">ภาพรวม</button>
+        <button type="button" data-goto="1">หลักสูตร</button>
+        <button type="button" data-goto="2">วัดผล</button>
+        <button type="button" data-goto="3">เอกสาร</button>
+        <button type="button" data-goto="4">ติดตามนักเรียน</button>
+      </nav>
+      <div class="topbar__end">
+        <span class="pill pill--demo">Mockup</span>
+        <a class="btn btn--primary btn--sm" href="login.html" data-auth-cta>
+          <span data-cta-label>เข้าสู่ระบบงานวิชาการ</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" data-carousel tabindex="0" aria-roledescription="carousel" aria-label="แนะนำความสามารถของระบบ 5 ฉาก — ใช้ปุ่มลูกศรซ้ายขวาเพื่อเปลี่ยนฉาก">
+        <div class="hero__bg" aria-hidden="true">
+          <div class="bg-layer bg-grid"></div>
+          <div class="bg-layer bg-orb bg-orb--a"></div>
+          <div class="bg-layer bg-orb bg-orb--b"></div>
+          <div class="bg-layer bg-arc"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"><path /></svg></div>
+          <div class="bg-noise"></div>
+        </div>
+
+        <nav class="pager" aria-label="เลือกฉาก">
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 1 ระบบบริหารงานวิชาการ"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 2 หลักสูตรและข้อมูลพื้นฐาน"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 3 วัดและประเมินผล"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 4 ภาระงานเอกสาร"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 5 ติดตามนักเรียน"><i></i></button>
+          <span class="pager__count num" aria-hidden="true"><b data-count-now>01</b> / 05</span>
+        </nav>
+
+        <div class="stage">
+          <!-- 1. Welcome -->
+          <article class="scene" data-accent="#8b7cf6" data-name="ระบบบริหารงานวิชาการ" aria-roledescription="slide" aria-label="1 จาก 5">
+            <div class="scene__visual"><div class="orbit"><div class="orbit__float"><div class="disc">
+              <div class="chart" data-chart="rings" data-values="100,82,64" data-center="ตัวอย่างความคืบหน้า" data-label="ภาพตัวอย่าง: วงแหวนความคืบหน้างานวิชาการ"></div>
+            </div></div></div></div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>01</b> Sak Ngam Academic</p>
+              <h1 class="title"><span class="t1" style="--chars:7">ระบบบริหาร</span><span class="t2" style="--chars:9">งานวิชาการ</span></h1>
+              <p class="lede">พื้นที่ทำงานเดียวของฝ่ายวิชาการและครูผู้สอน — ตั้งแต่ข้อมูลพื้นฐาน หลักสูตร การวัดผล ไปจนถึงการส่งและตรวจรับเอกสาร</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>Portal</dt><dd>2<small>ส่วน</small></dd></div>
+              <div class="kpi"><dt>บทบาทผู้ใช้</dt><dd>6<small>บทบาท</small></dd></div>
+              <div class="kpi"><dt>กลุ่มสาระ</dt><dd>8<small>กลุ่ม</small></dd></div>
+              <div class="kpi"><dt>สิทธิ์ข้อมูลทุกตาราง</dt><dd>RLS</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+              <a class="btn btn--ghost" href="#features">ดูความสามารถ</a>
+            </div>
+            <aside class="panel" aria-label="ระบบนี้ทำอะไรได้">
+              <h2 class="panel__title">สองพื้นที่ทำงาน ระบบเดียว</h2>
+              <p class="panel__meta">เข้าสู่ระบบครั้งเดียว ระบบพาไปตามบทบาท</p>
+              <div class="rows">
+                <div class="row"><span class="row__name">Academic Office</span><span class="tag tag--todo">ฝ่ายวิชาการ</span><span class="row__sub">ทะเบียน หลักสูตร วัดผล มอบหมายและตรวจรับเอกสาร</span></div>
+                <div class="row"><span class="row__name">Teacher Portal</span><span class="tag tag--wait">ครูผู้สอน</span><span class="row__sub">ภาระงานของฉัน ส่งเอกสาร ติดตามผลการตรวจ</span></div>
+              </div>
+            </aside>
+          </article>
+
+          <!-- 2. Curriculum & master data -->
+          <article class="scene" data-accent="#6d7cff" data-name="หลักสูตรและข้อมูลพื้นฐาน" aria-roledescription="slide" aria-label="2 จาก 5">
+            <div class="scene__visual"><div class="orbit"><div class="orbit__float"><div class="disc">
+              <div class="chart" data-chart="donut" data-values="14,14,16,12,8,8,10,14" data-total="8" data-center="กลุ่มสาระ" data-label="ภาพตัวอย่าง: สัดส่วนรายวิชาของ 8 กลุ่มสาระ"></div>
+            </div></div></div></div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>02</b> Curriculum &amp; Master Data</p>
+              <h2 class="title"><span class="t1" style="--chars:6">หลักสูตร</span><span class="t2" style="--chars:10">ข้อมูลพื้นฐาน</span></h2>
+              <p class="lede">ปีการศึกษา ภาคเรียน ระดับชั้น ห้องเรียน และ 8 กลุ่มสาระ เป็นฐานเดียวกันของทุกโมดูล ขึ้นปีการศึกษาใหม่ได้ในไม่กี่ขั้นตอน</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ระดับชั้น</dt><dd>ป.1–ม.6</dd></div>
+              <div class="kpi"><dt>ภาคเรียน</dt><dd>1 · 2</dd></div>
+              <div class="kpi"><dt>คัดลอกห้องเรียน</dt><dd>1<small>คลิก</small></dd></div>
+              <div class="kpi"><dt>ประวัติปีเก่า</dt><dd>ครบ</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+            </div>
+            <aside class="panel" aria-label="ตัวอย่างข้อมูลพื้นฐาน">
+              <h2 class="panel__title">ขึ้นปีการศึกษาใหม่</h2>
+              <p class="panel__meta">ตัวอย่างขั้นตอน</p>
+              <ol class="steps">
+                <li class="is-done"><b>เพิ่มปีการศึกษา 2570</b>กำหนดวันเริ่ม–สิ้นสุด</li>
+                <li class="is-done"><b>เพิ่มภาคเรียนที่ 1 และ 2</b>ระบบตรวจวันที่ไม่ให้ทับซ้อน</li>
+                <li class="is-now"><b>คัดลอกห้องเรียนจากปีก่อน</b>ข้ามห้องที่มีอยู่แล้ว</li>
+                <li><b>ตั้งเป็นปีปัจจุบัน</b>มีได้ครั้งละหนึ่งปีเท่านั้น</li>
+              </ol>
+            </aside>
+          </article>
+
+          <!-- 3. Assessment -->
+          <article class="scene" data-accent="#38d6f5" data-name="วัดและประเมินผล" aria-roledescription="slide" aria-label="3 จาก 5">
+            <div class="scene__visual"><div class="orbit"><div class="orbit__float"><div class="disc disc--square">
+              <div class="chart" data-chart="bars" data-values="18,16,21,15,12,8,6,4" data-labels="4|3.5|3|2.5|2|1.5|1|0" data-label="ภาพตัวอย่าง: การกระจายผลการเรียน"></div>
+            </div></div></div></div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>03</b> Assessment</p>
+              <h2 class="title"><span class="t1" style="--chars:5">วัดและ</span><span class="t2" style="--chars:8">ประเมินผล</span></h2>
+              <p class="lede">ทะเบียนผลการเรียน การกระจายเกรด แนวโน้มรายภาค และรายงาน ปพ. จากข้อมูลชุดเดียวกัน</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ผลการเรียน</dt><dd>4–0</dd></div>
+              <div class="kpi"><dt>สถานะพิเศษ</dt><dd>ร · มส</dd></div>
+              <div class="kpi"><dt>รายงาน</dt><dd>ปพ.</dd></div>
+              <div class="kpi"><dt>อนุมัติผล</dt><dd>2<small>ขั้น</small></dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+            </div>
+            <aside class="panel" aria-label="ตัวอย่างแนวโน้มผลการเรียน">
+              <h2 class="panel__title">แนวโน้มเกรดเฉลี่ย</h2>
+              <p class="panel__meta">ภาพตัวอย่าง · ข้อมูลจำลอง</p>
+              <div class="chart" data-chart="line" data-values="2.71,2.78,2.8,2.87" data-labels="1/68|2/68|1/69|2/69" data-label="ภาพตัวอย่าง: เกรดเฉลี่ยเพิ่มขึ้นใน 4 ภาคเรียน"></div>
+            </aside>
+          </article>
+
+          <!-- 4. Document workflow -->
+          <article class="scene" data-accent="#5eead4" data-name="ภาระงานเอกสาร" aria-roledescription="slide" aria-label="4 จาก 5">
+            <div class="scene__visual"><div class="orbit"><div class="orbit__float"><div class="disc">
+              <div class="chart" data-chart="gauge" data-values="64" data-center="ตรวจรับแล้ว" data-label="ภาพตัวอย่าง: เกจร้อยละเอกสารที่ตรวจรับแล้ว"></div>
+            </div></div></div></div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>04</b> Document Workflow</p>
+              <h2 class="title"><span class="t1" style="--chars:6">มอบหมาย</span><span class="t2" style="--chars:9">ส่ง · ตรวจรับ</span></h2>
+              <p class="lede">ฝ่ายวิชาการมอบหมายงานพร้อมแม่แบบ ครูส่ง PDF / Word / Excel ตรวจรับหรือส่งกลับแก้ไขได้ทันที ทุกฉบับเก็บเป็นประวัติ</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ชนิดไฟล์</dt><dd>3<small>แบบ</small></dd></div>
+              <div class="kpi"><dt>เวอร์ชันเอกสาร</dt><dd>ไม่ทับ</dd></div>
+              <div class="kpi"><dt>สถานะ</dt><dd>4<small>ขั้น</small></dd></div>
+              <div class="kpi"><dt>แจ้งเตือน</dt><dd>อัตโนมัติ</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+            </div>
+            <aside class="panel" aria-label="ขั้นตอนงานเอกสาร">
+              <h2 class="panel__title">วงจรเอกสารหนึ่งฉบับ</h2>
+              <p class="panel__meta">ตัวอย่าง</p>
+              <ol class="steps">
+                <li class="is-done"><b>มอบหมาย</b>ฝ่ายวิชาการแนบแม่แบบ กำหนดส่ง</li>
+                <li class="is-done"><b>ส่งเอกสาร</b>ครูอัปโหลด ฉบับที่ 1</li>
+                <li class="is-now"><b>ส่งกลับแก้ไข</b>พร้อมข้อเสนอแนะ</li>
+                <li><b>ตรวจรับ</b>ครูส่งฉบับที่ 2 แล้วผ่าน</li>
+              </ol>
+            </aside>
+          </article>
+
+          <!-- 5. Student monitoring -->
+          <article class="scene" data-accent="#c084fc" data-name="ติดตามนักเรียน" aria-roledescription="slide" aria-label="5 จาก 5">
+            <div class="scene__visual"><div class="orbit"><div class="orbit__float"><div class="disc">
+              <div class="chart" data-chart="donut" data-values="31,19,9" data-colors="var(--rose)|var(--amber)|var(--accent)" data-center="ตัวอย่าง" data-total="0·ร·มส" data-label="ภาพตัวอย่าง: สัดส่วน 0 ร มส"></div>
+            </div></div></div></div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>05</b> Student Monitoring</p>
+              <h2 class="title"><span class="t1" style="--chars:5">ติดตาม</span><span class="t2" style="--chars:6">นักเรียน</span></h2>
+              <p class="lede">เห็นนักเรียนที่ติด 0 ร มส และกลุ่มเสี่ยงตั้งแต่เนิ่น ๆ พร้อมสถานะการแก้ผลการเรียนรายคน — เห็นเฉพาะผู้มีสิทธิ์</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>สถานะติดตาม</dt><dd>0 · ร · มส</dd></div>
+              <div class="kpi"><dt>ครูที่ปรึกษา</dt><dd>แจ้งได้</dd></div>
+              <div class="kpi"><dt>ข้อมูลส่วนบุคคล</dt><dd>PDPA</dd></div>
+              <div class="kpi"><dt>Audit log</dt><dd>ทุกการแก้</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+            </div>
+            <aside class="panel" aria-label="ความปลอดภัยของข้อมูล">
+              <h2 class="panel__title">ข้อมูลนักเรียนปลอดภัย</h2>
+              <p class="panel__meta">หลักการของระบบ</p>
+              <div class="rows">
+                <div class="row"><span class="row__name">แยกข้อมูลตามโรงเรียน</span><span class="tag tag--ok">RLS</span></div>
+                <div class="row"><span class="row__name">เห็นตามบทบาทและกลุ่มสาระ</span><span class="tag tag--ok">RBAC</span></div>
+                <div class="row"><span class="row__name">บันทึกทุกการเปลี่ยนแปลง</span><span class="tag tag--ok">Audit</span></div>
+              </div>
+            </aside>
+          </article>
+        </div>
+
+        <div class="strip">
+          <button type="button" class="strip__arrow strip__arrow--prev" aria-label="ฉากก่อนหน้า">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="strip__win">
+            <ol class="strip__track">
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#8b7cf6"><span class="chart" data-chart="rings" data-mini data-values="100,82,64" data-label=""></span></span><span><span class="thumb__no num">01</span><span class="thumb__name">ภาพรวมระบบ</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#6d7cff"><span class="chart" data-chart="donut" data-mini data-values="14,14,16,12,8,8,10,14" data-label=""></span></span><span><span class="thumb__no num">02</span><span class="thumb__name">หลักสูตร</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#38d6f5"><span class="chart" data-chart="bars" data-mini data-values="18,16,21,15,12,8" data-label=""></span></span><span><span class="thumb__no num">03</span><span class="thumb__name">วัดผล</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#5eead4"><span class="chart" data-chart="gauge" data-mini data-values="64" data-label=""></span></span><span><span class="thumb__no num">04</span><span class="thumb__name">เอกสาร</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#c084fc"><span class="chart" data-chart="donut" data-mini data-values="31,19,9" data-colors="var(--rose)|var(--amber)|var(--accent)" data-label=""></span></span><span><span class="thumb__no num">05</span><span class="thumb__name">ติดตามนักเรียน</span></span></button></li>
+            </ol>
+          </div>
+          <button type="button" class="strip__arrow strip__arrow--next" aria-label="ฉากถัดไป">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <div class="progress">
+            <div class="progress__segs" aria-hidden="true">
+              <span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span>
+            </div>
+            <button type="button" class="progress__toggle" aria-pressed="false">
+              <svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg>
+              <svg class="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+              <span>เล่นอัตโนมัติ</span>
+            </button>
+          </div>
+        </div>
+        <p class="sr-only" aria-live="polite" data-status></p>
+      </section>
+
+      <!-- ความสามารถแยกตามผู้ใช้ — เนื้อหาเดียวกับ carousel ให้อ่านได้โดยไม่ต้องเปลี่ยน slide -->
+      <section class="section reveal-group" id="features" aria-labelledby="features-title">
+        <div class="section__head reveal">
+          <div>
+            <p class="label">Features</p>
+            <h2 class="section__title" id="features-title"><em>ระบบเดียว</em> สำหรับทุกคนในงานวิชาการ</h2>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card reveal" style="--c:var(--violet)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></svg></span>
+            <h3>ฝ่ายวิชาการ</h3><p>แดชบอร์ดงานค้าง คิวตรวจรับ ทะเบียน หลักสูตร วัดผล และรายงาน</p>
+          </div>
+          <div class="card reveal" style="--c:var(--cyan)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3" /></svg></span>
+            <h3>ครูผู้สอน</h3><p>เห็นงานที่ต้องส่ง กำหนดส่ง ข้อเสนอแนะ และส่งเอกสารได้ในไม่กี่คลิก</p>
+          </div>
+          <div class="card reveal" style="--c:var(--mint)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4" /></svg></span>
+            <h3>ผู้บริหาร</h3><p>ภาพรวมผลสัมฤทธิ์และความคืบหน้า แบบอ่านอย่างเดียว</p>
+          </div>
+          <div class="card reveal" style="--c:var(--rose)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V7z" /><path d="M9 12l2 2 4-4" /></svg></span>
+            <h3>ความปลอดภัย</h3><p>สิทธิ์บังคับที่ฐานข้อมูล ไม่มีการสมัครเอง และไม่มีการเลือกบทบาทเอง</p>
+          </div>
+        </div>
+        <div class="cta-band reveal">
+          <div>
+            <h3>พร้อมเริ่มงานแล้วหรือยัง</h3>
+            <p>ระบบจะพาไปยังพื้นที่ทำงานตามบทบาทที่ได้รับจากผู้ดูแลระบบ</p>
+          </div>
+          <a class="btn btn--primary btn--lg" href="login.html" data-auth-cta><span data-cta-label>เข้าสู่ระบบงานวิชาการ</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      MOCKUP หน้า Welcome — ตัวเลขและกราฟเป็นภาพตัวอย่าง ไม่ใช่ข้อมูลจริงของโรงเรียน และหน้านี้ไม่ดึงข้อมูลใด ๆ จากฐานข้อมูล
+      <span class="footnote__review">สำหรับผู้ตรวจ mockup: จำลองสถานะได้ด้วย <code>?session=office</code> หรือ <code>?session=teacher</code> ·
+      <a href="office-dashboard.html">Office Dashboard</a> · <a href="teacher-dashboard.html">Teacher Dashboard</a></span>
+    </footer>
+
+    <script src="interaction.js"></script>
+  </body>
+</html>

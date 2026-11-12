@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06070d" />
+    <meta name="robots" content="noindex" />
+    <title>MOCKUP · แดชบอร์ดครู — Sak Ngam Academic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body data-page="dashboard" style="--accent:#38d6f5">
+    <a class="skip-link" href="#main">ข้ามไปยังเนื้อหา</a>
+    <div class="app">
+      <aside class="side" id="sidebar" aria-label="เมนูระบบครู">
+        <div class="side__head">
+          <a class="brand" href="welcome.html">
+            <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5-9-5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></svg></span>
+            <span class="brand__text"><span class="brand__name">โรงเรียนสักงามวิทยา</span><span class="brand__sub">ระบบครู</span></span>
+          </a>
+          <button type="button" class="icon-btn side__close" data-drawer-close aria-label="ปิดเมนู">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <nav class="side__nav">
+          <a class="side__link" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="16" width="7" height="5" rx="2" /></svg>แดชบอร์ดของฉัน</a>
+          <a class="side__link" href="#my-work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg>งานที่ได้รับมอบหมาย<span class="side__badge">4</span></a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" /></svg>การแจ้งเตือน<span class="side__badge">3</span></a>
+          <p class="side__group">การสอน</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /></svg>รายวิชาที่สอน<span class="side__soon">เร็ว ๆ นี้</span></a>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5" /></svg>ห้องที่ปรึกษา<span class="side__soon">เร็ว ๆ นี้</span></a>
+          <p class="side__group">บัญชี</p>
+          <a class="side__link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></svg>โปรไฟล์</a>
+        </nav>
+        <div class="side__foot">
+          <div class="side__user"><span class="userchip__avatar" aria-hidden="true">ก</span><span><b>ครูตัวอย่าง ก</b><small>ครูผู้สอน · คณิตศาสตร์</small></span></div>
+        </div>
+      </aside>
+      <div class="scrim" data-drawer-close hidden></div>
+
+      <div class="app__main">
+        <header class="app__top">
+          <button type="button" class="icon-btn app__menu" data-drawer-open aria-controls="sidebar" aria-expanded="false" aria-label="เปิดเมนู">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+          <div class="app__title">
+            <h1>สวัสดี ครูตัวอย่าง ก</h1>
+            <p>ภาคเรียนที่ 2/2569 · มี 1 งานเลยกำหนด</p>
+          </div>
+          <div class="app__tools">
+            <span class="pill pill--demo">Demo · ข้อมูลจำลอง</span>
+            <a class="btn btn--primary" href="#submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
+              ส่งเอกสาร
+            </a>
+          </div>
+        </header>
+
+        <main class="app__content" id="main">
+          <!-- ภาระงานของฉัน: ตัวเลขคลิกได้ = กรองรายการด้านล่าง -->
+          <section class="stats" aria-label="ภาระงานของฉัน">
+            <a class="stat stat--link" href="#my-work" data-open-tab="tab-due"><p class="stat__label">ใกล้ครบกำหนด</p><p class="stat__value">2</p><p class="stat__hint">ภายใน 7 วัน</p></a>
+            <a class="stat stat--link stat--alert" href="#my-work" data-open-tab="tab-fix"><p class="stat__label">ต้องแก้ไข</p><p class="stat__value">1</p><p class="stat__hint">มีข้อเสนอแนะ</p></a>
+            <a class="stat stat--link stat--accent" href="#my-work" data-open-tab="tab-wait"><p class="stat__label">รอตรวจ</p><p class="stat__value">1</p><p class="stat__hint">ส่งแล้ว รอฝ่ายวิชาการ</p></a>
+            <a class="stat stat--link" href="#my-work" data-open-tab="tab-done"><p class="stat__label">ส่งแล้ว / ตรวจรับ</p><p class="stat__value">2</p><p class="stat__hint">ภาคเรียนนี้</p></a>
+          </section>
+
+          <!-- งานที่ต้องแก้ไข: แสดงก่อนเสมอ เพราะเร่งด่วนที่สุด -->
+          <section class="box box--highlight" aria-labelledby="fix-title">
+            <header class="box__head"><h2 id="fix-title">ต้องแก้ไขก่อน</h2><span class="tag tag--fix">ครบกำหนดอีก 2 วัน</span></header>
+            <div class="feedback">
+              <div>
+                <p class="feedback__task">บันทึกหลังการสอน เดือนที่ 1 · ฉบับที่ 1</p>
+                <p class="quote"><b>ข้อเสนอแนะจากฝ่ายวิชาการ</b>กรุณาเพิ่มแนวทางปรับปรุงการสอนในส่วนท้าย และแนบผลงานนักเรียนตัวอย่าง 1 ชิ้น</p>
+              </div>
+              <a class="btn btn--primary btn--lg" href="#submit">ส่งฉบับแก้ไข</a>
+            </div>
+          </section>
+
+          <div class="dash-grid dash-grid--teacher">
+            <!-- รายการงาน แบ่งแท็บตามสถานะ -->
+            <section class="box" id="my-work" aria-labelledby="work-title">
+              <header class="box__head"><h2 id="work-title">ภาระงานของฉัน</h2><span class="box__meta">6 งาน</span></header>
+              <div class="seg-tabs" role="tablist" aria-label="สถานะงาน">
+                <button type="button" role="tab" id="tab-due" aria-selected="true" aria-controls="panel-due">ใกล้ครบกำหนด <span>3</span></button>
+                <button type="button" role="tab" id="tab-fix" aria-selected="false" aria-controls="panel-fix" tabindex="-1">ต้องแก้ไข <span>1</span></button>
+                <button type="button" role="tab" id="tab-wait" aria-selected="false" aria-controls="panel-wait" tabindex="-1">รอตรวจ <span>1</span></button>
+                <button type="button" role="tab" id="tab-done" aria-selected="false" aria-controls="panel-done" tabindex="-1">ส่งแล้ว <span>2</span></button>
+              </div>
+              <ul class="tasklist" role="tabpanel" id="panel-due" aria-labelledby="tab-due">
+                <li>
+                  <span class="task__main"><b>รายงานผลการประเมินกลางภาค</b><small>วัดผล · <span class="text-alert">เลยกำหนด 1 วัน</span></small></span>
+                  <a class="btn btn--primary btn--sm" href="#submit">ส่งเอกสาร</a>
+                </li>
+                <li>
+                  <span class="task__main"><b>แผนการจัดการเรียนรู้ ภาคเรียนที่ 2</b><small>แผนการสอน · อีก 6 วัน · <a href="#">ดาวน์โหลดแม่แบบ</a></small></span>
+                  <a class="btn btn--primary btn--sm" href="#submit">ส่งเอกสาร</a>
+                </li>
+                <li>
+                  <span class="task__main"><b>วิจัยในชั้นเรียน (เค้าโครง)</b><small>อีก 20 วัน</small></span>
+                  <a class="btn btn--ghost btn--sm" href="#submit">ส่งเอกสาร</a>
+                </li>
+              </ul>
+              <ul class="tasklist" role="tabpanel" id="panel-fix" aria-labelledby="tab-fix" hidden>
+                <li>
+                  <span class="task__main"><b>บันทึกหลังการสอน เดือนที่ 1</b><small>ส่งกลับแก้ไข · อีก 2 วัน</small></span>
+                  <a class="btn btn--primary btn--sm" href="#submit">ส่งฉบับแก้ไข</a>
+                </li>
+              </ul>
+              <ul class="tasklist" role="tabpanel" id="panel-wait" aria-labelledby="tab-wait" hidden>
+                <li>
+                  <span class="task__main"><b>โครงการสอนรายวิชา</b><small>ส่งฉบับที่ 1 เมื่อ 3 วันก่อน</small></span>
+                  <span class="tag tag--wait">รอตรวจ</span>
+                </li>
+              </ul>
+              <ul class="tasklist" role="tabpanel" id="panel-done" aria-labelledby="tab-done" hidden>
+                <li>
+                  <span class="task__main"><b>ตารางสอนรายบุคคล</b><small>ฉบับที่ 2 · ตรวจรับเมื่อ 10 วันก่อน</small></span>
+                  <span class="tag tag--ok">ตรวจรับแล้ว</span>
+                </li>
+                <li>
+                  <span class="task__main"><b>โครงการสอนรายวิชา</b><small>ฉบับที่ 1 · ส่งเมื่อ 3 วันก่อน</small></span>
+                  <span class="tag tag--wait">รอตรวจ</span>
+                </li>
+              </ul>
+            </section>
+
+            <!-- ส่งเอกสาร: แบบฟอร์มชัดเจน ไม่มี animation -->
+            <section class="box" id="submit" aria-labelledby="submit-title">
+              <header class="box__head"><h2 id="submit-title">ส่งเอกสาร</h2><span class="box__meta">PDF / Word / Excel · ไม่เกิน 20 MB</span></header>
+              <form class="form" onsubmit="return false">
+                <div class="field">
+                  <label for="task">งานที่จะส่ง</label>
+                  <select id="task" class="input">
+                    <option>บันทึกหลังการสอน เดือนที่ 1 (ฉบับแก้ไข)</option>
+                    <option>รายงานผลการประเมินกลางภาค</option>
+                    <option>แผนการจัดการเรียนรู้ ภาคเรียนที่ 2</option>
+                  </select>
+                </div>
+                <div class="dropzone">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
+                  <span>ลากไฟล์มาวาง หรือ <button type="button" class="link-btn">เลือกไฟล์</button></span>
+                  <small>ตัวอย่างหน้าจอ — ยังไม่อัปโหลดจริง</small>
+                </div>
+                <div class="field">
+                  <label for="note">หมายเหตุถึงฝ่ายวิชาการ (ไม่บังคับ)</label>
+                  <textarea id="note" class="input" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn--primary btn--block">ส่งเอกสาร</button>
+              </form>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script src="interaction.js"></script>
+  </body>
+</html>

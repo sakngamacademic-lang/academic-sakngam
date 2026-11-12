@@ -23,3 +23,10 @@ export function daysUntil(d: Date | string, from: Date = new Date()): number {
   const ms = new Date(d).setHours(0, 0, 0, 0) - new Date(from).setHours(0, 0, 0, 0);
   return Math.round(ms / 86_400_000);
 }
+
+/** แสดงวันที่จากค่า date ของฐานข้อมูล (YYYY-MM-DD) โดยไม่เลื่อนวันตาม timezone */
+export function formatIsoDateTH(iso: string | null | undefined): string {
+  if (!iso) return "–";
+  const [y, m, d] = iso.split("-").map(Number);
+  return dateFormatter.format(new Date(y!, m! - 1, d!));
+}

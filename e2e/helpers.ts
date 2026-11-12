@@ -53,3 +53,9 @@ export function rest(token?: string) {
     "Content-Type": "application/json",
   };
 }
+
+/** เข้าสู่ระบบและรอจนเข้า portal เรียบร้อย (ใช้ก่อน page.goto หน้าอื่น) */
+export async function signIn(page: Page, email: string) {
+  await login(page, email);
+  await page.waitForURL(/\/(office|teacher)(\/|$)/);
+}

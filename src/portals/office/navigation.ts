@@ -1,14 +1,18 @@
 import {
   BarChart3,
   BookOpen,
+  CalendarDays,
+  CalendarRange,
   ClipboardCheck,
   FileSpreadsheet,
   FileText,
   GraduationCap,
+  Layers,
   LayoutDashboard,
   ListChecks,
   School,
   Settings,
+  Shapes,
   ShieldAlert,
   Target,
   UserRound,
@@ -42,7 +46,16 @@ export const officePortal: PortalConfig = {
       items: [
         { path: "teachers", label: "ครู", icon: UserRound, plannedPhase: "Phase 1.5", roles: REGISTRY_VIEW },
         { path: "students", label: "นักเรียน", icon: Users, plannedPhase: "Phase 1.12", roles: ACADEMIC_AND_EXEC },
-        { path: "classrooms", label: "ห้องเรียน & ครูที่ปรึกษา", icon: School, plannedPhase: "Phase 1.12", roles: ACADEMIC_AND_EXEC },
+      ],
+    },
+    {
+      title: "ข้อมูลพื้นฐาน",
+      items: [
+        { path: "academic-years", label: "ปีการศึกษา", icon: CalendarDays },
+        { path: "terms", label: "ภาคเรียน", icon: CalendarRange },
+        { path: "grade-levels", label: "ระดับชั้น", icon: Layers },
+        { path: "classrooms", label: "ห้องเรียน", icon: School },
+        { path: "learning-areas", label: "กลุ่มสาระการเรียนรู้", icon: Shapes },
       ],
     },
     {

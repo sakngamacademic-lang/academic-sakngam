@@ -3,6 +3,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { buildPortalRoutes } from "@/features/navigation/build-routes";
 import { RequireAuth, RequireRoles } from "@/features/auth/guards";
 import { OfficeDashboardPage } from "@/features/dashboard/office/OfficeDashboardPage";
+import { AcademicYearsPage } from "@/features/master-data/pages/AcademicYearsPage";
+import { TermsPage } from "@/features/master-data/pages/TermsPage";
+import { GradeLevelsPage } from "@/features/master-data/pages/GradeLevelsPage";
+import { ClassroomsPage } from "@/features/master-data/pages/ClassroomsPage";
+import { LearningAreasPage } from "@/features/master-data/pages/LearningAreasPage";
 import { officePortal } from "./navigation";
 
 export const officeRoutes: RouteObject = {
@@ -16,5 +21,10 @@ export const officeRoutes: RouteObject = {
   ),
   children: buildPortalRoutes(officePortal, {
     "": <OfficeDashboardPage />,
+    "academic-years": <AcademicYearsPage />,
+    terms: <TermsPage />,
+    "grade-levels": <GradeLevelsPage />,
+    classrooms: <ClassroomsPage />,
+    "learning-areas": <LearningAreasPage />,
   }),
 };

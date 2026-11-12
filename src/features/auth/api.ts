@@ -13,6 +13,7 @@ const myAccessSchema = z.object({
   // บทบาทที่ไม่รู้จัก (เช่นเพิ่มใน DB ภายหลัง) จะถูกตัดทิ้ง ไม่ทำให้แอปพัง
   roles: z.array(z.string()).transform((rs) => rs.filter((r): r is (typeof APP_ROLES)[number] =>
     (APP_ROLES as readonly string[]).includes(r))),
+  learning_area_ids: z.array(z.uuid()).default([]),
 });
 
 export type MyAccess = z.infer<typeof myAccessSchema>;

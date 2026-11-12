@@ -2,7 +2,7 @@
 
 ระบบบริหารงานวิชาการ โรงเรียนสักงามวิทยา — สำหรับ **ฝ่ายวิชาการ** (`/office`) และ **ครูผู้สอน** (`/teacher`)
 
-> สถานะปัจจุบัน: **Phase 1.3 — Authentication & Role-Based Portal**
+> สถานะปัจจุบัน: **Phase 1.4 — Master Data Management**
 > เข้าสู่ระบบด้วย Supabase Auth จริง (local) ตัวเลขบนแดชบอร์ดยังเป็น **ข้อมูลจำลอง (Demo)**
 > แผนสถาปัตยกรรม: [`docs/architecture/PHASE-0.md`](docs/architecture/PHASE-0.md)
 
@@ -74,6 +74,9 @@ npm run db:test
 | `20261112000300_audit_logs.sql` | `audit_logs` แบบ append-only + audit triggers |
 | `20261112000400_rls_policies.sql` | helper functions ตรวจสิทธิ์, grants, RLS policies |
 | `20261113000100_get_my_access.sql` | RPC อ่านบัญชีและบทบาทของผู้ใช้ปัจจุบัน |
+| `20261114000100_master_data_tables.sql` | `learning_areas`, `academic_years`, `terms`, `grade_levels`, `classrooms` + กฎวันที่ |
+| `20261114000200_learning_area_scope.sql` | scope กลุ่มสาระใน `user_roles`, helper ตรวจสิทธิ์กลุ่มสาระ |
+| `20261114000300_master_data_rls.sql` | grants ระดับคอลัมน์, RLS, RPC ตั้งปี/ภาคปัจจุบัน และคัดลอกห้องเรียน |
 
 ห้ามแก้ไฟล์ migration ที่ push แล้ว ถ้าต้องเปลี่ยนให้สร้างไฟล์ใหม่ด้วย `npx supabase migration new <name>`
 
@@ -103,7 +106,27 @@ npm run db:reset
 npm run test:e2e
 ```
 
-ชุดทดสอบจะปฏิเสธการรันถ้า `VITE_SUPABASE_URL` ไม่ใช่ localhost
+ชุดทดสอบจะ `supabase db reset` ฐานข้อมูล local ก่อนรันทุกครั้ง (ข้ามได้ด้วย `E2E_SKIP_DB_RESET=1`) และปฏิเสธการรันถ้า `VITE_SUPABASE_URL` ไม่ใช่ localhost
+
+## ข้อมูลพื้นฐาน (Phase 1.4)
+
+หน้าใน Academic Office: `/office/academic-years`, `/office/terms`, `/office/grade-levels`, `/office/classrooms`, `/office/learning-areas`
+
+| บทบาท | ปี/ภาค/ระดับชั้น/ห้องเรียน | กลุ่มสาระ | มอบหมายหัวหน้ากลุ่มสาระ |
+|---|---|---|---|
+| system_admin | จัดการ | จัดการ | ✅ (เท่านั้น) |
+| academic_head | จัดการ | จัดการ | ดูได้ |
+| academic_staff | จัดการ | ดู | – |
+| learning_area_head | ดู | ดูเฉพาะกลุ่มสาระของตน | – |
+| executive | ดู | ดู | – |
+| teacher | อ่านผ่าน API ได้ แต่ไม่มีหน้าใน portal | ไม่เห็น | – |
+
+- ไม่มีการลบจริง: ระดับชั้น ห้องเรียน และกลุ่มสาระใช้ "ปิดใช้งาน" ส่วนปีการศึกษาและภาคเรียนเก็บถาวรเสมอ
+- ปี/ภาคปัจจุบันตั้งผ่าน RPC `set_current_academic_year` / `set_current_term` เท่านั้น จึงมีได้ทีละหนึ่งเสมอ
+- ขึ้นปีการศึกษาใหม่: เพิ่มปี → เพิ่มภาคเรียน → "คัดลอกจากปีอื่น" ในหน้าห้องเรียน (RPC `copy_classrooms`) → ตั้งเป็นปีปัจจุบัน
+- `school_id` ฐานข้อมูลใส่ให้อัตโนมัติ ผู้ใช้กำหนดเองไม่ได้ และ composite FK กันการอ้างอิงข้ามโรงเรียน
+- หัวหน้ากลุ่มสาระ = แถว `user_roles` ที่ role `learning_area_head` + `learning_area_id` เปลี่ยนได้โดยการลบแล้วเพิ่มใหม่โดย system_admin เท่านั้น (ไม่มีสิทธิ์ UPDATE)
+- ตารางในอนาคตที่ผูกกลุ่มสาระให้ใช้ `private.can_access_learning_area(learning_area_id)` ใน RLS
 
 ## Environment Variables
 
@@ -155,6 +178,7 @@ src/
 | 1.1 | Project scaffold, layouts, navigation, demo dashboards | ✅ |
 | 1.2 | Supabase local + core migrations | ✅ |
 | 1.3 | Authentication & route guard ตามบทบาท | ✅ |
-| 1.4–1.12 | ข้อมูลพื้นฐาน, ทะเบียน, ไฟล์/R2, ระบบภาระงานเอกสาร, แจ้งเตือน, นำเข้า Excel | ⏳ |
+| 1.4 | ข้อมูลพื้นฐาน (ปี/ภาค/ระดับชั้น/ห้องเรียน/กลุ่มสาระ) + scope หัวหน้ากลุ่มสาระ | ✅ |
+| 1.5–1.12 | ทะเบียนครู, ไฟล์/R2, ระบบภาระงานเอกสาร, แจ้งเตือน, นำเข้า Excel | ⏳ |
 
 รายละเอียดแต่ละขั้นอยู่ใน `docs/architecture/PHASE-0.md` หัวข้อ 11

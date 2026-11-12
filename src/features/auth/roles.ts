@@ -37,6 +37,9 @@ const CAPABILITIES = {
   "tasks.view": ["academic_head", "academic_staff", "learning_area_head", "executive"],
   "tasks.manage": ["academic_head", "academic_staff", "learning_area_head"],
   "assessment.view": ["academic_head", "academic_staff", "learning_area_head", "executive"],
+  "masterdata.manage": ["system_admin", "academic_head", "academic_staff"],
+  "learningareas.manage": ["system_admin", "academic_head"],
+  "roles.manage": ["system_admin"],
 } satisfies Record<string, readonly AppRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

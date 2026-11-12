@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06070d" />
+    <meta name="robots" content="noindex" />
+    <title>MOCKUP · ฝ่ายวิชาการ — Sak Ngam Academic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body data-portal="office">
+    <a class="skip-link" href="#main">ข้ามไปยังเนื้อหา</a>
+
+    <header class="topbar">
+      <a class="brand" href="office-mockup.html" aria-label="ฝ่ายวิชาการ โรงเรียนสักงามวิทยา">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5-9-5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">โรงเรียนสักงามวิทยา</span>
+          <span class="brand__sub">ฝ่ายวิชาการ</span>
+        </span>
+      </a>
+      <nav class="topnav" aria-label="ฉากหลัก">
+        <button type="button" data-goto="0">ภาพรวม</button>
+        <button type="button" data-goto="1">หลักสูตร</button>
+        <button type="button" data-goto="2">ผลสัมฤทธิ์</button>
+        <button type="button" data-goto="3">เอกสาร</button>
+        <button type="button" data-goto="4">ติดตามนักเรียน</button>
+      </nav>
+      <div class="topbar__end">
+        <span class="pill pill--demo">Demo · ข้อมูลจำลอง</span>
+        <span class="userchip"><span class="userchip__avatar" aria-hidden="true">หว</span>หัวหน้าวิชาการ (ตัวอย่าง)</span>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" data-carousel tabindex="0" aria-roledescription="carousel" aria-label="ภาพรวมงานฝ่ายวิชาการ 5 ฉาก — ใช้ปุ่มลูกศรซ้ายขวาเพื่อเปลี่ยนฉาก">
+        <div class="hero__bg" aria-hidden="true">
+          <div class="bg-layer bg-grid"></div>
+          <div class="bg-layer bg-orb bg-orb--a"></div>
+          <div class="bg-layer bg-orb bg-orb--b"></div>
+          <div class="bg-layer bg-arc"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"><path /></svg></div>
+          <div class="bg-noise"></div>
+        </div>
+
+        <!-- Vertical slide indicator -->
+        <nav class="pager" aria-label="เลือกฉาก">
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 1 ภาพรวมงานวิชาการ"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 2 หลักสูตร"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 3 ผลสัมฤทธิ์"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 4 ภาระงานเอกสาร"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 5 ติดตามนักเรียน"><i></i></button>
+          <span class="pager__count num" aria-hidden="true"><b data-count-now>01</b> / 05</span>
+        </nav>
+
+        <div class="stage">
+          <!-- ============ 1. ACADEMIC OVERVIEW ============ -->
+          <article class="scene" data-accent="#8b7cf6" data-name="ภาพรวมงานวิชาการ" aria-roledescription="slide" aria-label="1 จาก 5">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="rings" data-values="78,64,52" data-center="ส่งเอกสารแล้ว"
+                  data-label="ความคืบหน้าภาคเรียน: ส่งเอกสารแล้ว 78%, ตรวจรับแล้ว 64%, บันทึกผลการเรียน 52%"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>01</b> Academic Overview</p>
+              <h2 class="title"><span class="t1" style="--chars:6">ภาพรวม</span><span class="t2" style="--chars:9">งานวิชาการ</span></h2>
+              <p class="lede">สถานะงานวิชาการทั้งโรงเรียนในภาคเรียนที่ 2 ปีการศึกษา 2569 — เอกสาร การวัดผล และความคืบหน้าในหน้าเดียว</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ครูผู้สอน</dt><dd data-count="48" data-unit="คน">48</dd></div>
+              <div class="kpi"><dt>นักเรียน</dt><dd data-count="812" data-unit="คน">812</dd></div>
+              <div class="kpi"><dt>ห้องเรียน</dt><dd data-count="24" data-unit="ห้อง">24</dd></div>
+              <div class="kpi"><dt>งานที่เปิดอยู่</dt><dd data-count="5" data-unit="งาน">5</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#shortcuts">เปิดแดชบอร์ด</a>
+              <a class="btn btn--ghost" href="#calendar">ดูปฏิทินวิชาการ</a>
+            </div>
+            <aside class="panel" aria-label="สรุปความคืบหน้า">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อมูลภาพรวม">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="o1-a" id="o1-ta">ความคืบหน้า</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="o1-b" id="o1-tb" tabindex="-1">สัปดาห์นี้</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o1-a" aria-labelledby="o1-ta">
+                <h3 class="panel__title">ภาคเรียนที่ 2 / 2569</h3>
+                <p class="panel__meta">สัปดาห์ที่ 3 จาก 20 · อัปเดตล่าสุดวันนี้</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ส่งเอกสารแล้ว</span><span class="row__val">78%</span><span class="meter" style="--v:78"><i></i></span></div>
+                  <div class="row"><span class="row__name">ตรวจรับแล้ว</span><span class="row__val">64%</span><span class="meter" style="--v:64;--c:var(--cyan)"><i></i></span></div>
+                  <div class="row"><span class="row__name">บันทึกผลการเรียน</span><span class="row__val">52%</span><span class="meter" style="--v:52;--c:var(--mint)"><i></i></span></div>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o1-b" aria-labelledby="o1-tb" hidden>
+                <h3 class="panel__title">สิ่งที่ต้องทำสัปดาห์นี้</h3>
+                <p class="panel__meta">เรียงตามกำหนดเวลา</p>
+                <ol class="steps">
+                  <li class="is-done"><b>เปิดรับแผนการจัดการเรียนรู้</b>มอบหมายครบ 48 คน</li>
+                  <li class="is-now"><b>ตรวจรับบันทึกหลังสอน</b>รอตรวจ 17 รายการ</li>
+                  <li><b>ประชุมหัวหน้ากลุ่มสาระ</b>วันศุกร์ 15:30 น.</li>
+                </ol>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 2. CURRICULUM ============ -->
+          <article class="scene" data-accent="#6d7cff" data-name="หลักสูตรสถานศึกษา" aria-roledescription="slide" aria-label="2 จาก 5">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="donut" data-values="14,14,16,12,8,8,10,14" data-total="8" data-center="กลุ่มสาระ"
+                  data-label="สัดส่วนรายวิชาของ 8 กลุ่มสาระการเรียนรู้"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>02</b> Curriculum</p>
+              <h2 class="title"><span class="t1" style="--chars:6">หลักสูตร</span><span class="t2" style="--chars:8">สถานศึกษา</span></h2>
+              <p class="lede">โครงสร้างหลักสูตร 8 กลุ่มสาระ มาตรฐานการเรียนรู้ และตัวชี้วัดที่ผูกกับรายวิชาแต่ละระดับชั้น</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>กลุ่มสาระ</dt><dd data-count="8" data-unit="กลุ่ม">8</dd></div>
+              <div class="kpi"><dt>รายวิชา</dt><dd data-count="126" data-unit="วิชา">126</dd></div>
+              <div class="kpi"><dt>ตัวชี้วัด</dt><dd data-count="1284" data-unit="ข้อ">1,284</dd></div>
+              <div class="kpi"><dt>ผูกรายวิชาแล้ว</dt><dd data-count="92" data-unit="%">92</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#shortcuts">โครงสร้างหลักสูตร</a>
+              <a class="btn btn--ghost" href="#shortcuts">มาตรฐานและตัวชี้วัด</a>
+            </div>
+            <aside class="panel" aria-label="ข้อมูลหลักสูตร">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อมูลหลักสูตร">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="o2-a" id="o2-ta">กลุ่มสาระ</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="o2-b" id="o2-tb" tabindex="-1">ตัวชี้วัด</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o2-a" aria-labelledby="o2-ta">
+                <h3 class="panel__title">รายวิชาต่อกลุ่มสาระ</h3>
+                <p class="panel__meta">5 อันดับแรก จาก 8 กลุ่ม</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">วิทยาศาสตร์และเทคโนโลยี</span><span class="row__val">22 วิชา</span><span class="meter" style="--v:100"><i></i></span></div>
+                  <div class="row"><span class="row__name">คณิตศาสตร์</span><span class="row__val">18 วิชา</span><span class="meter" style="--v:82"><i></i></span></div>
+                  <div class="row"><span class="row__name">ภาษาไทย</span><span class="row__val">18 วิชา</span><span class="meter" style="--v:82"><i></i></span></div>
+                  <div class="row"><span class="row__name">ภาษาต่างประเทศ</span><span class="row__val">17 วิชา</span><span class="meter" style="--v:77"><i></i></span></div>
+                  <div class="row"><span class="row__name">สังคมศึกษา ศาสนา และวัฒนธรรม</span><span class="row__val">16 วิชา</span><span class="meter" style="--v:73"><i></i></span></div>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o2-b" aria-labelledby="o2-tb" hidden>
+                <h3 class="panel__title">ความครอบคลุมตัวชี้วัด</h3>
+                <p class="panel__meta">ตัวชี้วัดที่ผูกกับรายวิชาแล้ว</p>
+                <div class="chart" data-chart="gauge" data-values="92" data-center="1,181 จาก 1,284 ข้อ" data-label="ตัวชี้วัดที่ผูกกับรายวิชาแล้ว 92%"></div>
+                <p class="row__sub">เหลือ 103 ข้อ ส่วนใหญ่อยู่ในรายวิชาเพิ่มเติม ม.ปลาย</p>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 3. ASSESSMENT ============ -->
+          <article class="scene" data-accent="#38d6f5" data-name="ผลสัมฤทธิ์ทางการเรียน" aria-roledescription="slide" aria-label="3 จาก 5">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc disc--square">
+                <div class="chart" data-chart="bars" data-values="18,16,21,15,12,8,6,4" data-labels="4|3.5|3|2.5|2|1.5|1|0"
+                  data-label="การกระจายผลการเรียนเป็นร้อยละ: เกรด 4 18%, 3.5 16%, 3 21%, 2.5 15%, 2 12%, 1.5 8%, 1 6%, 0 4%"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>03</b> Assessment</p>
+              <h2 class="title"><span class="t1" style="--chars:7">ผลสัมฤทธิ์</span><span class="t2" style="--chars:10">ทางการเรียน</span></h2>
+              <p class="lede">การกระจายผลการเรียน เกรดเฉลี่ย และแนวโน้มรายภาคเรียน เพื่อวางแผนยกระดับคุณภาพผู้เรียน</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>เกรดเฉลี่ยรวม</dt><dd data-count="2.87">2.87</dd></div>
+              <div class="kpi"><dt>ได้ 3 ขึ้นไป</dt><dd data-count="55" data-unit="%">55</dd></div>
+              <div class="kpi"><dt>บันทึกผลแล้ว</dt><dd data-count="52" data-unit="%">52</dd></div>
+              <div class="kpi"><dt>รออนุมัติ</dt><dd data-count="14" data-unit="วิชา">14</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#shortcuts">ทะเบียนผลการเรียน</a>
+              <a class="btn btn--ghost" href="#shortcuts">รายงาน ปพ.</a>
+            </div>
+            <aside class="panel" aria-label="ข้อมูลผลสัมฤทธิ์">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อมูลผลสัมฤทธิ์">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="o3-a" id="o3-ta">แนวโน้ม</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="o3-b" id="o3-tb" tabindex="-1">รายกลุ่มสาระ</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o3-a" aria-labelledby="o3-ta">
+                <h3 class="panel__title">เกรดเฉลี่ยรายภาคเรียน</h3>
+                <p class="panel__meta">4 ภาคเรียนล่าสุด</p>
+                <div class="chart" data-chart="line" data-values="2.71,2.78,2.8,2.87" data-labels="1/68|2/68|1/69|2/69"
+                  data-label="เกรดเฉลี่ยเพิ่มจาก 2.71 เป็น 2.87 ใน 4 ภาคเรียน"></div>
+                <p class="row__sub">เพิ่มขึ้น 0.16 จากภาคเรียนที่ 1/2568</p>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o3-b" aria-labelledby="o3-tb" hidden>
+                <h3 class="panel__title">เกรดเฉลี่ยตามกลุ่มสาระ</h3>
+                <p class="panel__meta">เต็ม 4.00</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ศิลปะ</span><span class="row__val">3.41</span><span class="meter" style="--v:85"><i></i></span></div>
+                  <div class="row"><span class="row__name">ภาษาไทย</span><span class="row__val">3.02</span><span class="meter" style="--v:76"><i></i></span></div>
+                  <div class="row"><span class="row__name">วิทยาศาสตร์และเทคโนโลยี</span><span class="row__val">2.74</span><span class="meter" style="--v:69"><i></i></span></div>
+                  <div class="row"><span class="row__name">คณิตศาสตร์</span><span class="row__val">2.38</span><span class="meter" style="--v:60;--c:var(--amber)"><i></i></span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 4. DOCUMENT MANAGEMENT ============ -->
+          <article class="scene" data-accent="#5eead4" data-name="ภาระงานเอกสารครู" aria-roledescription="slide" aria-label="4 จาก 5">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="gauge" data-values="64" data-center="ตรวจรับแล้ว" data-label="เอกสารที่ตรวจรับแล้ว 64% ของทั้งหมด"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>04</b> Document Management</p>
+              <h2 class="title"><span class="t1" style="--chars:7">ภาระงาน</span><span class="t2" style="--chars:8">เอกสารครู</span></h2>
+              <p class="lede">มอบหมายงาน รับเอกสาร ตรวจรับ และส่งกลับแก้ไข — เห็นทุกขั้นตอนและทุกเวอร์ชันของเอกสารที่ครูส่ง</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>งานที่เปิดอยู่</dt><dd data-count="5" data-unit="งาน">5</dd></div>
+              <div class="kpi"><dt>รอตรวจ</dt><dd data-count="17" data-unit="ฉบับ">17</dd></div>
+              <div class="kpi"><dt>ส่งกลับแก้ไข</dt><dd data-count="7" data-unit="ฉบับ">7</dd></div>
+              <div class="kpi kpi--alert"><dt>เลยกำหนด</dt><dd data-count="9" data-unit="ฉบับ">9</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#shortcuts">สร้างภาระงาน</a>
+              <a class="btn btn--ghost" href="#shortcuts">เปิดคิวตรวจรับ</a>
+            </div>
+            <aside class="panel" aria-label="ข้อมูลภาระงานเอกสาร">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อมูลภาระงานเอกสาร">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="o4-a" id="o4-ta">คิวรอตรวจ</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="o4-b" id="o4-tb" tabindex="-1">รายงาน</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o4-a" aria-labelledby="o4-ta">
+                <h3 class="panel__title">ส่งเข้ามาล่าสุด</h3>
+                <p class="panel__meta">17 ฉบับรอตรวจ</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ครูตัวอย่าง ก</span><span class="tag tag--wait">รอตรวจ</span><span class="row__sub">แผนการจัดการเรียนรู้ ภาคเรียนที่ 2 · ฉบับที่ 1</span></div>
+                  <div class="row"><span class="row__name">ครูตัวอย่าง ข</span><span class="tag tag--wait">รอตรวจ</span><span class="row__sub">บันทึกหลังการสอน เดือนที่ 1 · ฉบับที่ 2</span></div>
+                  <div class="row"><span class="row__name">ครูตัวอย่าง ค</span><span class="tag tag--fix">ส่งกลับแก้ไข</span><span class="row__sub">โครงการสอนรายวิชา · ฉบับที่ 1</span></div>
+                  <div class="row"><span class="row__name">ครูตัวอย่าง ง</span><span class="tag tag--ok">ตรวจรับแล้ว</span><span class="row__sub">วิจัยในชั้นเรียน (เค้าโครง) · ฉบับที่ 1</span></div>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o4-b" aria-labelledby="o4-tb" hidden>
+                <h3 class="panel__title">ความคืบหน้ารายงาน</h3>
+                <p class="panel__meta">ร้อยละของครูที่ส่งแล้ว</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">โครงการสอนรายวิชา</span><span class="row__val">96%</span><span class="meter" style="--v:96"><i></i></span></div>
+                  <div class="row"><span class="row__name">บันทึกหลังการสอน เดือนที่ 1</span><span class="row__val">83%</span><span class="meter" style="--v:83"><i></i></span></div>
+                  <div class="row"><span class="row__name">แผนการจัดการเรียนรู้</span><span class="row__val">65%</span><span class="meter" style="--v:65;--c:var(--cyan)"><i></i></span></div>
+                  <div class="row"><span class="row__name">วิจัยในชั้นเรียน (เค้าโครง)</span><span class="row__val">19%</span><span class="meter" style="--v:19;--c:var(--amber)"><i></i></span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 5. STUDENT MONITORING ============ -->
+          <article class="scene" data-accent="#c084fc" data-name="ติดตามนักเรียน" aria-roledescription="slide" aria-label="5 จาก 5">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="donut" data-values="31,19,9" data-colors="var(--rose)|var(--amber)|var(--accent)" data-center="รายการต้องติดตาม"
+                  data-label="ผลการเรียนที่ต้องติดตาม 59 รายการ: ติด 0 31, ติด ร 19, ติด มส 9"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>05</b> Student Monitoring</p>
+              <h2 class="title"><span class="t1" style="--chars:5">ติดตาม</span><span class="t2" style="--chars:6">นักเรียน</span></h2>
+              <p class="lede">ติดตามนักเรียนที่มีผลการเรียน 0, ร, มส และกลุ่มเสี่ยง พร้อมสถานะการแก้ไขผลการเรียนรายคน</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi kpi--alert"><dt>ติด 0</dt><dd data-count="31" data-unit="รายการ">31</dd></div>
+              <div class="kpi"><dt>ติด ร</dt><dd data-count="19" data-unit="รายการ">19</dd></div>
+              <div class="kpi"><dt>ติด มส</dt><dd data-count="9" data-unit="รายการ">9</dd></div>
+              <div class="kpi"><dt>กลุ่มเสี่ยง</dt><dd data-count="23" data-unit="คน">23</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#shortcuts">เปิดทะเบียนติดตาม</a>
+              <a class="btn btn--ghost" href="#shortcuts">แจ้งครูที่ปรึกษา</a>
+            </div>
+            <aside class="panel" aria-label="ข้อมูลการติดตามนักเรียน">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อมูลการติดตามนักเรียน">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="o5-a" id="o5-ta">รายระดับชั้น</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="o5-b" id="o5-tb" tabindex="-1">กลุ่มเสี่ยง</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o5-a" aria-labelledby="o5-ta">
+                <h3 class="panel__title">รายการต้องติดตามตามระดับชั้น</h3>
+                <p class="panel__meta">รวม 0 / ร / มส</p>
+                <div class="chart" data-chart="bars" data-values="11,15,9,15,4,5" data-labels="ม.1|ม.2|ม.3|ม.4|ม.5|ม.6"
+                  data-label="รายการต้องติดตาม: ม.1 11, ม.2 15, ม.3 9, ม.4 15, ม.5 4, ม.6 5"></div>
+                <ul class="legend">
+                  <li style="--c:var(--rose)">0 = 31</li>
+                  <li style="--c:var(--amber)">ร = 19</li>
+                  <li style="--c:var(--accent)">มส = 9</li>
+                </ul>
+              </div>
+              <div class="panel__body" role="tabpanel" id="o5-b" aria-labelledby="o5-tb" hidden>
+                <h3 class="panel__title">นักเรียนที่ควรพบก่อน</h3>
+                <p class="panel__meta">ชื่อสมมติ ไม่ใช่นักเรียนจริง</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">นักเรียนตัวอย่าง 01</span><span class="tag tag--late">0 × 3 วิชา</span><span class="row__sub">ม.2/1 · ยังไม่เริ่มแก้ผลการเรียน</span></div>
+                  <div class="row"><span class="row__name">นักเรียนตัวอย่าง 02</span><span class="tag tag--fix">มส × 2 วิชา</span><span class="row__sub">ม.4/2 · เวลาเรียนร้อยละ 68</span></div>
+                  <div class="row"><span class="row__name">นักเรียนตัวอย่าง 03</span><span class="tag tag--wait">ร × 2 วิชา</span><span class="row__sub">ม.1/2 · นัดส่งงานวันศุกร์</span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+        </div>
+
+        <!-- Horizontal thumbnail carousel + progress -->
+        <div class="strip">
+          <button type="button" class="strip__arrow strip__arrow--prev" aria-label="ฉากก่อนหน้า">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="strip__win">
+            <ol class="strip__track">
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#8b7cf6"><span class="chart" data-chart="rings" data-mini data-values="78,64,52" data-label=""></span></span><span><span class="thumb__no num">01</span><span class="thumb__name">ภาพรวม</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#6d7cff"><span class="chart" data-chart="donut" data-mini data-values="14,14,16,12,8,8,10,14" data-label=""></span></span><span><span class="thumb__no num">02</span><span class="thumb__name">หลักสูตร</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#38d6f5"><span class="chart" data-chart="bars" data-mini data-values="18,16,21,15,12,8" data-label=""></span></span><span><span class="thumb__no num">03</span><span class="thumb__name">ผลสัมฤทธิ์</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#5eead4"><span class="chart" data-chart="gauge" data-mini data-values="64" data-label=""></span></span><span><span class="thumb__no num">04</span><span class="thumb__name">เอกสาร</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#c084fc"><span class="chart" data-chart="donut" data-mini data-values="31,19,9" data-colors="var(--rose)|var(--amber)|var(--accent)" data-label=""></span></span><span><span class="thumb__no num">05</span><span class="thumb__name">ติดตามนักเรียน</span></span></button></li>
+            </ol>
+          </div>
+          <button type="button" class="strip__arrow strip__arrow--next" aria-label="ฉากถัดไป">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <div class="progress">
+            <div class="progress__segs" aria-hidden="true">
+              <span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span>
+            </div>
+            <button type="button" class="progress__toggle" aria-pressed="false">
+              <svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg>
+              <svg class="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+              <span>เล่นอัตโนมัติ</span>
+            </button>
+          </div>
+        </div>
+        <p class="sr-only" aria-live="polite" data-status></p>
+      </section>
+
+      <!-- ทางลัด (scroll reveal) -->
+      <section class="section reveal-group" id="shortcuts" aria-labelledby="shortcuts-title">
+        <div class="section__head reveal">
+          <div>
+            <p class="label">Workspace</p>
+            <h2 class="section__title" id="shortcuts-title"><em>ไปยัง</em> งานของฝ่ายวิชาการ</h2>
+          </div>
+          <span class="pill">ลิงก์ตัวอย่าง ยังไม่เชื่อมระบบจริง</span>
+        </div>
+        <div class="cards">
+          <a class="card reveal" href="#" style="--c:var(--violet)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3" /><path d="M8 2v4M16 2v4M3 10h18" /></svg></span>
+            <h3>ข้อมูลพื้นฐาน</h3><p>ปีการศึกษา ภาคเรียน ระดับชั้น ห้องเรียน กลุ่มสาระ</p><span class="card__phase">พร้อมใช้งาน · Phase 1.4</span>
+          </a>
+          <a class="card reveal" href="#" style="--c:var(--indigo)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M8 7h7M8 11h7" /></svg></span>
+            <h3>หลักสูตรและรายวิชา</h3><p>มาตรฐาน ตัวชี้วัด และโครงสร้างหลักสูตร</p><span class="card__phase">แผน · Phase 2</span>
+          </a>
+          <a class="card reveal" href="#" style="--c:var(--mint)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 14l2 2 4-4" /></svg></span>
+            <h3>ภาระงานเอกสาร</h3><p>มอบหมาย → ส่ง → ตรวจรับ → ส่งกลับแก้ไข</p><span class="card__phase">แผน · Phase 1.7–1.10</span>
+          </a>
+          <a class="card reveal" href="#" style="--c:var(--rose)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V7z" /><path d="M12 9v4M12 16h.01" /></svg></span>
+            <h3>ติดตามผลการเรียน</h3><p>0 / ร / มส และนักเรียนกลุ่มเสี่ยง</p><span class="card__phase">แผน · Phase 2</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ปฏิทินวิชาการ (scroll reveal) -->
+      <section class="section reveal-group" id="calendar" aria-labelledby="calendar-title">
+        <div class="section__head reveal">
+          <div>
+            <p class="label">Academic Calendar</p>
+            <h2 class="section__title" id="calendar-title"><em>ปฏิทิน</em> ภาคเรียนที่ 2 / 2569</h2>
+          </div>
+        </div>
+        <ol class="timeline">
+          <li class="reveal"><time>1 พ.ย. 2569</time><b>เปิดภาคเรียน</b><span>เริ่มมอบหมายแผนการจัดการเรียนรู้</span></li>
+          <li class="reveal is-now"><time>สัปดาห์นี้</time><b>ตรวจรับเอกสารรอบที่ 1</b><span>บันทึกหลังการสอนและโครงการสอน</span></li>
+          <li class="reveal"><time>21–25 ธ.ค. 2569</time><b>สอบกลางภาค</b><span>ปิดรับคะแนนเก็บก่อนสอบ</span></li>
+          <li class="reveal"><time>31 มี.ค. 2570</time><b>ปิดภาคเรียน</b><span>อนุมัติผลการเรียนและออก ปพ.</span></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      MOCKUP สำหรับพิจารณาแนวทางออกแบบ “Dark Premium Editorial” — ตัวเลข รายชื่อ และกราฟทั้งหมดเป็นข้อมูลจำลอง ไม่มีภาพถ่ายจริง ไม่เชื่อมฐานข้อมูล ·
+      <a href="teacher-mockup.html">ดู Mockup ระบบครู</a>
+    </footer>
+
+    <script src="interaction.js"></script>
+  </body>
+</html>

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#06070d" />
+    <meta name="robots" content="noindex" />
+    <title>MOCKUP · ระบบครู — Sak Ngam Academic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@200;300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="design-system.css" />
+  </head>
+  <body data-portal="teacher">
+    <a class="skip-link" href="#main">ข้ามไปยังเนื้อหา</a>
+
+    <header class="topbar">
+      <a class="brand" href="teacher-mockup.html" aria-label="ระบบครู โรงเรียนสักงามวิทยา">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5-9-5z" /><path d="M7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5" /></svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">โรงเรียนสักงามวิทยา</span>
+          <span class="brand__sub">ระบบครู</span>
+        </span>
+      </a>
+      <nav class="topnav" aria-label="ฉากหลัก">
+        <button type="button" data-goto="0">พื้นที่ของฉัน</button>
+        <button type="button" data-goto="1">งานที่ได้รับ</button>
+        <button type="button" data-goto="2">ส่งเอกสาร</button>
+        <button type="button" data-goto="3">ผลการตรวจ</button>
+      </nav>
+      <div class="topbar__end">
+        <span class="pill pill--demo">Demo · ข้อมูลจำลอง</span>
+        <span class="userchip"><span class="userchip__avatar" aria-hidden="true">ก</span>ครูตัวอย่าง ก</span>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" data-carousel tabindex="0" aria-roledescription="carousel" aria-label="พื้นที่ทำงานของครู 4 ฉาก — ใช้ปุ่มลูกศรซ้ายขวาเพื่อเปลี่ยนฉาก">
+        <div class="hero__bg" aria-hidden="true">
+          <div class="bg-layer bg-grid"></div>
+          <div class="bg-layer bg-orb bg-orb--a"></div>
+          <div class="bg-layer bg-orb bg-orb--b"></div>
+          <div class="bg-layer bg-arc"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"><path /></svg></div>
+          <div class="bg-noise"></div>
+        </div>
+
+        <nav class="pager" aria-label="เลือกฉาก">
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 1 พื้นที่ของฉัน"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 2 งานที่ได้รับมอบหมาย"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 3 ส่งเอกสาร"><i></i></button>
+          <button type="button" class="pager__dot" aria-label="ฉากที่ 4 ผลการตรวจและข้อเสนอแนะ"><i></i></button>
+          <span class="pager__count num" aria-hidden="true"><b data-count-now>01</b> / 04</span>
+        </nav>
+
+        <div class="stage">
+          <!-- ============ 1. MY ACADEMIC SPACE ============ -->
+          <article class="scene" data-accent="#38d6f5" data-name="พื้นที่ของฉัน" aria-roledescription="slide" aria-label="1 จาก 4">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="rings" data-values="67,50,80" data-center="งานส่งแล้ว"
+                  data-label="ความคืบหน้าของฉัน: ส่งงานแล้ว 67%, ตรวจรับแล้ว 50%, กรอกคะแนนแล้ว 80%"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>01</b> My Academic Space</p>
+              <h2 class="title"><span class="t1" style="--chars:5">สวัสดี</span><span class="t2" style="--chars:10">ครูตัวอย่าง ก</span></h2>
+              <p class="lede">ภาพรวมงานของคุณในภาคเรียนที่ 2/2569 — งานที่ต้องส่ง ผลการตรวจ และสิ่งที่ควรทำต่อ</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>งานที่ต้องส่ง</dt><dd data-count="4" data-unit="งาน">4</dd></div>
+              <div class="kpi kpi--alert"><dt>เลยกำหนด</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi"><dt>รอตรวจ</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi"><dt>ตรวจรับแล้ว</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#this-week">ดูงานสัปดาห์นี้</a>
+              <a class="btn btn--ghost" href="#deadlines">กำหนดส่ง</a>
+            </div>
+            <aside class="panel" aria-label="สรุปของฉัน">
+              <div class="panel__tabs" role="tablist" aria-label="สรุปของฉัน">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="t1-a" id="t1-ta">วันนี้</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="t1-b" id="t1-tb" tabindex="-1">รายวิชาที่สอน</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t1-a" aria-labelledby="t1-ta">
+                <h3 class="panel__title">สิ่งที่ควรทำก่อน</h3>
+                <p class="panel__meta">เรียงตามความเร่งด่วน</p>
+                <ol class="steps">
+                  <li class="is-now"><b>ส่งรายงานผลการประเมินกลางภาค</b>เลยกำหนด 1 วัน</li>
+                  <li><b>แก้ไขบันทึกหลังการสอน เดือนที่ 1</b>มีข้อเสนอแนะจากฝ่ายวิชาการ</li>
+                  <li><b>ส่งแผนการจัดการเรียนรู้</b>ครบกำหนดในอีก 6 วัน</li>
+                </ol>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t1-b" aria-labelledby="t1-tb" hidden>
+                <h3 class="panel__title">รายวิชาที่สอน</h3>
+                <p class="panel__meta">ร้อยละการกรอกคะแนน</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ค21102 คณิตศาสตร์ 2 · ม.1/1</span><span class="row__val">90%</span><span class="meter" style="--v:90"><i></i></span></div>
+                  <div class="row"><span class="row__name">ค21102 คณิตศาสตร์ 2 · ม.1/2</span><span class="row__val">85%</span><span class="meter" style="--v:85"><i></i></span></div>
+                  <div class="row"><span class="row__name">ค22202 คณิตศาสตร์เพิ่มเติม · ม.2/1</span><span class="row__val">64%</span><span class="meter" style="--v:64;--c:var(--amber)"><i></i></span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 2. MY ASSIGNMENTS ============ -->
+          <article class="scene" data-accent="#8b7cf6" data-name="งานที่ได้รับมอบหมาย" aria-roledescription="slide" aria-label="2 จาก 4">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc disc--square">
+                <div class="chart" data-chart="bars" data-values="1,2,1,0,1,1" data-labels="สัปดาห์นี้|+1|+2|+3|+4|+5"
+                  data-label="จำนวนงานที่ครบกำหนดในแต่ละสัปดาห์: สัปดาห์นี้ 1, ถัดไป 2, 1, 0, 1, 1"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>02</b> My Assignments</p>
+              <h2 class="title"><span class="t1" style="--chars:5">งานที่</span><span class="t2" style="--chars:11">ได้รับมอบหมาย</span></h2>
+              <p class="lede">ภาระงานจากฝ่ายวิชาการทั้งหมด พร้อมกำหนดส่ง แม่แบบเอกสาร และสถานะล่าสุดของแต่ละงาน</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ทั้งหมด</dt><dd data-count="6" data-unit="งาน">6</dd></div>
+              <div class="kpi"><dt>ยังไม่ส่ง</dt><dd data-count="3" data-unit="งาน">3</dd></div>
+              <div class="kpi"><dt>ต้องแก้ไข</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi"><dt>ใกล้กำหนด</dt><dd data-count="2" data-unit="วัน">2</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#this-week">ดูงานทั้งหมด</a>
+              <a class="btn btn--ghost" href="#this-week">ดาวน์โหลดแม่แบบ</a>
+            </div>
+            <aside class="panel" aria-label="รายการงาน">
+              <div class="panel__tabs" role="tablist" aria-label="รายการงาน">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="t2-a" id="t2-ta">ต้องทำ</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="t2-b" id="t2-tb" tabindex="-1">เสร็จแล้ว</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t2-a" aria-labelledby="t2-ta">
+                <h3 class="panel__title">งานที่ต้องดำเนินการ</h3>
+                <p class="panel__meta">4 งาน · เรียงตามวันครบกำหนด</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">รายงานผลการประเมินกลางภาค</span><span class="tag tag--late">เลยกำหนด</span><span class="row__sub">วัดผล · ครบกำหนดเมื่อวาน</span></div>
+                  <div class="row"><span class="row__name">บันทึกหลังการสอน เดือนที่ 1</span><span class="tag tag--fix">ส่งกลับแก้ไข</span><span class="row__sub">อีก 2 วัน · มีแม่แบบ</span></div>
+                  <div class="row"><span class="row__name">แผนการจัดการเรียนรู้ ภาคเรียนที่ 2</span><span class="tag tag--todo">รอส่ง</span><span class="row__sub">อีก 6 วัน · มีแม่แบบ</span></div>
+                  <div class="row"><span class="row__name">วิจัยในชั้นเรียน (เค้าโครง)</span><span class="tag tag--todo">รอส่ง</span><span class="row__sub">อีก 20 วัน</span></div>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t2-b" aria-labelledby="t2-tb" hidden>
+                <h3 class="panel__title">เสร็จแล้ว</h3>
+                <p class="panel__meta">2 งาน</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">โครงการสอนรายวิชา</span><span class="tag tag--wait">รอตรวจ</span><span class="row__sub">ส่งฉบับที่ 1 เมื่อ 3 วันก่อน</span></div>
+                  <div class="row"><span class="row__name">ตารางสอนรายบุคคล</span><span class="tag tag--ok">ตรวจรับแล้ว</span><span class="row__sub">ฉบับที่ 2 · ตรวจรับเมื่อ 10 วันก่อน</span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 3. DOCUMENT SUBMISSION ============ -->
+          <article class="scene" data-accent="#5eead4" data-name="ส่งเอกสาร" aria-roledescription="slide" aria-label="3 จาก 4">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="gauge" data-values="67" data-center="ส่งครบแล้ว 4 จาก 6"
+                  data-label="ส่งเอกสารแล้ว 67% ของงานทั้งหมด"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>03</b> Document Submission</p>
+              <h2 class="title"><span class="t1" style="--chars:3">ส่ง</span><span class="t2" style="--chars:9">แผนการสอน</span></h2>
+              <p class="lede">อัปโหลด PDF, Word หรือ Excel ได้สูงสุด 5 ไฟล์ต่อครั้ง ระบบเก็บทุกฉบับไว้เป็นประวัติ ไม่เขียนทับของเดิม</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ชนิดไฟล์</dt><dd>3<small>แบบ</small></dd></div>
+              <div class="kpi"><dt>ขนาดสูงสุด</dt><dd>20<small>MB</small></dd></div>
+              <div class="kpi"><dt>ฉบับที่ส่งแล้ว</dt><dd data-count="7" data-unit="ฉบับ">7</dd></div>
+              <div class="kpi"><dt>กำหนดส่ง</dt><dd data-count="6" data-unit="วัน">6</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#this-week">เลือกไฟล์เพื่อส่ง</a>
+              <a class="btn btn--ghost" href="#this-week">ดาวน์โหลดแม่แบบ</a>
+            </div>
+            <aside class="panel" aria-label="ส่งแผนการจัดการเรียนรู้">
+              <div class="panel__tabs" role="tablist" aria-label="ส่งเอกสาร">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="t3-a" id="t3-ta">อัปโหลด</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="t3-b" id="t3-tb" tabindex="-1">ประวัติฉบับ</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t3-a" aria-labelledby="t3-ta">
+                <h3 class="panel__title">แผนการจัดการเรียนรู้ ภาคเรียนที่ 2</h3>
+                <p class="panel__meta">ฉบับที่ 1 · ครบกำหนดในอีก 6 วัน</p>
+                <div class="dropzone" aria-label="ตัวอย่างพื้นที่อัปโหลด (ยังไม่ทำงาน)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
+                  ลากไฟล์มาวาง หรือแตะเพื่อเลือก
+                  <span class="row__sub">ตัวอย่างหน้าจอ — ยังไม่อัปโหลดจริง</span>
+                </div>
+                <div class="filechips">
+                  <span class="tag tag--ok">แผนฯ-ค21102.pdf · 1.2 MB</span>
+                  <span class="tag tag--ok">ใบงาน-หน่วย3.docx · 340 KB</span>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t3-b" aria-labelledby="t3-tb" hidden>
+                <h3 class="panel__title">บันทึกหลังการสอน เดือนที่ 1</h3>
+                <p class="panel__meta">ทุกฉบับถูกเก็บไว้ ตรวจย้อนหลังได้</p>
+                <ol class="steps">
+                  <li class="is-done"><b>ฉบับที่ 1 · ส่งแล้ว</b>12 ต.ค. 2569 · 2 ไฟล์</li>
+                  <li class="is-done"><b>ส่งกลับแก้ไข</b>โดยฝ่ายวิชาการ · 14 ต.ค. 2569</li>
+                  <li class="is-now"><b>ฉบับที่ 2 · รอส่ง</b>ครบกำหนดในอีก 2 วัน</li>
+                </ol>
+              </div>
+            </aside>
+          </article>
+
+          <!-- ============ 4. REVIEW & FEEDBACK ============ -->
+          <article class="scene" data-accent="#f7c56b" data-name="ผลการตรวจและข้อเสนอแนะ" aria-roledescription="slide" aria-label="4 จาก 4">
+            <div class="scene__visual">
+              <div class="orbit"><div class="orbit__float"><div class="disc">
+                <div class="chart" data-chart="donut" data-values="1,1,1,3" data-colors="var(--mint)|var(--cyan)|var(--amber)|var(--violet)" data-total="6" data-center="งานทั้งหมด"
+                  data-label="สถานะงาน 6 งาน: ตรวจรับแล้ว 1, รอตรวจ 1, ส่งกลับแก้ไข 1, ยังไม่ส่ง 3"></div>
+              </div></div></div>
+            </div>
+            <header class="scene__head">
+              <p class="eyebrow"><b>04</b> Review &amp; Feedback</p>
+              <h2 class="title"><span class="t1" style="--chars:9">ผลการตรวจ</span><span class="t2" style="--chars:9">ข้อเสนอแนะ</span></h2>
+              <p class="lede">ติดตามสถานะการตรวจรับ อ่านข้อเสนอแนะจากฝ่ายวิชาการ แล้วส่งฉบับแก้ไขได้ทันที</p>
+            </header>
+            <dl class="kpis">
+              <div class="kpi"><dt>ตรวจรับแล้ว</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi"><dt>รอตรวจ</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi kpi--alert"><dt>ต้องแก้ไข</dt><dd data-count="1" data-unit="งาน">1</dd></div>
+              <div class="kpi"><dt>ยังไม่ส่ง</dt><dd data-count="3" data-unit="งาน">3</dd></div>
+            </dl>
+            <div class="scene__actions">
+              <a class="btn btn--primary" href="#this-week">ส่งฉบับแก้ไข</a>
+              <a class="btn btn--ghost" href="#this-week">การแจ้งเตือนทั้งหมด</a>
+            </div>
+            <aside class="panel" aria-label="ข้อเสนอแนะ">
+              <div class="panel__tabs" role="tablist" aria-label="ข้อเสนอแนะ">
+                <button type="button" class="panel__tab" role="tab" aria-selected="true" aria-controls="t4-a" id="t4-ta">ต้องแก้ไข</button>
+                <button type="button" class="panel__tab" role="tab" aria-selected="false" aria-controls="t4-b" id="t4-tb" tabindex="-1">การแจ้งเตือน</button>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t4-a" aria-labelledby="t4-ta">
+                <h3 class="panel__title">บันทึกหลังการสอน เดือนที่ 1</h3>
+                <p class="panel__meta">ส่งกลับแก้ไข · ฉบับที่ 1</p>
+                <p class="quote"><b>ข้อเสนอแนะจากฝ่ายวิชาการ</b>กรุณาเพิ่มแนวทางปรับปรุงการสอนในส่วนท้ายของบันทึก และแนบผลงานนักเรียนตัวอย่าง 1 ชิ้น</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ครบกำหนดส่งฉบับแก้ไข</span><span class="tag tag--fix">อีก 2 วัน</span></div>
+                </div>
+              </div>
+              <div class="panel__body" role="tabpanel" id="t4-b" aria-labelledby="t4-tb" hidden>
+                <h3 class="panel__title">การแจ้งเตือนล่าสุด</h3>
+                <p class="panel__meta">3 รายการใหม่</p>
+                <div class="rows">
+                  <div class="row"><span class="row__name">ตารางสอนรายบุคคล ตรวจรับแล้ว</span><span class="tag tag--ok">ใหม่</span><span class="row__sub">10 วันก่อน</span></div>
+                  <div class="row"><span class="row__name">มีงานใหม่: วิจัยในชั้นเรียน</span><span class="tag tag--todo">ใหม่</span><span class="row__sub">5 วันก่อน</span></div>
+                  <div class="row"><span class="row__name">บันทึกหลังการสอนถูกส่งกลับแก้ไข</span><span class="tag tag--fix">ใหม่</span><span class="row__sub">2 วันก่อน</span></div>
+                </div>
+              </div>
+            </aside>
+          </article>
+        </div>
+
+        <div class="strip">
+          <button type="button" class="strip__arrow strip__arrow--prev" aria-label="ฉากก่อนหน้า">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div class="strip__win">
+            <ol class="strip__track">
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#38d6f5"><span class="chart" data-chart="rings" data-mini data-values="67,50,80" data-label=""></span></span><span><span class="thumb__no num">01</span><span class="thumb__name">พื้นที่ของฉัน</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#8b7cf6"><span class="chart" data-chart="bars" data-mini data-values="1,2,1,0,1,1" data-label=""></span></span><span><span class="thumb__no num">02</span><span class="thumb__name">งานที่ได้รับ</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#5eead4"><span class="chart" data-chart="gauge" data-mini data-values="67" data-label=""></span></span><span><span class="thumb__no num">03</span><span class="thumb__name">ส่งเอกสาร</span></span></button></li>
+              <li><button type="button" class="thumb"><span class="thumb__chart" style="--c:#f7c56b"><span class="chart" data-chart="donut" data-mini data-values="1,1,1,3" data-colors="var(--mint)|var(--cyan)|var(--amber)|var(--violet)" data-label=""></span></span><span><span class="thumb__no num">04</span><span class="thumb__name">ผลการตรวจ</span></span></button></li>
+            </ol>
+          </div>
+          <button type="button" class="strip__arrow strip__arrow--next" aria-label="ฉากถัดไป">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <div class="progress">
+            <div class="progress__segs" aria-hidden="true">
+              <span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span><span class="progress__seg"><i></i></span>
+            </div>
+            <button type="button" class="progress__toggle" aria-pressed="false">
+              <svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z" /></svg>
+              <svg class="ico-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+              <span>เล่นอัตโนมัติ</span>
+            </button>
+          </div>
+        </div>
+        <p class="sr-only" aria-live="polite" data-status></p>
+      </section>
+
+      <section class="section reveal-group" id="this-week" aria-labelledby="week-title">
+        <div class="section__head reveal">
+          <div>
+            <p class="label">This Week</p>
+            <h2 class="section__title" id="week-title"><em>งาน</em> สัปดาห์นี้</h2>
+          </div>
+          <span class="pill">ลิงก์ตัวอย่าง ยังไม่เชื่อมระบบจริง</span>
+        </div>
+        <div class="cards">
+          <a class="card reveal" href="#" style="--c:var(--rose)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
+            <h3>รายงานผลการประเมินกลางภาค</h3><p>เลยกำหนด 1 วัน — ส่งได้แต่จะถูกบันทึกว่าส่งช้า</p><span class="card__phase">วัดผล</span>
+          </a>
+          <a class="card reveal" href="#" style="--c:var(--amber)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg></span>
+            <h3>แก้ไขบันทึกหลังการสอน</h3><p>มีข้อเสนอแนะ 1 ข้อ ส่งฉบับที่ 2 ภายใน 2 วัน</p><span class="card__phase">บันทึกหลังสอน</span>
+          </a>
+          <a class="card reveal" href="#" style="--c:var(--violet)">
+            <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /></svg></span>
+            <h3>แผนการจัดการเรียนรู้</h3><p>ดาวน์โหลดแม่แบบแล้วส่งภายใน 6 วัน</p><span class="card__phase">แผนการสอน</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section reveal-group" id="deadlines" aria-labelledby="deadline-title">
+        <div class="section__head reveal">
+          <div>
+            <p class="label">Deadlines</p>
+            <h2 class="section__title" id="deadline-title"><em>กำหนดส่ง</em> ที่ใกล้ถึง</h2>
+          </div>
+        </div>
+        <ol class="timeline">
+          <li class="reveal is-now"><time>เมื่อวาน</time><b>รายงานผลกลางภาค</b><span>เลยกำหนด</span></li>
+          <li class="reveal"><time>อีก 2 วัน</time><b>บันทึกหลังการสอน (แก้ไข)</b><span>ฉบับที่ 2</span></li>
+          <li class="reveal"><time>อีก 6 วัน</time><b>แผนการจัดการเรียนรู้</b><span>ภาคเรียนที่ 2</span></li>
+          <li class="reveal"><time>อีก 20 วัน</time><b>วิจัยในชั้นเรียน</b><span>เค้าโครง</span></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      MOCKUP สำหรับพิจารณาแนวทางออกแบบ “Dark Premium Editorial” — ตัวเลข รายชื่อ และกราฟทั้งหมดเป็นข้อมูลจำลอง ไม่มีภาพถ่ายจริง ไม่เชื่อมฐานข้อมูล ·
+      <a href="office-mockup.html">ดู Mockup ฝ่ายวิชาการ</a>
+    </footer>
+
+    <script src="interaction.js"></script>
+  </body>
+</html>

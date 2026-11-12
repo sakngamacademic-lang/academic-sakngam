@@ -2,7 +2,7 @@
 
 ระบบบริหารงานวิชาการ โรงเรียนสักงามวิทยา — สำหรับ **ฝ่ายวิชาการ** (`/office`) และ **ครูผู้สอน** (`/teacher`)
 
-> สถานะปัจจุบัน: **Phase 1.1 — Project Scaffold**
+> สถานะปัจจุบัน: **Phase 1.2 — Supabase Local + Core Database**
 > ยังไม่มีระบบเข้าสู่ระบบ ยังไม่เชื่อมฐานข้อมูล ตัวเลขบนแดชบอร์ดเป็น **ข้อมูลจำลอง (Demo)** ทั้งหมด
 > แผนสถาปัตยกรรม: [`docs/architecture/PHASE-0.md`](docs/architecture/PHASE-0.md)
 
@@ -40,6 +40,41 @@ npm run dev
 | `npm run typecheck` | ตรวจ TypeScript |
 | `npm run build` | ตรวจ type แล้ว build ไปที่ `dist/` |
 | `npm run preview` | เปิดดูผลลัพธ์จากการ build |
+
+## ฐานข้อมูล Supabase (Local เท่านั้น)
+
+ต้องมี Docker ที่ทำงานอยู่ ส่วน Supabase CLI ติดตั้งมาเป็น devDependency แล้ว
+
+```bash
+npm run db:start
+```
+
+```bash
+npm run db:reset
+```
+
+```bash
+npm run db:test
+```
+
+- `db:start` เปิด Supabase local (API `http://127.0.0.1:54321`, Studio `http://127.0.0.1:54323`) แล้วนำค่า `API_URL` และ `ANON_KEY` จาก `npx supabase status` ไปใส่ใน `.env.local`
+- `db:reset` ล้างฐานข้อมูล local แล้วรัน migrations และ `supabase/seed.sql` ใหม่
+- `db:test` รัน pgTAP tests ใน `supabase/tests/database/`
+- **ห้ามรัน migration ทดสอบบน hosted Supabase** และ seed ใช้กับ local เท่านั้น
+- บัญชีทดสอบใน seed (local เท่านั้น) มีรหัสผ่าน `LocalDev#2569` เช่น `admin@snw.test`, `head@snw.test`, `staff@snw.test`, `areahead@snw.test`, `exec@snw.test`, `teacher1@snw.test`
+- ปิดการสมัครสมาชิกเอง (`enable_signup = false`) เพราะบัญชีต้องสร้างโดยผู้ดูแล
+- ตารางใหม่ **ไม่ถูกเปิดให้ Data API อัตโนมัติ** ทุก migration ต้อง `enable row level security` และ `grant` ให้ชัดเจน
+
+### Migrations (forward-only)
+
+| ไฟล์ | เนื้อหา |
+|---|---|
+| `20261112000100_foundation.sql` | schema `private`, ปิด auto-expose, enum `app_role`, `set_updated_at()` |
+| `20261112000200_core_identity.sql` | `schools`, `profiles`, `user_roles`, trigger สร้าง profile |
+| `20261112000300_audit_logs.sql` | `audit_logs` แบบ append-only + audit triggers |
+| `20261112000400_rls_policies.sql` | helper functions ตรวจสิทธิ์, grants, RLS policies |
+
+ห้ามแก้ไฟล์ migration ที่ push แล้ว ถ้าต้องเปลี่ยนให้สร้างไฟล์ใหม่ด้วย `npx supabase migration new <name>`
 
 ## Environment Variables
 
@@ -89,7 +124,7 @@ src/
 |---|---|---|
 | 0 | สถาปัตยกรรม & แผนงาน | ✅ |
 | 1.1 | Project scaffold, layouts, navigation, demo dashboards | ✅ |
-| 1.2 | Supabase local + core migrations | ⏳ |
+| 1.2 | Supabase local + core migrations | ✅ |
 | 1.3 | Authentication & route guard ตามบทบาท | ⏳ |
 | 1.4–1.12 | ข้อมูลพื้นฐาน, ทะเบียน, ไฟล์/R2, ระบบภาระงานเอกสาร, แจ้งเตือน, นำเข้า Excel | ⏳ |
 

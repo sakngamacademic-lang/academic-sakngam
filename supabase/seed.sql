@@ -1,0 +1,58 @@
+-- =============================================================================
+-- seed.sql — สำหรับ LOCAL DEVELOPMENT เท่านั้น
+--   * รันอัตโนมัติเฉพาะ `supabase db reset` บนเครื่องนักพัฒนา
+--   * ห้ามรันบน staging/production
+--   * ข้อมูลทั้งหมดเป็นข้อมูลสมมติ ไม่มีข้อมูลนักเรียนหรือบุคลากรจริง
+--   * อีเมลใช้โดเมน .test (RFC 2606) ซึ่งส่งอีเมลจริงไม่ได้
+--   * รหัสผ่านใช้ได้เฉพาะ local: LocalDev#2569
+-- =============================================================================
+
+-- โรงเรียน (มีโรงเรียนที่ 2 เพื่อทดสอบการแยกข้อมูลข้ามโรงเรียน)
+insert into public.schools (id, code, name_th, name_en, province) values
+  ('00000000-0000-4000-a000-000000000001', 'SNW-DEV', 'โรงเรียนสักงามวิทยา (ข้อมูลทดสอบ)', 'Sak Ngam Wittaya (DEV)', 'กำแพงเพชร'),
+  ('00000000-0000-4000-a000-000000000002', 'OTHER-DEV', 'โรงเรียนทดสอบแยกข้อมูล', 'Isolation Test School', null);
+
+-- ผู้ใช้ทดสอบ: 1 คนต่อ 1 บทบาท + ครูอีก 1 คน + ผู้ใช้ของโรงเรียนอื่น
+with u(id, email, name, school) as (
+  values
+    ('10000000-0000-4000-a000-000000000001'::uuid, 'admin@snw.test',     'ผู้ดูแลระบบ (ทดสอบ)',        '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000002'::uuid, 'head@snw.test',      'หัวหน้าวิชาการ (ทดสอบ)',      '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000003'::uuid, 'staff@snw.test',     'เจ้าหน้าที่วิชาการ (ทดสอบ)',   '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000004'::uuid, 'areahead@snw.test',  'หัวหน้ากลุ่มสาระ (ทดสอบ)',     '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000005'::uuid, 'exec@snw.test',      'ผู้บริหาร (ทดสอบ)',           '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000006'::uuid, 'teacher1@snw.test',  'ครูตัวอย่าง ก',               '00000000-0000-4000-a000-000000000001'),
+    ('10000000-0000-4000-a000-000000000007'::uuid, 'teacher2@snw.test',  'ครูตัวอย่าง ข',               '00000000-0000-4000-a000-000000000001'),
+    ('20000000-0000-4000-a000-000000000001'::uuid, 'admin@other.test',   'ผู้ดูแลโรงเรียนอื่น (ทดสอบ)',   '00000000-0000-4000-a000-000000000002')
+)
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change
+)
+select
+  '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
+  extensions.crypt('LocalDev#2569', extensions.gen_salt('bf')), now(),
+  jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email'), 'school_id', u.school),
+  jsonb_build_object('display_name', u.name), now(), now(),
+  '', '', '', ''
+from u;
+
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select gen_random_uuid(), id, id::text,
+       jsonb_build_object('sub', id::text, 'email', email, 'email_verified', true),
+       'email', now(), now(), now()
+from auth.users
+where email like '%.test';
+
+-- บทบาท (granted_by = null หมายถึงกำหนดโดยระบบ/seed)
+insert into public.user_roles (user_id, school_id, role) values
+  ('10000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000001', 'system_admin'),
+  ('10000000-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000001', 'academic_head'),
+  ('10000000-0000-4000-a000-000000000002', '00000000-0000-4000-a000-000000000001', 'teacher'),
+  ('10000000-0000-4000-a000-000000000003', '00000000-0000-4000-a000-000000000001', 'academic_staff'),
+  ('10000000-0000-4000-a000-000000000004', '00000000-0000-4000-a000-000000000001', 'learning_area_head'),
+  ('10000000-0000-4000-a000-000000000004', '00000000-0000-4000-a000-000000000001', 'teacher'),
+  ('10000000-0000-4000-a000-000000000005', '00000000-0000-4000-a000-000000000001', 'executive'),
+  ('10000000-0000-4000-a000-000000000006', '00000000-0000-4000-a000-000000000001', 'teacher'),
+  ('10000000-0000-4000-a000-000000000007', '00000000-0000-4000-a000-000000000001', 'teacher'),
+  ('20000000-0000-4000-a000-000000000001', '00000000-0000-4000-a000-000000000002', 'system_admin');

@@ -66,7 +66,7 @@ export function AppShell({ portal }: AppShellProps) {
         ข้ามไปยังเนื้อหา
       </a>
 
-      <aside className="fixed inset-y-0 left-0 hidden w-72 lg:block">{sidebarBody()}</aside>
+      <aside className="fixed inset-y-0 left-0 hidden w-72 border-r lg:block">{sidebarBody()}</aside>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="border-0">

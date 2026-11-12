@@ -7,7 +7,7 @@ type Tone = "primary" | "success" | "warning" | "destructive" | "info";
 const toneClass: Record<Tone, string> = {
   primary: "bg-primary/10 text-primary",
   success: "bg-success/15 text-success",
-  warning: "bg-warning/20 text-[oklch(0.5_0.12_65)]",
+  warning: "bg-warning/20 text-warning",
   destructive: "bg-destructive/10 text-destructive",
   info: "bg-info/15 text-info",
 };

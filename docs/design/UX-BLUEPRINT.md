@@ -1,6 +1,6 @@
 # UX Blueprint — Sak Ngam Academic (v2)
 
-> สถานะ: **MOCKUP รออนุมัติ** · ยังไม่นำเข้า Production UI (`src/`) · ข้อมูลทั้งหมดเป็นข้อมูลจำลอง
+> สถานะ: **อนุมัติแล้ว และนำเข้า Production UI แล้ว (UI Integration V2)** · Welcome = `src/features/welcome/`, Dashboard = `src/features/dashboard/` · ส่วนที่ยังไม่มี Backend แสดงในกรอบ "ตัวอย่างหน้าจอ (Demo)"
 > v2 (ปรับตามแนวคิดใหม่): Hero Carousel / DishOrbit ใช้เป็น **Welcome Page เท่านั้น** — Dashboard ทั้งสอง Portal เป็นหน้าทำงานแบบ Functional
 
 | Mockup | ไฟล์ | บทบาทของหน้า |

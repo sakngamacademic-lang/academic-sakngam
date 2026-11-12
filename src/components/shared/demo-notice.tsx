@@ -8,7 +8,7 @@ export function DemoNotice() {
       role="note"
       className="mb-6 flex items-start gap-3 rounded-lg border border-warning/50 bg-warning/10 px-4 py-3 text-sm"
     >
-      <FlaskConical className="mt-0.5 size-4 shrink-0 text-[oklch(0.5_0.12_65)]" />
+      <FlaskConical className="mt-0.5 size-4 shrink-0 text-warning" />
       <p>
         <strong className="font-semibold">ข้อมูลตัวอย่าง (Demo)</strong> — ตัวเลข รายชื่อ และงานในหน้านี้เป็นข้อมูลจำลองเพื่อแสดงหน้าจอเท่านั้น
         ไม่ใช่ข้อมูลจริงของโรงเรียน

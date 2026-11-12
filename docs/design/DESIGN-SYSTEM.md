@@ -1,7 +1,7 @@
 # Design System — Dark Premium Editorial
 
 > แหล่งจริงของค่าทั้งหมด: `docs/design/mockup/design-system.css` (CSS Custom Properties)
-> สถานะ: MOCKUP รออนุมัติ — ยังไม่ใช้กับ `src/`
+> สถานะ: **นำเข้า Production แล้ว (UI Integration V2)** — tokens อยู่ที่ `src/styles/index.css`, Welcome ใช้ `src/features/welcome/welcome.css`
 
 ## 1. สี
 

@@ -1,58 +1,60 @@
 /**
  * ⚠️ DEMO DATA — ข้อมูลจำลองสำหรับแสดงหน้าจอเท่านั้น ไม่ใช่ข้อมูลจริงของโรงเรียน
- * จะถูกแทนที่ด้วย query จาก Supabase ใน Phase 1.8–1.10
+ * แสดงเฉพาะภายใน <DemoZone> และจะถูกแทนที่ด้วย query จาก Supabase ใน Phase 1.8–1.10
  */
-import type { AssignmentStatus } from "@/components/shared";
+import type { TagTone } from "@/components/dashboard";
 import { daysFromToday } from "../demo-utils";
 
-export const demoOfficeStats = {
-  teachers: 48,
-  students: 812,
-  openTasks: 5,
-  pendingReview: 17,
-};
+export const demoOfficeKpis = { pendingReview: 17, oldestPendingDays: 3, overdue: 9, overdueTasks: 5 };
 
-export interface DemoTaskProgress {
+export interface DemoTodo {
   id: string;
+  tone: TagTone;
+  tag: string;
   title: string;
-  category: string;
-  dueAt: string;
-  assigned: number;
-  submitted: number;
-  approved: number;
-  revision: number;
+  detail: string;
+  action: string;
 }
 
-export const demoTaskProgress: DemoTaskProgress[] = [
-  { id: "t1", title: "แผนการจัดการเรียนรู้ ภาคเรียนที่ 2", category: "แผนการสอน", dueAt: daysFromToday(6), assigned: 48, submitted: 31, approved: 22, revision: 4 },
-  { id: "t2", title: "บันทึกหลังการสอน เดือนที่ 1", category: "บันทึกหลังสอน", dueAt: daysFromToday(2), assigned: 48, submitted: 40, approved: 35, revision: 2 },
-  { id: "t3", title: "โครงการสอนรายวิชา", category: "โครงการสอน", dueAt: daysFromToday(-3), assigned: 48, submitted: 46, approved: 44, revision: 1 },
-  { id: "t4", title: "วิจัยในชั้นเรียน (เค้าโครง)", category: "วิจัยในชั้นเรียน", dueAt: daysFromToday(20), assigned: 48, submitted: 9, approved: 3, revision: 0 },
+export const demoPendingTasks: DemoTodo[] = [
+  { id: "p1", tone: "late", tag: "ด่วน", title: "ตรวจรับเอกสารที่ค้างเกิน 3 วัน", detail: "6 ฉบับ · บันทึกหลังการสอน", action: "ตรวจ" },
+  { id: "p2", tone: "fix", tag: "ติดตาม", title: "แจ้งเตือนครูที่ยังไม่ส่งโครงการสอน", detail: "2 คน · เลยกำหนด 3 วัน", action: "แจ้งเตือน" },
+  { id: "p3", tone: "todo", tag: "วางแผน", title: "สร้างงาน “บันทึกหลังการสอน เดือนที่ 2”", detail: "กำหนดเปิดสัปดาห์หน้า", action: "สร้าง" },
+  { id: "p4", tone: "wait", tag: "ข้อมูล", title: "ยืนยันครูที่ปรึกษา ม.4/2", detail: "ยังไม่กำหนด", action: "กำหนด" },
 ];
 
-export interface DemoReviewItem {
+/** ร้อยละครูที่ส่งแล้วต่องาน */
+export const demoSubmissionProgress = {
+  values: [96, 83, 65, 19],
+  labels: ["โครงการสอน", "บันทึกฯ ด.1", "แผนฯ", "วิจัยฯ"],
+  label: "ข้อมูลจำลอง ร้อยละครูที่ส่งแล้ว: โครงการสอน 96, บันทึกหลังสอนเดือน 1 83, แผนการจัดการเรียนรู้ 65, วิจัยในชั้นเรียน 19",
+};
+
+export const demoRisk = [
+  { key: "zero", label: "ติด 0", value: 31, color: "var(--rose)" },
+  { key: "incomplete", label: "ติด ร", value: 19, color: "var(--amber)" },
+  { key: "notEligible", label: "ติด มส", value: 9, color: "var(--violet)" },
+] as const;
+
+export type QueueStatus = "wait" | "fix" | "late";
+export const QUEUE_STATUS_LABEL: Record<QueueStatus, string> = { wait: "รอตรวจ", fix: "ส่งกลับแก้ไข", late: "เลยกำหนด" };
+
+export interface DemoQueueItem {
   id: string;
   teacher: string;
   learningArea: string;
   task: string;
-  version: number;
-  submittedAt: string;
-  status: AssignmentStatus;
+  version: number | null;
+  submittedAt: string | null;
+  status: QueueStatus;
+  lateDays?: number;
+  action: string;
 }
 
-export const demoReviewQueue: DemoReviewItem[] = [
-  { id: "r1", teacher: "ครูตัวอย่าง ก", learningArea: "คณิตศาสตร์", task: "แผนการจัดการเรียนรู้ ภาคเรียนที่ 2", version: 1, submittedAt: daysFromToday(0), status: "submitted" },
-  { id: "r2", teacher: "ครูตัวอย่าง ข", learningArea: "วิทยาศาสตร์และเทคโนโลยี", task: "บันทึกหลังการสอน เดือนที่ 1", version: 2, submittedAt: daysFromToday(-1), status: "submitted" },
-  { id: "r3", teacher: "ครูตัวอย่าง ค", learningArea: "ภาษาไทย", task: "แผนการจัดการเรียนรู้ ภาคเรียนที่ 2", version: 1, submittedAt: daysFromToday(-1), status: "submitted" },
-  { id: "r4", teacher: "ครูตัวอย่าง ง", learningArea: "ภาษาต่างประเทศ", task: "บันทึกหลังการสอน เดือนที่ 1", version: 1, submittedAt: daysFromToday(-2), status: "submitted" },
-];
-
-/** สรุปนักเรียนที่มีผล 0 / ร / มส แยกตามระดับชั้น */
-export const demoRiskSummary = [
-  { grade: "ม.1", zero: 6, incomplete: 3, notEligible: 2 },
-  { grade: "ม.2", zero: 9, incomplete: 5, notEligible: 1 },
-  { grade: "ม.3", zero: 4, incomplete: 2, notEligible: 3 },
-  { grade: "ม.4", zero: 7, incomplete: 6, notEligible: 2 },
-  { grade: "ม.5", zero: 3, incomplete: 1, notEligible: 0 },
-  { grade: "ม.6", zero: 2, incomplete: 2, notEligible: 1 },
+export const demoReviewQueue: DemoQueueItem[] = [
+  { id: "q1", teacher: "ครูตัวอย่าง ก", learningArea: "คณิตศาสตร์", task: "แผนการจัดการเรียนรู้ ภาคเรียนที่ 2", version: 1, submittedAt: daysFromToday(0), status: "wait", action: "ตรวจ" },
+  { id: "q2", teacher: "ครูตัวอย่าง ข", learningArea: "วิทยาศาสตร์และเทคโนโลยี", task: "บันทึกหลังการสอน เดือนที่ 1", version: 2, submittedAt: daysFromToday(-1), status: "wait", action: "ตรวจ" },
+  { id: "q3", teacher: "ครูตัวอย่าง ค", learningArea: "ภาษาไทย", task: "โครงการสอนรายวิชา", version: 1, submittedAt: daysFromToday(-3), status: "fix", action: "ดู" },
+  { id: "q4", teacher: "ครูตัวอย่าง ง", learningArea: "ภาษาต่างประเทศ", task: "โครงการสอนรายวิชา", version: null, submittedAt: null, status: "late", lateDays: 3, action: "แจ้งเตือน" },
+  { id: "q5", teacher: "ครูตัวอย่าง จ", learningArea: "ศิลปะ", task: "บันทึกหลังการสอน เดือนที่ 1", version: 1, submittedAt: daysFromToday(-3), status: "wait", action: "ตรวจ" },
 ];

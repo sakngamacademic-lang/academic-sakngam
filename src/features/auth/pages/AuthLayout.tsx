@@ -4,17 +4,17 @@ import { GraduationCap } from "lucide-react";
 /** โครงหน้าสำหรับหน้า Login / ลืมรหัสผ่าน (โทนเดียวกับ sidebar) */
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-sidebar-foreground">
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-gold text-sidebar">
+          <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <GraduationCap className="size-7" />
           </div>
           <p className="text-sm text-sidebar-muted">ระบบบริหารงานวิชาการ · โรงเรียนสักงามวิทยา</p>
           <h1 className="mt-1 text-2xl font-semibold text-white">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-sidebar-muted">{subtitle}</p>}
         </div>
-        <div className="rounded-xl bg-card p-6 text-card-foreground shadow-xl sm:p-8">{children}</div>
+        <div className="rounded-2xl border bg-card p-6 text-card-foreground shadow-2xl shadow-black/60 sm:p-8">{children}</div>
       </main>
     </div>
   );

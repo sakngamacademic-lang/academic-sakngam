@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DemoBadge, DemoNotice, PageHeader, StatCard, StatusBadge } from "@/components/shared";
 import { daysUntil, formatDateLongTH, formatDateTH } from "@/lib/format";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { demoMyTasks } from "./demo-data";
 
 function dueLabel(dueAt: string) {
@@ -14,6 +15,7 @@ function dueLabel(dueAt: string) {
 }
 
 export function TeacherDashboardPage() {
+  const { access } = useAuth();
   const isOpen = (s: string) => s === "assigned" || s === "revision_requested";
   const todo = demoMyTasks.filter((t) => isOpen(t.status)).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const revisions = demoMyTasks.filter((t) => t.status === "revision_requested");
@@ -26,7 +28,10 @@ export function TeacherDashboardPage() {
 
   return (
     <>
-      <PageHeader title="แดชบอร์ดของฉัน" description={`ภาระงานเอกสารของคุณ · ${formatDateLongTH(new Date())}`} />
+      <PageHeader
+        title={`สวัสดี ${access?.display_name || "คุณครู"}`}
+        description={`ภาระงานเอกสารของคุณ · ${formatDateLongTH(new Date())}`}
+      />
       <DemoNotice />
 
       <section aria-label="สรุปภาระงาน" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">

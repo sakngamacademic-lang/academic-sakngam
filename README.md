@@ -2,8 +2,8 @@
 
 ระบบบริหารงานวิชาการ โรงเรียนสักงามวิทยา — สำหรับ **ฝ่ายวิชาการ** (`/office`) และ **ครูผู้สอน** (`/teacher`)
 
-> สถานะปัจจุบัน: **Phase 1.2 — Supabase Local + Core Database**
-> ยังไม่มีระบบเข้าสู่ระบบ ยังไม่เชื่อมฐานข้อมูล ตัวเลขบนแดชบอร์ดเป็น **ข้อมูลจำลอง (Demo)** ทั้งหมด
+> สถานะปัจจุบัน: **Phase 1.3 — Authentication & Role-Based Portal**
+> เข้าสู่ระบบด้วย Supabase Auth จริง (local) ตัวเลขบนแดชบอร์ดยังเป็น **ข้อมูลจำลอง (Demo)**
 > แผนสถาปัตยกรรม: [`docs/architecture/PHASE-0.md`](docs/architecture/PHASE-0.md)
 
 ## เทคโนโลยี
@@ -61,7 +61,7 @@ npm run db:test
 - `db:reset` ล้างฐานข้อมูล local แล้วรัน migrations และ `supabase/seed.sql` ใหม่
 - `db:test` รัน pgTAP tests ใน `supabase/tests/database/`
 - **ห้ามรัน migration ทดสอบบน hosted Supabase** และ seed ใช้กับ local เท่านั้น
-- บัญชีทดสอบใน seed (local เท่านั้น) มีรหัสผ่าน `LocalDev#2569` เช่น `admin@snw.test`, `head@snw.test`, `staff@snw.test`, `areahead@snw.test`, `exec@snw.test`, `teacher1@snw.test`
+- บัญชีทดสอบใน seed (local เท่านั้น) มีรหัสผ่าน `LocalDev#2569` เช่น `admin@snw.test`, `head@snw.test`, `staff@snw.test`, `areahead@snw.test`, `exec@snw.test`, `teacher1@snw.test`, `suspended@snw.test` (บัญชีถูกระงับ), `admin@other.test` (โรงเรียนอื่น)
 - ปิดการสมัครสมาชิกเอง (`enable_signup = false`) เพราะบัญชีต้องสร้างโดยผู้ดูแล
 - ตารางใหม่ **ไม่ถูกเปิดให้ Data API อัตโนมัติ** ทุก migration ต้อง `enable row level security` และ `grant` ให้ชัดเจน
 
@@ -73,8 +73,37 @@ npm run db:test
 | `20261112000200_core_identity.sql` | `schools`, `profiles`, `user_roles`, trigger สร้าง profile |
 | `20261112000300_audit_logs.sql` | `audit_logs` แบบ append-only + audit triggers |
 | `20261112000400_rls_policies.sql` | helper functions ตรวจสิทธิ์, grants, RLS policies |
+| `20261113000100_get_my_access.sql` | RPC อ่านบัญชีและบทบาทของผู้ใช้ปัจจุบัน |
 
 ห้ามแก้ไฟล์ migration ที่ push แล้ว ถ้าต้องเปลี่ยนให้สร้างไฟล์ใหม่ด้วย `npx supabase migration new <name>`
+
+## การยืนยันตัวตนและสิทธิ์ (Phase 1.3)
+
+- เข้าสู่ระบบด้วยอีเมลและรหัสผ่านผ่าน Supabase Auth ไม่เปิดให้สมัครเอง
+- บทบาทอ่านจาก RPC `public.get_my_access()` ในฐานข้อมูล ไม่ได้อ่านจาก localStorage หรือ `user_metadata`
+- ระบบดึงบทบาทใหม่ทุกครั้งที่ token ถูกต่ออายุ เมื่อกลับมาที่แท็บ และทุก 5 นาที จึงเห็นผลเมื่อมีการถอนสิทธิ์หรือระงับบัญชี
+- บัญชีที่ `is_active = false` จะถูกบังคับออกจากระบบพร้อมข้อความแจ้ง
+- Route guard (`src/features/auth/guards.tsx`) ควบคุมแค่ UI เท่านั้น การอนุญาตจริงอยู่ที่ RLS
+- สิทธิ์ของเมนูกำหนดที่ `roles` ใน `src/portals/*/navigation.ts` ถ้าเข้า URL โดยตรงโดยไม่มีสิทธิ์จะได้หน้า 403
+- ลืมรหัสผ่าน: `/forgot-password` → อีเมล → `/reset-password` (local ดูอีเมลที่ Mailpit `http://127.0.0.1:54324`) ส่วน production ต้องตั้งค่า SMTP ก่อน
+
+### ทดสอบ E2E (Playwright + Supabase local)
+
+```bash
+npx supabase status -o env
+```
+
+นำ `API_URL` และ `ANON_KEY` ไปใส่ใน `.env.local` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) แล้วรัน
+
+```bash
+npm run db:reset
+```
+
+```bash
+npm run test:e2e
+```
+
+ชุดทดสอบจะปฏิเสธการรันถ้า `VITE_SUPABASE_URL` ไม่ใช่ localhost
 
 ## Environment Variables
 
@@ -125,7 +154,7 @@ src/
 | 0 | สถาปัตยกรรม & แผนงาน | ✅ |
 | 1.1 | Project scaffold, layouts, navigation, demo dashboards | ✅ |
 | 1.2 | Supabase local + core migrations | ✅ |
-| 1.3 | Authentication & route guard ตามบทบาท | ⏳ |
+| 1.3 | Authentication & route guard ตามบทบาท | ✅ |
 | 1.4–1.12 | ข้อมูลพื้นฐาน, ทะเบียน, ไฟล์/R2, ระบบภาระงานเอกสาร, แจ้งเตือน, นำเข้า Excel | ⏳ |
 
 รายละเอียดแต่ละขั้นอยู่ใน `docs/architecture/PHASE-0.md` หัวข้อ 11

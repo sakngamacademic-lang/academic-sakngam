@@ -1,16 +1,17 @@
 import { NavLink } from "react-router-dom";
-import type { PortalConfig } from "@/features/navigation/types";
+import type { NavSection, PortalConfig } from "@/features/navigation/types";
 import { cn } from "@/lib/utils";
 
 interface SidebarNavProps {
   portal: PortalConfig;
+  sections: NavSection[];
   onNavigate?: () => void;
 }
 
-export function SidebarNav({ portal, onNavigate }: SidebarNavProps) {
+export function SidebarNav({ portal, sections, onNavigate }: SidebarNavProps) {
   return (
     <nav aria-label={`เมนู${portal.name}`} className="flex flex-col gap-5">
-      {portal.sections.map((section, i) => (
+      {sections.map((section, i) => (
         <div key={section.title ?? i}>
           {section.title && (
             <p className="mb-1.5 px-3 text-xs font-medium tracking-wide text-sidebar-muted">{section.title}</p>

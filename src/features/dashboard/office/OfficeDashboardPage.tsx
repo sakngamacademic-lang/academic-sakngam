@@ -5,9 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { DemoBadge, DemoNotice, PageHeader, StatCard, StatusBadge } from "@/components/shared";
 import { daysUntil, formatDateLongTH, formatDateTH, formatNumberTH } from "@/lib/format";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { demoOfficeStats, demoReviewQueue, demoRiskSummary, demoTaskProgress } from "./demo-data";
 
 export function OfficeDashboardPage() {
+  const { can, access } = useAuth();
+  const canViewTasks = can("tasks.view");
+  const canManageTasks = can("tasks.manage");
+  const canViewAssessment = can("assessment.view");
   const riskTotals = demoRiskSummary.reduce(
     (acc, r) => ({ zero: acc.zero + r.zero, incomplete: acc.incomplete + r.incomplete, notEligible: acc.notEligible + r.notEligible }),
     { zero: 0, incomplete: 0, notEligible: 0 },
@@ -17,13 +22,16 @@ export function OfficeDashboardPage() {
     <>
       <PageHeader
         title="แดชบอร์ดฝ่ายวิชาการ"
-        description={`ภาพรวมงานวิชาการ · ${formatDateLongTH(new Date())}`}
+        description={`${access?.school?.name_th ?? ""} · ${formatDateLongTH(new Date())}`}
         actions={
-          <Button asChild variant="outline">
-            <Link to="/office/tasks">
-              <FileText /> สร้างภาระงาน
-            </Link>
-          </Button>
+          // ผู้บริหาร/ผู้ดูแลระบบไม่เห็นปุ่มสร้างงาน (สิทธิ์จริงจะบังคับด้วย RLS เมื่อมีตาราง tasks)
+          canManageTasks && (
+            <Button asChild variant="outline">
+              <Link to="/office/tasks">
+                <FileText /> สร้างภาระงาน
+              </Link>
+            </Button>
+          )
         }
       />
       <DemoNotice />
@@ -35,6 +43,7 @@ export function OfficeDashboardPage() {
         <StatCard label="เอกสารรอตรวจ" value={demoOfficeStats.pendingReview} hint="ทุกงานรวมกัน" icon={ClipboardCheck} tone="warning" />
       </section>
 
+      {canViewTasks && (
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-5">
         <Card className="xl:col-span-3">
           <CardHeader className="flex-row items-start justify-between gap-2">
@@ -106,15 +115,19 @@ export function OfficeDashboardPage() {
                 </li>
               ))}
             </ul>
-            <Button asChild variant="ghost" className="mt-3 w-full">
-              <Link to="/office/reviews">
-                ดูคิวตรวจทั้งหมด <ChevronLeft className="rotate-180" />
-              </Link>
-            </Button>
+            {canManageTasks && (
+              <Button asChild variant="ghost" className="mt-3 w-full">
+                <Link to="/office/reviews">
+                  ดูคิวตรวจทั้งหมด <ChevronLeft className="rotate-180" />
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
+      )}
 
+      {canViewAssessment && (
       <Card className="mt-6">
         <CardHeader className="flex-row items-start justify-between gap-2">
           <div>
@@ -155,6 +168,7 @@ export function OfficeDashboardPage() {
           </div>
         </CardContent>
       </Card>
+      )}
     </>
   );
 }

@@ -1,11 +1,13 @@
 import { Bell, BookOpenCheck, FileText, LayoutDashboard, UserRound, Users } from "lucide-react";
 import type { PortalConfig } from "@/features/navigation/types";
+import { TEACHER_ROLES } from "@/features/auth/roles";
 
 export const teacherPortal: PortalConfig = {
   id: "teacher",
   basePath: "/teacher",
   name: "ระบบครู",
   shortName: "ครู",
+  roles: TEACHER_ROLES,
   sections: [
     {
       items: [
@@ -21,6 +23,6 @@ export const teacherPortal: PortalConfig = {
         { path: "homeroom", label: "ห้องที่ปรึกษา", icon: Users, plannedPhase: "Phase 2" },
       ],
     },
-    { title: "บัญชี", items: [{ path: "profile", label: "โปรไฟล์", icon: UserRound, plannedPhase: "Phase 1.3" }] },
+    { title: "บัญชี", items: [{ path: "profile", label: "โปรไฟล์", icon: UserRound, plannedPhase: "Phase 1.5" }] },
   ],
 };

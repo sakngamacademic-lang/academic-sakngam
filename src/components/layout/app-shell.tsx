@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
-import { ArrowLeftRight, Menu } from "lucide-react";
+import { ArrowLeftRight, LogOut, Menu } from "lucide-react";
 import type { PortalConfig } from "@/features/navigation/types";
+import { visibleSections } from "@/features/navigation/build-routes";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { hasAnyRole, OFFICE_ROLES, ROLE_LABELS, TEACHER_ROLES } from "@/features/auth/roles";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Brand } from "./brand";
 import { SidebarNav } from "./sidebar-nav";
 import { EnvironmentBanner } from "./environment-banner";
+import { UserPanel } from "./user-panel";
 
 interface AppShellProps {
   portal: PortalConfig;
@@ -16,10 +20,18 @@ interface AppShellProps {
  * โครง Layout ร่วมของทั้งสอง portal
  * - Desktop (lg+): sidebar คงที่ด้านซ้าย
  * - Mobile/Tablet: แถบบน + เมนูแบบเลื่อน (Sheet)
+ * - เมนูกรองตามบทบาทจากฐานข้อมูล (การอนุญาตจริงอยู่ที่ RLS)
  */
 export function AppShell({ portal }: AppShellProps) {
   const [open, setOpen] = useState(false);
-  const other = portal.id === "office" ? { to: "/teacher", label: "ไประบบครู" } : { to: "/office", label: "ไปฝ่ายวิชาการ" };
+  const { roles, access, signOut } = useAuth();
+  const sections = visibleSections(portal, roles);
+
+  const other =
+    portal.id === "office"
+      ? hasAnyRole(roles, TEACHER_ROLES) && { to: "/teacher", label: "ไประบบครู" }
+      : hasAnyRole(roles, OFFICE_ROLES) && { to: "/office", label: "ไปฝ่ายวิชาการ" };
+  const primaryRole = roles.find((r) => portal.roles.includes(r)) ?? roles[0];
 
   const sidebarBody = (onNavigate?: () => void) => (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -27,17 +39,20 @@ export function AppShell({ portal }: AppShellProps) {
         <Brand subtitle={portal.name} />
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-5">
-        <SidebarNav portal={portal} onNavigate={onNavigate} />
+        <SidebarNav portal={portal} sections={sections} onNavigate={onNavigate} />
       </div>
-      <div className="border-t border-white/10 p-3">
-        <Link
-          to={other.to}
-          onClick={onNavigate}
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-white"
-        >
-          <ArrowLeftRight className="size-4" />
-          {other.label}
-        </Link>
+      <div className="space-y-2 border-t border-white/10 p-3">
+        {other && (
+          <Link
+            to={other.to}
+            onClick={onNavigate}
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-white"
+          >
+            <ArrowLeftRight className="size-4" />
+            {other.label}
+          </Link>
+        )}
+        <UserPanel onNavigate={onNavigate} />
       </div>
     </div>
   );
@@ -66,9 +81,14 @@ export function AppShell({ portal }: AppShellProps) {
           <Menu className="size-5" />
         </Button>
         <p className="truncate font-medium lg:hidden">{portal.name}</p>
-        <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
-          {/* Phase 1.3 จะแทนที่ด้วยเมนูผู้ใช้จาก Supabase Auth — ไม่มีการจำลองผู้ใช้ */}
-          <span className="hidden sm:inline">ยังไม่ได้เข้าสู่ระบบ</span>
+        <div className="ml-auto flex min-w-0 items-center gap-3">
+          <div className="hidden min-w-0 text-right leading-tight sm:block">
+            <p className="truncate text-sm font-medium">{access?.display_name || access?.email}</p>
+            {primaryRole && <p className="truncate text-xs text-muted-foreground">{ROLE_LABELS[primaryRole]}</p>}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void signOut()} aria-label="ออกจากระบบ">
+            <LogOut /> <span className="hidden sm:inline">ออกจากระบบ</span>
+          </Button>
         </div>
       </header>
 

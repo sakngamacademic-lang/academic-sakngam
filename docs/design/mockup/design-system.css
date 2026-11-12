@@ -2222,3 +2222,20 @@ body[data-page="dashboard"] {
 .todo li > .tag {
   justify-self: start;
 }
+
+/* Dashboard top bar: ปุ่มหลักไม่ตัดบรรทัด, ข้อความรองย่อด้วย … แทน */
+.app__tools .btn {
+  white-space: nowrap;
+}
+.app__title p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 639.98px) {
+  /* แท็บสถานะเลื่อนแนวนอนได้: ขอบขวาจางเพื่อบอกว่ามีต่อ */
+  .seg-tabs {
+    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+    mask-image: linear-gradient(90deg, #000 85%, transparent);
+  }
+}

@@ -10,7 +10,7 @@
 | Office Dashboard | `docs/design/mockup/office-dashboard.html` | หน้าทำงานประจำวันของฝ่ายวิชาการ |
 | Teacher Dashboard | `docs/design/mockup/teacher-dashboard.html` | หน้าทำงานประจำวันของครู |
 
-`office-mockup.html` และ `teacher-mockup.html` (v1 — Hero Carousel เป็น Dashboard) **ถูกแทนที่แล้ว** ด้วยไฟล์ข้างบน รอผู้ใช้ยืนยันการลบ
+Mockup v1 (Hero Carousel เป็น Dashboard) **ถูกแทนที่แล้ว** และย้ายไปเก็บที่ `docs/design/archive/` (ไม่ลบ) · ผลตรวจ V2: `docs/design/REVIEW-V2.md`
 
 ---
 

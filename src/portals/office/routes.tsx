@@ -9,6 +9,7 @@ import { GradeLevelsPage } from "@/features/master-data/pages/GradeLevelsPage";
 import { ClassroomsPage } from "@/features/master-data/pages/ClassroomsPage";
 import { LearningAreasPage } from "@/features/master-data/pages/LearningAreasPage";
 import { TeachersPage } from "@/features/teachers/pages/TeachersPage";
+import { TeacherDocumentsPage } from "@/features/documents/pages/TeacherDocumentsPage";
 import { officePortal } from "./navigation";
 
 export const officeRoutes: RouteObject = {
@@ -28,5 +29,6 @@ export const officeRoutes: RouteObject = {
     classrooms: <ClassroomsPage />,
     "learning-areas": <LearningAreasPage />,
     teachers: <TeachersPage />,
+    documents: <TeacherDocumentsPage />,
   }),
 };

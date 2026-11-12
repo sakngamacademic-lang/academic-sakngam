@@ -9,6 +9,8 @@ const envSchema = z.object({
   VITE_SUPABASE_URL: z.url().optional().or(z.literal("")),
   VITE_SUPABASE_ANON_KEY: z.string().optional(),
   VITE_APP_ENV: z.enum(["local", "staging"]).default("local"),
+  /** ที่อยู่ Edge Functions (ไม่ใช่ secret) — ค่าเริ่มต้น `${VITE_SUPABASE_URL}/functions/v1` */
+  VITE_FUNCTIONS_URL: z.url().optional().or(z.literal("")),
 });
 
 const parsed = envSchema.safeParse(import.meta.env);

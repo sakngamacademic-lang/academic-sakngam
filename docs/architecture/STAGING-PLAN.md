@@ -16,6 +16,7 @@
 | 7 | `20261114000200_learning_area_scope.sql` | scope หัวหน้ากลุ่มสาระ |
 | 8 | `20261114000300_master_data_rls.sql` | RLS + RPC master data |
 | 9 | `20261115000100_teacher_registry.sql` | **Phase 1.5** ทะเบียนครู + RLS + RPC ผูกบัญชี |
+| 10 | `20261116000100_document_storage.sql` | **Phase 1.6** documents / files / file_events + RPC จัดเก็บเอกสาร |
 
 ตรวจแล้วบน local (PostgreSQL 17 เท่ากับ Hosted): `supabase db reset` ผ่าน · pgTAP 156/156 · E2E 56/56
 ข้อควรระวัง: migration 9 ใช้ `on delete set null (profile_id)` ต้องใช้ PostgreSQL ≥ 15 (Hosted ใหม่เป็น 17)
@@ -31,11 +32,14 @@
 7. **ตรวจ RLS ผ่าน Hosted API** — `node scripts/staging/rls-check.mjs` (anon key เท่านั้น สคริปต์ปฏิเสธ service_role) + Security Advisor ใน Dashboard ต้องไม่มี error
 8. **Frontend** — `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` ของ staging ใส่ใน `.env.staging` (ถูก ignore) หรือ secret ของระบบ build — ไม่มี service key ใน frontend
 
+9. **R2 + Edge Functions (Phase 1.6)** — ตั้งค่าตาม `docs/architecture/STORAGE.md` ข้อ 3, `supabase functions deploy storage-upload-url storage-confirm-upload storage-download-url storage-delete storage-cleanup`, แล้วทดสอบอัปโหลด/ดาวน์โหลด/สิทธิ์ซ้ำบน staging
+
 ## 3. สิ่งที่ต้องได้รับจากผู้ใช้ก่อนเริ่ม
 
 - อนุมัติแผนนี้ และยืนยัน project ref ของ Staging
 - ช่องทางส่ง `SUPABASE_ACCESS_TOKEN` + DB password (environment secret) — **ห้ามส่งในแชท**
 - อนุญาตให้ environment เข้าถึง host `<ref>.supabase.co` และ `api.supabase.com`
+- R2: Account ID และ API Token ที่จำกัดเฉพาะ bucket — ใส่เป็น Supabase Edge Function Secrets โดยผู้ดูแล (ไม่ผ่านแชท / Git)
 
 ## 4. Rollback
 

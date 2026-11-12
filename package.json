@@ -12,7 +12,10 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "storage:dev": "node scripts/storage-dev.mjs",
+    "functions:check": "deno check supabase/functions/_dev/serve.ts",
+    "test:sigv4": "node --test scripts/sigv4-verify.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",
@@ -38,6 +41,8 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
+    "deno": "^2.9.6",
+    "s3rver": "^3.7.1",
     "supabase": "^3.1.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",

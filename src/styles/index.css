@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* โทนสีหลัก: น้ำเงินเข้ม (สถาบัน) + เหลืองทอง (เน้น) — ใช้ตัวแปรแบบ shadcn/ui */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.003 250);
+  --foreground: oklch(0.21 0.03 260);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.38 0.14 263);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.955 0.012 255);
+  --secondary-foreground: oklch(0.3 0.06 262);
+  --muted: oklch(0.96 0.006 255);
+  --muted-foreground: oklch(0.5 0.02 258);
+  --accent: oklch(0.95 0.03 255);
+  --accent-foreground: oklch(0.3 0.1 262);
+  --destructive: oklch(0.58 0.21 27);
+  --success: oklch(0.6 0.14 155);
+  --warning: oklch(0.77 0.15 75);
+  --info: oklch(0.6 0.13 240);
+  --gold: oklch(0.82 0.15 85);
+  --border: oklch(0.91 0.01 255);
+  --input: oklch(0.91 0.01 255);
+  --ring: oklch(0.55 0.15 263);
+  --sidebar: oklch(0.26 0.09 264);
+  --sidebar-foreground: oklch(0.93 0.02 255);
+  --sidebar-muted: oklch(0.72 0.05 258);
+  --sidebar-accent: oklch(0.34 0.11 264);
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans Thai", "Noto Sans Thai", "Sarabun", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-gold: var(--gold);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* ภาษาไทยต้องการระยะบรรทัดมากกว่าอังกฤษ เพื่อไม่ให้สระบน/ล่างชนกัน */
+    line-height: 1.65;
+  }
+  h1, h2, h3, h4 {
+    line-height: 1.4;
+  }
+}

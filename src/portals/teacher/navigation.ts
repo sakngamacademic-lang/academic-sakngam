@@ -1,0 +1,26 @@
+import { Bell, BookOpenCheck, FileText, LayoutDashboard, UserRound, Users } from "lucide-react";
+import type { PortalConfig } from "@/features/navigation/types";
+
+export const teacherPortal: PortalConfig = {
+  id: "teacher",
+  basePath: "/teacher",
+  name: "ระบบครู",
+  shortName: "ครู",
+  sections: [
+    {
+      items: [
+        { path: "", label: "แดชบอร์ดของฉัน", icon: LayoutDashboard },
+        { path: "tasks", label: "งานที่ได้รับมอบหมาย", icon: FileText, plannedPhase: "Phase 1.9" },
+        { path: "notifications", label: "การแจ้งเตือน", icon: Bell, plannedPhase: "Phase 1.11" },
+      ],
+    },
+    {
+      title: "การสอน",
+      items: [
+        { path: "courses", label: "รายวิชาที่สอน", icon: BookOpenCheck, plannedPhase: "Phase 2" },
+        { path: "homeroom", label: "ห้องที่ปรึกษา", icon: Users, plannedPhase: "Phase 2" },
+      ],
+    },
+    { title: "บัญชี", items: [{ path: "profile", label: "โปรไฟล์", icon: UserRound, plannedPhase: "Phase 1.3" }] },
+  ],
+};

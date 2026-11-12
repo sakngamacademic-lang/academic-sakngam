@@ -34,7 +34,7 @@ stateDiagram-v2
 
 | รหัส | ใช้กับ kind | ตรวจ | ระดับ |
 |---|---|---|---|
-| V01 | ทุก kind | มี `source_document_id` และตำแหน่งต้นฉบับ (Sheet/Cell หรือหน้า) | E |
+| V01 | ทุก kind | มี `source_document_id` และ locator ตามรูปแบบ Data Dictionary §0 (PDF ต้องมี `pdf:`) | E |
 | V02 | ทุก kind | `curriculum_version` เป้าหมายเป็น `draft` | E |
 | V10 | subjects | รหัสวิชาไม่ว่าง และไม่ซ้ำภายใน batch | E |
 | V11 | subjects | รหัสวิชาซ้ำกับที่มีอยู่ใน version เดียวกัน (→ ต้องเลือก: ข้าม / อัปเดตใน draft) | W |
@@ -45,7 +45,7 @@ stateDiagram-v2
 | V16 | study_programs | ชื่อแผนตรงตามเอกสาร (ห้ามตั้งชื่อเอง) | W |
 | V20 | subjects | หน่วยกิตเป็นตัวเลข ≥ 0 และทศนิยมไม่เกิน 1 ตำแหน่ง | E |
 | V21 | subjects | ชั่วโมงเรียนเป็นจำนวนเต็ม ≥ 0 | E |
-| V22 | subjects | `learning_hours` ≈ `credits × hours_per_credit` ของ version (เมื่อมีค่ายืนยันแล้ว) | W |
+| V22 | subjects | ถ้า version มี `hours_per_credit`: แจ้งเมื่อ `learning_hours ≠ credits × hours_per_credit` — **ข้อมูลเท่านั้น** ไม่แก้ค่า ไม่บล็อก (CF-07: 1.0 หน่วยกิต = 20 ชม. มีจริง) | I |
 | V30 | offerings / activities | ระดับชั้น map ได้กับ `grade_levels` ของโรงเรียน | E |
 | V31 | offerings / activities | ภาคเรียน ∈ {1, 2, ว่าง = ทั้งปี} | E |
 | V32 | offerings | ช่วงชั้นของแผนการเรียน = ช่วงชั้นของระดับชั้น | E |
@@ -57,6 +57,10 @@ stateDiagram-v2
 | V51 | mappings | ตัวชี้วัดชั้นปีตรงกับชั้นของรายวิชา | W |
 | V60 | ทุก kind | ค่าขัดกับแหล่งที่น่าเชื่อถือกว่า (A/B) → สร้าง `source_conflicts` อัตโนมัติ | W |
 | V61 | ทุก kind | แถว `proposed_by = ai` | สถานะเริ่ม `needs_review` เสมอ |
+| V62 | ทุก kind (Excel) | หัวชีตระบุฉบับหลักสูตรไม่ตรงกับ version เป้าหมาย (CF-05: ชีตระบุ 2561) → ทุกแถวของชีต `needs_review` | W |
+| V63 | ทุก kind (Excel) | ค่าต่างกันระหว่าง SRC-05 กับ SRC-06 ในตำแหน่งเดียวกัน (CF-06: 34 เซลล์) → `source_conflicts` รายเซลล์ | W |
+| V64 | ทุก kind | `source_documents.content_status` = `empty` หรือ `duplicate` → สร้าง batch ไม่ได้ | E |
+| V65 | ทุก kind | ข้อมูลเกี่ยวข้องกับ conflict สถานะ `open` และ impact `blocking` → commit ไม่ได้ | E |
 
 **ไม่มีการเดาค่า**: เซลล์ที่อ่านไม่ได้/ว่าง → แถว `error` หรือ `needs_review` พร้อมข้อความ ไม่เติมค่าเอง
 
@@ -66,11 +70,11 @@ stateDiagram-v2
 2. ผู้ใช้เลือก **mapping ต่อ Sheet**: ช่วงหัวตาราง, คอลัมน์ → ฟิลด์ (รหัส / ชื่อ / หน่วยกิต / ชั่วโมง / ชั้น / ภาค / แผนการเรียน) — บันทึก mapping ใน `import_batches` เพื่อทำซ้ำได้
 3. ทุกแถว: `source_sheet` + `source_cell_range` (เช่น `ม.4 วิทย์!B12:G12`) และ `raw` = ค่าตามเซลล์จริง (รวมเซลล์ผสาน/สูตร: เก็บค่าที่คำนวณแล้ว + ระบุว่าเป็นสูตร)
 4. แถวสรุป/รวมยอด → ไม่สร้างข้อมูล แต่ใช้ตรวจ V34
-5. **ไฟล์สองชุดไม่ทับกัน**: SRC-05 และ SRC-06 นำเข้าเป็นคนละ batch และเป้าหมายเป็น curriculum_version ตามที่ยืนยันจากประกาศ (H1/H2 ใน Source Register) — ไม่ใช้ชื่อไฟล์ตัดสินฉบับ
+5. **ไฟล์สองชุดไม่ทับกัน**: SRC-05 และ SRC-06 นำเข้าเป็นคนละ batch · ชีตระบุหลักสูตร 2561 (CF-05) และต่างกัน 34 เซลล์ (CF-06) จึง **ห้ามสมมติ** ว่าเป็นโครงสร้างฉบับ 2569 — ใช้หลังสกัด SRC-01 แล้ว เพื่อตรวจความแตกต่างเท่านั้น จนกว่าจะยืนยัน H1/H2
 
-## 4. PDF (SRC-01 – SRC-04)
+## 4. PDF (SRC-01 – SRC-04) — เริ่มที่ SRC-01 ก่อน (คำสั่งผู้ใช้)
 
-1. สกัดข้อความทีละหน้า → เสนอแถว (`proposed_by = parser`) พร้อม `source_page`
+1. สกัดข้อความทีละหน้า → เสนอแถว (`proposed_by = parser`) พร้อม `source_page` (= หน้า PDF) และ locator `pdf:N;book:M`
 2. ข้อความไทยใน PDF อาจสระ/วรรณยุกต์เพี้ยน → ทุกแถวจาก PDF เริ่มที่ `needs_review` และหน้าตรวจแสดงภาพหน้าต้นฉบับคู่กัน
 3. กรอกมือได้ (`proposed_by = manual`) แต่ต้องอ้างหน้าเสมอ (V01)
 4. ประกาศใช้หลักสูตร (การเริ่มใช้กับ ม.1 และ ม.4) บันทึกเป็น `curriculum_versions.announcement_source_id` + `announcement_locator` และ `curriculum_implementations.decided_source_id` — ไม่นำเข้าเป็นแถวข้อมูลทั่วไป

@@ -1,6 +1,6 @@
 # Curriculum ERD (C1.0)
 
-> สถานะ: ออกแบบ รออนุมัติ C1.1 · รายละเอียดคอลัมน์และ constraint อยู่ใน [Data Dictionary](CURRICULUM-DATA-DICTIONARY.md)
+> สถานะ: ออกแบบ รออนุมัติ C1.1 · ปรับตามผล Source Audit (provenance, framework_status, conflicts) · รายละเอียดคอลัมน์และ constraint อยู่ใน [Data Dictionary](CURRICULUM-DATA-DICTIONARY.md)
 > สัญลักษณ์: ตาราง **ตัวหนา** = ตารางเดิมที่มีอยู่แล้ว (ไม่สร้างซ้ำ) · ตาราง global ไม่มี `school_id`
 
 ## 1. National Framework (global · อ่านอย่างเดียว)
@@ -52,7 +52,7 @@ erDiagram
   subject_learning_outcomes ||--o{ curriculum_indicator_mappings : "nullable"
 
   school_curricula { uuid id PK uuid school_id FK text name_th }
-  curriculum_versions { uuid id PK uuid school_id FK uuid school_curriculum_id FK uuid framework_version_id FK text version_label int effective_year_be numeric hours_per_credit text status uuid announcement_source_id FK }
+  curriculum_versions { uuid id PK uuid school_id FK uuid school_curriculum_id FK uuid framework_version_id FK text version_label int effective_year_be numeric hours_per_credit text framework_status text status uuid announcement_source_id FK }
   study_programs { uuid id PK uuid school_id FK uuid curriculum_version_id FK text code text name_th text stage }
   curriculum_implementations { uuid id PK uuid school_id FK uuid curriculum_version_id FK uuid study_program_id FK uuid entry_academic_year_id FK uuid entry_grade_level_id FK text status }
   classroom_programs { uuid classroom_id PK uuid school_id FK uuid study_program_id FK }
@@ -73,8 +73,8 @@ erDiagram
   curriculum_versions ||--o{ import_batches : "เป้าหมาย"
   import_batches ||--o{ import_rows : ""
 
-  source_documents { uuid id PK uuid school_id FK uuid file_id FK text register_code text doc_type text reliability text sha256 uuid curriculum_version_id FK uuid learning_area_id FK }
-  source_conflicts { uuid id PK uuid school_id FK uuid doc_a_id FK uuid doc_b_id FK text subject_ref text description text resolution uuid resolved_by }
+  source_documents { uuid id PK uuid school_id FK uuid file_id FK text register_code text doc_type text reliability text sha256 int page_offset text declared_curriculum_ref text content_status uuid curriculum_version_id FK uuid learning_area_id FK }
+  source_conflicts { uuid id PK uuid school_id FK text conflict_code uuid doc_a_id FK uuid doc_b_id FK text subject_ref text description text impact text resolution uuid resolved_by }
   import_batches { uuid id PK uuid school_id FK uuid source_document_id FK uuid curriculum_version_id FK text kind text status uuid created_by uuid approved_by }
   import_rows { uuid id PK uuid school_id FK uuid batch_id FK int row_no text source_sheet text source_cell_range int source_page jsonb raw jsonb normalized jsonb issues text status text proposed_by }
 ```

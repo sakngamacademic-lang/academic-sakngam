@@ -9,7 +9,8 @@
 |---|---|
 | คอลัมน์มาตรฐาน | `id uuid PK default gen_random_uuid()`, `created_at`, `updated_at` (trigger `private.set_updated_at`), `created_by uuid default auth.uid()` |
 | Multi-school | ตารางโรงเรียนทุกตาราง: `school_id uuid not null default private.current_school_id()` + `unique (id, school_id)` + FK แบบ composite `(x_id, school_id)` + trigger `lock_columns_after_insert` (ห้ามย้ายโรงเรียน) |
-| Provenance (P) | `source_document_id uuid` → `source_documents`, `source_locator text` (เช่น `p.12` หรือ `Sheet1!B5:H5`), `import_row_id uuid` → `import_rows` (null = กรอกมือ) |
+| Provenance (P) | `source_document_id uuid not null` → `source_documents`, `source_locator text not null`, `import_row_id uuid` → `import_rows` (null = กรอกมือ) |
+| รูปแบบ locator | `pdf:<หน้า PDF>` (บังคับสำหรับ PDF) · `book:<เลขหน้าที่พิมพ์>` (ถ้ามี — ห้ามใช้แทน pdf) · `sheet:<ชื่อชีต>!<cell/range>` · `file:<path ในZIP>` · คั่นหลายตำแหน่งด้วย `;` เช่น `pdf:4;book:3` |
 | Audit | trigger `private.audit_row_change` ทุกตารางโรงเรียน · ไม่มี DELETE grant (ใช้สถานะ) |
 | Version lock (V) | แก้ไขได้เฉพาะเมื่อ `curriculum_versions.status = 'draft'` (ตรวจใน RLS update + trigger) |
 | Null-safe scope | helper สิทธิ์ทุกตัวต้อง `coalesce(..., false)` |
@@ -87,7 +88,8 @@
 | framework_version_id | uuid | FK global (อ้างกรอบแกนกลางที่ใช้ — ยืนยันจาก SRC-01) |
 | version_label | text | unique ต่อ school_curriculum (เช่น "พ.ศ. ____" ตามเอกสาร) |
 | effective_year_be | int | ปีที่ประกาศใช้ |
-| hours_per_credit | numeric(5,2) | **ค่าที่ยืนยันจากเอกสาร** (D6) ใช้ตรวจความสอดคล้องเท่านั้น ไม่คำนวณแทน |
+| hours_per_credit | numeric(5,2) **null** | optional (D6) — ใช้เตือนเท่านั้น **ห้ามใช้คำนวณหรือเขียนทับ** `credits` / `learning_hours` จากต้นฉบับ (CF-07) |
+| framework_status | text | `confirmed` \| `provisional` — ฉบับ 2569 = `provisional` จนกว่า CF-02 ปิด (D2) |
 | status | text | `draft` → `under_review` → `approved` → `active` → `retired` (เปลี่ยนผ่าน RPC) |
 | announcement_source_id | uuid | FK `source_documents` — ประกาศใช้หลักสูตร |
 | announcement_locator | text | หน้าที่อ้างอิงในประกาศ |
@@ -186,12 +188,17 @@ check: มีค่าอย่างใดอย่างหนึ่งระ�
 ### `source_documents`
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
-| register_code | text | unique ต่อโรงเรียน (เช่น `SRC-01`) — ตรงกับ Source Register |
+| register_code | text | unique ต่อโรงเรียน (เช่น `SRC-01`, `SRC-03-SC`) — ตรงกับ Source Register |
 | title | text | not null |
 | doc_type | text | `curriculum_book` \| `announcement` \| `learning_area_curriculum` \| `assessment_regulation` \| `structure_workbook` \| `other` |
 | file_id | uuid null | composite FK `files` (Phase 1.6, private) |
 | parent_id | uuid null | ไฟล์ย่อยใน ZIP → แฟ้ม ZIP |
 | sha256 | text | ตรงกับ `files.sha256` |
+| page_count | int null | จำนวนหน้า PDF (SRC-01 = 547) |
+| page_offset | int null | หน้า PDF − หน้าเล่ม (SRC-01 = 1 จากประกาศ เล่ม 3 = PDF 4) — ใช้แปลงเท่านั้น locator เก็บทั้งสองแบบ |
+| declared_curriculum_ref | text null | ฉบับที่เอกสาร **ระบุเอง** (เช่น "2551 ปรับปรุง 2560") — แยกจากฉบับที่ระบบตัดสิน |
+| content_status | text | `has_content` \| `empty` \| `duplicate` \| `variant` (CF-04, SRC-02) |
+| duplicate_of_id | uuid null | ชี้เอกสารต้นแบบเมื่อซ้ำ |
 | reliability | text | `A` \| `B` \| `C` \| `D` (นิยามใน Source Register §2) |
 | curriculum_version_id | uuid null | |
 | learning_area_id | uuid null | |
@@ -205,13 +212,15 @@ check: มีค่าอย่างใดอย่างหนึ่งระ�
 ### `source_conflicts`
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
-| doc_a_id / doc_b_id | uuid | composite FK `source_documents` |
+| conflict_code | text | unique ต่อโรงเรียน (เช่น `CF-02`) — ตรงกับ Source Register §3 |
+| doc_a_id / doc_b_id | uuid | composite FK `source_documents` (doc_b null ได้เมื่อขัดกันภายในเอกสารเดียว เช่น CF-03 ชื่อไฟล์ ↔ เนื้อหา) |
 | subject_ref | text | สิ่งที่ขัดแย้ง (เช่น รหัสวิชา / ช่องโครงสร้าง) |
 | locator_a / locator_b | text | หน้า / Sheet!Cell ของแต่ละฝั่ง |
 | description | text | not null |
 | resolution | text null | ผลตัดสิน + เหตุผล |
+| impact | text | `blocking` (ห้าม commit ข้อมูลที่เกี่ยว) \| `warning` |
 | status | text | `open` \| `resolved` |
-| resolved_by / resolved_at | | H เท่านั้น |
+| resolved_by / resolved_at | | H เท่านั้น (มนุษย์) |
 
 ### `import_batches`
 | คอลัมน์ | ชนิด | ข้อกำหนด |

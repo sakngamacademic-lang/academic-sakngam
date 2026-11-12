@@ -16,6 +16,9 @@ const UNIQUE: Record<string, string> = {
   learning_areas_code_key: "รหัสกลุ่มสาระนี้มีอยู่แล้ว",
   learning_areas_name_key: "ชื่อกลุ่มสาระนี้มีอยู่แล้ว",
   user_roles_unique: "ผู้ใช้นี้ได้รับบทบาทนี้อยู่แล้ว",
+  teachers_code_key: "รหัสประจำตัวนี้มีอยู่แล้ว",
+  teachers_email_key: "อีเมลนี้ถูกใช้กับครูคนอื่นแล้ว",
+  teachers_profile_key: "บัญชีนี้ผูกกับระเบียนครูคนอื่นอยู่แล้ว",
 };
 
 const CHECK: Record<string, string> = {
@@ -28,6 +31,8 @@ const CHECK: Record<string, string> = {
   grade_levels_code_format: "รหัสใช้ได้เฉพาะ A–Z, 0–9, - และ _ (ไม่เกิน 16 ตัว)",
   learning_areas_code_format: "รหัสใช้ได้เฉพาะ A–Z, 0–9, - และ _ (ไม่เกิน 16 ตัว)",
   user_roles_scope_check: "หัวหน้ากลุ่มสาระต้องระบุกลุ่มสาระ",
+  teachers_code_format: "รหัสประจำตัวใช้ได้เฉพาะ A–Z, 0–9, - และ _ (ไม่เกิน 32 ตัว)",
+  teachers_email_format: "รูปแบบอีเมลไม่ถูกต้อง",
 };
 
 function findKey(map: Record<string, string>, text: string) {

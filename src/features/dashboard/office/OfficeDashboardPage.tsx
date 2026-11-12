@@ -9,7 +9,11 @@ import {
   Search,
   Shapes,
   Timer,
+  Link2,
+  Users,
+  UserX,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { DashSection, DemoZone, KpiCard, LiveBadge, PendingButton, QuickActions, Tag, type QuickAction } from "@/components/dashboard";
 import { BarsChart, DonutChart } from "@/components/charts/charts";
 import { PageHeader } from "@/components/shared";
@@ -17,6 +21,7 @@ import { daysUntil, formatDateLongTH, formatDateTH, formatNumberTH } from "@/lib
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useClassrooms, useGradeLevels, useLearningAreas } from "@/features/master-data/api";
+import { useTeachers } from "@/features/teachers/api";
 import { useCurrentPeriod } from "../use-current-period";
 import {
   demoOfficeKpis,
@@ -91,6 +96,59 @@ function MasterDataSummary() {
         </div>
       )}
     </section>
+  );
+}
+
+/** ทะเบียนครู — ข้อมูลจริง (Phase 1.5) ขอบเขตตาม RLS: ทั้งโรงเรียน หรือเฉพาะกลุ่มสาระของหัวหน้ากลุ่มสาระ */
+function TeacherRegistrySummary() {
+  const teachers = useTeachers();
+  const areas = useLearningAreas();
+  const active = teachers.data?.filter((t) => t.employment_status === "active") ?? [];
+  const linked = active.filter((t) => t.profile_id).length;
+  const byArea = (areas.data ?? [])
+    .map((a) => ({ id: a.id, name: a.name_th, count: active.filter((t) => t.learning_area_id === a.id).length }))
+    .filter((a) => a.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const noArea = active.filter((t) => !t.learning_area_id).length;
+  const max = Math.max(1, ...byArea.map((a) => a.count), noArea);
+
+  return (
+    <DashSection
+      id="registry"
+      className="mt-6"
+      title={<span className="flex items-center gap-2">ทะเบียนครูและบุคลากร <LiveBadge /></span>}
+      actions={<Link to="/office/teachers" className="text-sm text-primary hover:underline">เปิดทะเบียน</Link>}
+    >
+      {teachers.isError ? (
+        <p role="alert" className="text-sm text-destructive">โหลดทะเบียนครูไม่สำเร็จ</p>
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,20rem)_1fr]">
+          <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
+            <KpiCard label="ปฏิบัติงาน" icon={Users} loading={teachers.isPending} value={formatNumberTH(active.length)} />
+            <KpiCard label="มีบัญชีเข้าระบบ" icon={Link2} tone="accent" loading={teachers.isPending} value={formatNumberTH(linked)} />
+            <KpiCard label="ยังไม่มีบัญชี" icon={UserX} loading={teachers.isPending} value={formatNumberTH(active.length - linked)} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="mb-3 text-sm text-muted-foreground">จำนวนครูที่ปฏิบัติงาน แยกตามกลุ่มสาระ</h3>
+            {active.length === 0 && !teachers.isPending ? (
+              <p className="text-sm text-muted-foreground">ยังไม่มีข้อมูลครูที่คุณมีสิทธิ์เห็น</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {[...byArea, ...(noArea ? [{ id: "none", name: "ไม่สังกัดกลุ่มสาระ", count: noArea }] : [])].map((a) => (
+                  <li key={a.id} className="grid grid-cols-[minmax(0,11rem)_1fr_2rem] items-center gap-3 text-sm">
+                    <span className="truncate">{a.name}</span>
+                    <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                      <span className="block h-full rounded-full bg-primary" style={{ width: `${(a.count / max) * 100}%` }} />
+                    </span>
+                    <b className="text-right tabular-nums">{a.count}</b>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </DashSection>
   );
 }
 
@@ -224,7 +282,7 @@ export function OfficeDashboardPage() {
         ]
       : []),
     { label: canManageMasterData ? "จัดการปีการศึกษา" : "ปีการศึกษา", to: "/office/academic-years", icon: CalendarDays, primary: !canManageTasks },
-    { label: "ห้องเรียน", to: "/office/classrooms", icon: School },
+    { label: "ทะเบียนครู", to: "/office/teachers", icon: Users },
     ...(!canManageTasks ? [{ label: "ระดับชั้น", to: "/office/grade-levels", icon: Layers }] : []),
   ];
 
@@ -237,6 +295,7 @@ export function OfficeDashboardPage() {
 
       <QuickActions items={actions} />
       <MasterDataSummary />
+      <TeacherRegistrySummary />
 
       {(canViewTasks || canViewAssessment) && (
         <DemoZone id="demo-office" title="งานเอกสารและการติดตามผล" phase="Phase 1.8–1.10">

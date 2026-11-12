@@ -8,6 +8,7 @@ import { TermsPage } from "@/features/master-data/pages/TermsPage";
 import { GradeLevelsPage } from "@/features/master-data/pages/GradeLevelsPage";
 import { ClassroomsPage } from "@/features/master-data/pages/ClassroomsPage";
 import { LearningAreasPage } from "@/features/master-data/pages/LearningAreasPage";
+import { TeachersPage } from "@/features/teachers/pages/TeachersPage";
 import { officePortal } from "./navigation";
 
 export const officeRoutes: RouteObject = {
@@ -26,5 +27,6 @@ export const officeRoutes: RouteObject = {
     "grade-levels": <GradeLevelsPage />,
     classrooms: <ClassroomsPage />,
     "learning-areas": <LearningAreasPage />,
+    teachers: <TeachersPage />,
   }),
 };

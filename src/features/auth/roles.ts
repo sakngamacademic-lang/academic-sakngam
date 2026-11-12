@@ -40,6 +40,8 @@ const CAPABILITIES = {
   "masterdata.manage": ["system_admin", "academic_head", "academic_staff"],
   "learningareas.manage": ["system_admin", "academic_head"],
   "roles.manage": ["system_admin"],
+  "teachers.manage": ["system_admin", "academic_head", "academic_staff"],
+  "teachers.link": ["system_admin", "academic_head"],
 } satisfies Record<string, readonly AppRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

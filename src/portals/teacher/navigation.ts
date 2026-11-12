@@ -23,6 +23,6 @@ export const teacherPortal: PortalConfig = {
         { path: "homeroom", label: "ห้องที่ปรึกษา", icon: Users, plannedPhase: "Phase 2" },
       ],
     },
-    { title: "บัญชี", items: [{ path: "profile", label: "โปรไฟล์", icon: UserRound, plannedPhase: "Phase 1.5" }] },
+    { title: "บัญชี", items: [{ path: "profile", label: "โปรไฟล์", icon: UserRound }] },
   ],
 };

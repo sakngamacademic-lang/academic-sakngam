@@ -20,6 +20,8 @@ export class StorageError extends Error {}
 
 export interface UploadTarget {
   documentId?: string;
+  /** แนบเป็นแม่แบบของภาระงาน */
+  taskId?: string;
   title?: string;
   category?: string;
 }
@@ -68,7 +70,7 @@ export const edgeFunctionStorage: DocumentStorage = {
     onStage?.("requesting");
     const t = await call<{ fileId: string; documentId: string; version: number; uploadUrl: string; headers: Record<string, string> }>(
       "storage-upload-url",
-      { documentId: target.documentId ?? null, title: target.title, category: target.category, fileName: file.name, mimeType: mime, size: file.size },
+      { documentId: target.documentId ?? null, taskId: target.taskId ?? null, title: target.title, category: target.category, fileName: file.name, mimeType: mime, size: file.size },
     );
     onStage?.("uploading");
     const put = await fetch(t.uploadUrl, { method: "PUT", headers: t.headers, body: file }).catch(() => null);

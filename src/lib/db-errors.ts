@@ -19,6 +19,7 @@ const UNIQUE: Record<string, string> = {
   teachers_code_key: "รหัสประจำตัวนี้มีอยู่แล้ว",
   teachers_email_key: "อีเมลนี้ถูกใช้กับครูคนอื่นแล้ว",
   teachers_profile_key: "บัญชีนี้ผูกกับระเบียนครูคนอื่นอยู่แล้ว",
+  task_assignments_unique: "ครูคนนี้ได้รับมอบหมายงานนี้อยู่แล้ว",
 };
 
 const CHECK: Record<string, string> = {
@@ -33,6 +34,9 @@ const CHECK: Record<string, string> = {
   user_roles_scope_check: "หัวหน้ากลุ่มสาระต้องระบุกลุ่มสาระ",
   teachers_code_format: "รหัสประจำตัวใช้ได้เฉพาะ A–Z, 0–9, - และ _ (ไม่เกิน 32 ตัว)",
   teachers_email_format: "รูปแบบอีเมลไม่ถูกต้อง",
+  tasks_dates_order: "วันครบกำหนดต้องอยู่หลังวันเริ่มต้น",
+  tasks_allowed_exts: "กรุณาเลือกชนิดไฟล์ที่รับอย่างน้อย 1 ชนิด",
+  tasks_max_files_range: "จำนวนไฟล์ต้องอยู่ระหว่าง 1–10",
 };
 
 function findKey(map: Record<string, string>, text: string) {
@@ -57,6 +61,7 @@ export function dbErrorMessage(error: unknown): string {
     case "23502":
       return "กรุณากรอกข้อมูลที่จำเป็นให้ครบ";
     case "42501":
+      if (e.message && !/^permission denied|row-level security/.test(e.message)) return e.message;
       return "คุณไม่มีสิทธิ์ดำเนินการนี้";
     case "P0001":
       return e.message ?? "ข้อมูลไม่ถูกต้อง";

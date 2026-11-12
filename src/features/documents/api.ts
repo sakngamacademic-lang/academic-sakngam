@@ -55,10 +55,29 @@ export function useDocuments() {
         .select(
           "id, title, category, latest_version, created_at, teacher:teachers(teacher_code, prefix, first_name, last_name), files(id, version, original_name, file_ext, size_bytes, status, status_reason, sha256, created_at, locked_at)",
         )
+        .eq("kind", "teacher_document")
         .order("created_at", { ascending: false })
         .order("version", { referencedTable: "files", ascending: false });
       if (error) throw error;
       return data as unknown as DocumentRow[];
+    },
+  });
+}
+
+/** แม่แบบเอกสารของภาระงาน (kind = task_template) — RLS: ผู้ที่เห็นงานนั้น */
+export function useTaskTemplates(taskId: string | undefined) {
+  return useQuery({
+    queryKey: [...documentsKey, "templates", taskId],
+    enabled: !!taskId,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from("documents")
+        .select("id, files(id, version, original_name, file_ext, size_bytes, status, status_reason, sha256, created_at, locked_at)")
+        .eq("kind", "task_template")
+        .eq("task_id", taskId!)
+        .order("created_at");
+      if (error) throw error;
+      return (data as unknown as { id: string; files: DocFile[] }[]).flatMap((d) => d.files.filter((f) => f.status === "ready"));
     },
   });
 }

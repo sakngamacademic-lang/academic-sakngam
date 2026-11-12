@@ -118,3 +118,32 @@ insert into public.teachers (id, school_id, profile_id, teacher_code, prefix, fi
   ('50000000-0000-4000-a000-000000000009', '00000000-0000-4000-a000-000000000001', null, 'S001', 'นาง',    'ธุรการ',   'ทดสอบ',      'support_staff',       null,                                   'active',   null),
   ('50000000-0000-4000-a000-000000000010', '00000000-0000-4000-a000-000000000001', null, 'E001', 'ดร.',    'ผู้อำนวยการ', 'ทดสอบ',    'executive',           null,                                   'active',   null),
   ('50000000-0000-4000-a000-000000000101', '00000000-0000-4000-a000-000000000002', null, 'T001', 'นาย',    'โรงเรียนอื่น', 'ทดสอบ',   'teacher',             '30000000-0000-4000-a000-000000000101', 'active',   null);
+
+-- ภาระงาน (Phase 1.7) — ข้อมูลสมมติ วันที่สัมพัทธ์กับวันที่ reset
+insert into public.tasks (id, school_id, term_id, learning_area_id, title, description, category, starts_at, due_at, allowed_exts, max_files, status, created_by, published_by, published_at)
+select v.id, '00000000-0000-4000-a000-000000000001', t.id, v.area, v.title, v.descr, v.cat, now() - interval '3 days', now() + v.due,
+       v.exts, v.maxf, v.status, '10000000-0000-4000-a000-000000000002',
+       case when v.status = 'published' then '10000000-0000-4000-a000-000000000002'::uuid end,
+       case when v.status = 'published' then now() - interval '2 days' end
+from (values
+  ('60000000-0000-4000-a000-000000000001'::uuid, null::uuid, 'แผนการจัดการเรียนรู้ ภาคเรียนที่ 2', 'ส่งแผนการจัดการเรียนรู้ทุกรายวิชาที่สอน ตามแบบฟอร์มของฝ่ายวิชาการ', 'lesson_plan', interval '6 days', array['pdf','docx'], 3, 'published'),
+  ('60000000-0000-4000-a000-000000000002'::uuid, '30000000-0000-4000-a000-000000000002'::uuid, 'บันทึกหลังการสอน คณิตศาสตร์ เดือนที่ 1', 'งานของกลุ่มสาระคณิตศาสตร์', 'post_teaching_record', interval '2 days', array['pdf'], 1, 'published'),
+  ('60000000-0000-4000-a000-000000000003'::uuid, null::uuid, 'รายงานผลการประเมินกลางภาค', 'ใช้แบบฟอร์ม Excel ที่แนบ', 'assessment_report', interval '-1 day', array['xlsx','xls'], 1, 'published'),
+  ('60000000-0000-4000-a000-000000000004'::uuid, null::uuid, 'วิจัยในชั้นเรียน (เค้าโครง)', 'ร่าง — ยังไม่เผยแพร่', 'classroom_research', interval '20 days', array['pdf','docx'], 2, 'draft')
+) as v(id, area, title, descr, cat, due, exts, maxf, status)
+join public.terms t on t.school_id = '00000000-0000-4000-a000-000000000001' and t.is_current;
+
+insert into public.task_assignments (school_id, task_id, teacher_id, assigned_by, status, current_version, last_submitted_at)
+select '00000000-0000-4000-a000-000000000001', a.task, a.teacher, '10000000-0000-4000-a000-000000000002', a.status, a.ver, a.sub
+from (values
+  ('60000000-0000-4000-a000-000000000001'::uuid, '50000000-0000-4000-a000-000000000001'::uuid, 'assigned', 0, null::timestamptz),
+  ('60000000-0000-4000-a000-000000000001', '50000000-0000-4000-a000-000000000002', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000001', '50000000-0000-4000-a000-000000000003', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000001', '50000000-0000-4000-a000-000000000004', 'submitted', 1, now() - interval '1 day'),
+  ('60000000-0000-4000-a000-000000000001', '50000000-0000-4000-a000-000000000005', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000002', '50000000-0000-4000-a000-000000000002', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000002', '50000000-0000-4000-a000-000000000003', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000002', '50000000-0000-4000-a000-000000000005', 'submitted', 1, now() - interval '5 hours'),
+  ('60000000-0000-4000-a000-000000000003', '50000000-0000-4000-a000-000000000003', 'assigned', 0, null),
+  ('60000000-0000-4000-a000-000000000003', '50000000-0000-4000-a000-000000000004', 'assigned', 0, null)
+) as a(task, teacher, status, ver, sub);

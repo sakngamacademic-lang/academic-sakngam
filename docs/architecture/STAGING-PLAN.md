@@ -17,6 +17,7 @@
 | 8 | `20261114000300_master_data_rls.sql` | RLS + RPC master data |
 | 9 | `20261115000100_teacher_registry.sql` | **Phase 1.5** ทะเบียนครู + RLS + RPC ผูกบัญชี |
 | 10 | `20261116000100_document_storage.sql` | **Phase 1.6** documents / files / file_events + RPC จัดเก็บเอกสาร |
+| 11 | `20261117000100_task_assignment.sql` | **Phase 1.7** tasks / task_assignments / assignment_events / view task_progress + RPC เผยแพร่ ยกเลิก + แม่แบบงาน (แก้ช่องโหว่ owner null ใน storage_begin_upload) |
 
 ตรวจแล้วบน local (PostgreSQL 17 เท่ากับ Hosted): `supabase db reset` ผ่าน · pgTAP 156/156 · E2E 56/56
 ข้อควรระวัง: migration 9 ใช้ `on delete set null (profile_id)` ต้องใช้ PostgreSQL ≥ 15 (Hosted ใหม่เป็น 17)

@@ -5,6 +5,7 @@ import { RequireAuth, RequireRoles } from "@/features/auth/guards";
 import { TeacherDashboardPage } from "@/features/dashboard/teacher/TeacherDashboardPage";
 import { TeacherProfilePage } from "@/features/teachers/pages/TeacherProfilePage";
 import { MyDocumentsPage } from "@/features/documents/pages/MyDocumentsPage";
+import { MyAssignmentsPage } from "@/features/tasks/pages/MyAssignmentsPage";
 import { teacherPortal } from "./navigation";
 
 export const teacherRoutes: RouteObject = {
@@ -20,5 +21,6 @@ export const teacherRoutes: RouteObject = {
     "": <TeacherDashboardPage />,
     profile: <TeacherProfilePage />,
     documents: <MyDocumentsPage />,
+    assignments: <MyAssignmentsPage />,
   }),
 };

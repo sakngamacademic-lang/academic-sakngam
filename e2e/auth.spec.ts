@@ -7,7 +7,7 @@ test.describe("Authentication", () => {
   test("ยังไม่ login เข้าหน้าที่ป้องกันไว้ → ไปหน้า Login", async ({ page }) => {
     await page.goto("/office");
     await expect(page).toHaveURL(/\/login$/);
-    await page.goto("/teacher/tasks");
+    await page.goto("/teacher/assignments");
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -104,11 +104,12 @@ test.describe("Route guard ตามบทบาท", () => {
     await expect(page.getByRole("heading", { name: OFFICE_HEADING })).toBeVisible();
     await expect(page.getByRole("link", { name: "สร้างภาระงาน" })).toHaveCount(0);
     const nav = page.getByRole("navigation", { name: "เมนูฝ่ายวิชาการ" });
-    await expect(nav.getByRole("link", { name: /รายการงาน/ })).toHaveCount(0);
+    // Phase 1.7: ผู้บริหารอ่านรายการงานได้ (อ่านอย่างเดียว) แต่สร้างงานไม่ได้
+    await expect(nav.getByRole("link", { name: /รายการงาน/ })).toHaveCount(1);
     await expect(nav.getByRole("link", { name: /นำเข้า Excel/ })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: /ตั้งค่าระบบ/ })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: /รายงาน/ })).toHaveCount(1);
-    for (const path of ["/office/tasks", "/office/imports", "/office/settings"]) {
+    for (const path of ["/office/tasks/create", "/office/imports", "/office/settings"]) {
       await page.goto(path);
       await expectForbidden(page);
     }

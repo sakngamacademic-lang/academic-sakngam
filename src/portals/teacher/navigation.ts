@@ -12,7 +12,7 @@ export const teacherPortal: PortalConfig = {
     {
       items: [
         { path: "", label: "แดชบอร์ดของฉัน", icon: LayoutDashboard },
-        { path: "tasks", label: "งานที่ได้รับมอบหมาย", icon: FileText, plannedPhase: "Phase 1.9" },
+        { path: "assignments", label: "งานที่ได้รับมอบหมาย", icon: FileText },
         { path: "documents", label: "คลังเอกสารของฉัน", icon: FolderLock },
         { path: "notifications", label: "การแจ้งเตือน", icon: Bell, plannedPhase: "Phase 1.11" },
       ],

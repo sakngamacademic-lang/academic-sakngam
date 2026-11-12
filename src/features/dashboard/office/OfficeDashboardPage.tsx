@@ -277,7 +277,7 @@ export function OfficeDashboardPage() {
   const actions: QuickAction[] = [
     ...(canManageTasks
       ? [
-          { label: "สร้างภาระงาน", to: "/office/tasks", icon: FilePlus2, primary: true, soon: "Phase 1.8" },
+          { label: "สร้างภาระงาน", to: "/office/tasks/create", icon: FilePlus2, primary: true },
           { label: "ตรวจรับเอกสาร", to: "/office/reviews", icon: ClipboardCheck, soon: REVIEW_PHASE },
         ]
       : []),

@@ -3,6 +3,8 @@
  * ตรวจชนิดจริงจาก magic bytes — ไม่เชื่อนามสกุลหรือ Content-Type ที่ผู้ใช้ส่งมา
  */
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
+/** เอกสารต้นทางหลักสูตร (เช่น PDF 547 หน้า) — RPC ของแต่ละชนิดบังคับเพดานของตนอีกชั้น */
+export const MAX_SOURCE_BYTES = 100 * 1024 * 1024;
 
 export const ALLOWED: Record<string, string> = {
   pdf: "application/pdf",
@@ -48,7 +50,7 @@ export function detectKind(b: Uint8Array): { ext: string | null; reason?: string
 /** ตรวจไฟล์ที่อัปโหลดแล้วเทียบกับข้อมูลที่ขอไว้ตอนเริ่มอัปโหลด */
 export function verifyUpload(bytes: Uint8Array, expected: { ext: string; size: number }): { ok: true } | { ok: false; reason: string } {
   if (bytes.length !== expected.size) return { ok: false, reason: `ขนาดไฟล์ไม่ตรงกับที่แจ้ง (${bytes.length} ≠ ${expected.size})` };
-  if (bytes.length > MAX_FILE_BYTES) return { ok: false, reason: "ไฟล์ใหญ่เกิน 20 MB" };
+  if (bytes.length > MAX_SOURCE_BYTES) return { ok: false, reason: "ไฟล์ใหญ่เกิน 100 MB" };
   const kind = detectKind(bytes);
   if (!kind.ext) return { ok: false, reason: kind.reason ?? "ชนิดไฟล์ไม่ถูกต้อง" };
   if (kind.ext !== expected.ext) return { ok: false, reason: `เนื้อไฟล์เป็น ${kind.ext.toUpperCase()} แต่นามสกุลเป็น .${expected.ext}` };

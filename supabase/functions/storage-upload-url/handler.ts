@@ -1,7 +1,7 @@
 /** ขอ URL สำหรับอัปโหลด: ตรวจผู้ใช้ → ฐานข้อมูลตรวจสิทธิ์/ชนิด/ขนาด และสร้าง object key → ออก presigned PUT 5 นาที */
 import { handle, HttpError, isUuid, readJson } from "../_shared/http.ts";
 import { requireUser, userRpc } from "../_shared/supabase.ts";
-import { ALLOWED, MAX_FILE_BYTES } from "../_shared/file-rules.ts";
+import { ALLOWED, MAX_FILE_BYTES, MAX_SOURCE_BYTES } from "../_shared/file-rules.ts";
 import { createStorageProvider } from "../_shared/storage/index.ts";
 import { PRESIGN_TTL_SECONDS } from "../_shared/storage/provider.ts";
 
@@ -9,6 +9,8 @@ interface Body {
   documentId?: string | null;
   /** แนบแม่แบบให้ภาระงาน (Phase 1.7) — ผู้จัดการงานเท่านั้น */
   taskId?: string | null;
+  /** เอกสารต้นทางหลักสูตร (C1.1) — ฝ่ายวิชาการเท่านั้น, PDF/Excel ≤ 100 MB */
+  curriculumSource?: boolean;
   title?: string;
   category?: string;
   fileName?: string;
@@ -34,11 +36,18 @@ export const handler = handle(async (req) => {
     throw new HttpError(400, "กรุณาระบุชื่อไฟล์ ชนิด และขนาด");
   }
   if (!Object.values(ALLOWED).includes(b.mimeType)) throw new HttpError(400, "รองรับเฉพาะไฟล์ PDF, Word และ Excel");
-  if (b.size! < 1 || b.size! > MAX_FILE_BYTES) throw new HttpError(400, "ขนาดไฟล์ต้องไม่เกิน 20 MB");
-  if (b.taskId == null && b.documentId == null && !b.title?.trim()) throw new HttpError(400, "กรุณาระบุชื่อเอกสาร");
+  const maxBytes = b.curriculumSource ? MAX_SOURCE_BYTES : MAX_FILE_BYTES;
+  if (b.size! < 1 || b.size! > maxBytes) throw new HttpError(400, `ขนาดไฟล์ต้องไม่เกิน ${maxBytes / 1024 / 1024} MB`);
+  if (!b.curriculumSource && b.taskId == null && b.documentId == null && !b.title?.trim()) throw new HttpError(400, "กรุณาระบุชื่อเอกสาร");
 
   // ฐานข้อมูลตรวจสิทธิ์และสร้าง object key — เอกสารของครู หรือแม่แบบของงาน
-  const [row] = b.taskId
+  const [row] = b.curriculumSource
+    ? await userRpc<Begin[]>(caller, "storage_begin_curriculum_source_upload", {
+        p_original_name: b.fileName,
+        p_mime_type: b.mimeType,
+        p_size_bytes: b.size,
+      })
+    : b.taskId
     ? await userRpc<Begin[]>(caller, "storage_begin_template_upload", {
         p_task_id: b.taskId,
         p_original_name: b.fileName,

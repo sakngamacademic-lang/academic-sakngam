@@ -1,7 +1,7 @@
 /** ยืนยันการอัปโหลด: อ่านไฟล์จาก storage → ตรวจขนาด + magic bytes + sha256 → บันทึกผล (service_role) */
 import { handle, HttpError, isUuid, readJson } from "../_shared/http.ts";
 import { requireUser, serviceRpc, userRpc } from "../_shared/supabase.ts";
-import { MAX_FILE_BYTES, sha256Hex, verifyUpload } from "../_shared/file-rules.ts";
+import { MAX_SOURCE_BYTES, sha256Hex, verifyUpload } from "../_shared/file-rules.ts";
 import { createStorageProvider } from "../_shared/storage/index.ts";
 
 interface Pending {
@@ -27,7 +27,8 @@ export const handler = handle(async (req) => {
 
   let result: { ok: true } | { ok: false; reason: string };
   let bytes: Uint8Array<ArrayBuffer> | null = null;
-  if (head.size > MAX_FILE_BYTES || head.size !== p.size_bytes) {
+  // ขนาดต้องเท่ากับที่ฐานข้อมูลอนุญาตตอนเริ่ม (เพดานรายชนิดบังคับใน RPC แล้ว)
+  if (head.size > MAX_SOURCE_BYTES || head.size !== p.size_bytes) {
     result = { ok: false, reason: `ขนาดไฟล์ไม่ตรงกับที่แจ้ง (${head.size} ≠ ${p.size_bytes})` };
   } else {
     bytes = await storage.getBytes(p.object_key);

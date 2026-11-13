@@ -61,7 +61,7 @@ console.log(`storage : http://127.0.0.1:${S3_PORT}/${BUCKET} (private, ตรว
 
 const deno = spawn(
   "npx",
-  ["deno", "run", "--allow-net", "--allow-env", `--env-file=${envFile}`, "supabase/functions/_dev/serve.ts"],
+  ["deno", "run", "--config", "supabase/functions/deno.json", "--allow-net", "--allow-env", "--allow-read", "--allow-sys", `--env-file=${envFile}`, "supabase/functions/_dev/serve.ts"],
   { stdio: "inherit" },
 );
 console.log(`functions: http://127.0.0.1:${FN_PORT}/functions/v1/<name>`);

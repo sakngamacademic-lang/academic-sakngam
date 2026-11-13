@@ -8,6 +8,7 @@ import { handler as confirmUpload } from "../storage-confirm-upload/handler.ts";
 import { handler as downloadUrl } from "../storage-download-url/handler.ts";
 import { handler as del } from "../storage-delete/handler.ts";
 import { handler as cleanup } from "../storage-cleanup/handler.ts";
+import { handler as curriculumParse } from "../curriculum-import-parse/handler.ts";
 
 const routes: Record<string, (r: Request) => Promise<Response>> = {
   "storage-upload-url": uploadUrl,
@@ -15,6 +16,7 @@ const routes: Record<string, (r: Request) => Promise<Response>> = {
   "storage-download-url": downloadUrl,
   "storage-delete": del,
   "storage-cleanup": cleanup,
+  "curriculum-import-parse": curriculumParse,
 };
 
 const port = Number(Deno.env.get("FUNCTIONS_PORT") ?? 54330);

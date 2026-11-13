@@ -2,7 +2,7 @@
 -- ⚠️ fixture ทั้งหมดเป็นข้อมูลทดสอบที่สร้างขึ้น (รหัส TEST-*) ไม่ใช่ข้อมูลหลักสูตรจริง และถูก rollback
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(64);
+select plan(65);
 
 insert into public.schools (id, code, name_th) values
   ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A'),
@@ -182,7 +182,7 @@ select throws_ok($$select public.curriculum_import_row_decide((select id from pu
   '42501', null, 'service_role / AI ตัดสินแถวไม่ได้');
 reset role;
 select results_eq($$select status from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' order by row_no$$,
-  $$values ('valid'::text), ('error'), ('error'), ('needs_review')$$, 'สถานะแถว: ถูกต้อง / รหัสซ้ำ (V11) / ไม่มีค่า / AI → needs_review');
+  $$values ('valid'::text), ('error'), ('needs_review'), ('needs_review')$$, 'สถานะแถว: ถูกต้อง / รหัสซ้ำ (V11) / หน้า PDF รอถอดค่า / AI → needs_review');
 select ok((select issues @> '[{"code":"V22","severity":"info"}]' from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 1),
   'V22 แจ้งชั่วโมง≠หน่วยกิต×40 เป็น info เท่านั้น ไม่แก้ค่า');
 select is((select normalized ->> 'learning_hours' from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 1), '40', 'ค่าต้นฉบับไม่ถูกเขียนทับ');
@@ -195,6 +195,8 @@ reset role;
 select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000003');
 select throws_ok($$select public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 2), 'approve')$$,
   'P0001', 'แถวนี้ยังมีข้อผิดพลาด อนุมัติไม่ได้', 'แถว error อนุมัติไม่ได้');
+select throws_ok($$select public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 3), 'approve')$$,
+  'P0001', 'ยังไม่ได้กรอกค่าจากต้นฉบับ อนุมัติไม่ได้', 'แถว PDF ที่ยังไม่ถอดค่า อนุมัติไม่ได้');
 select is(public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 1), 'approve'), 'approved', 'เจ้าหน้าที่อนุมัติแถว valid');
 select is(public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 2), 'skip', null, 'มีอยู่แล้ว'), 'skipped', 'ข้ามแถวซ้ำ');
 select is(public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 3), 'approve',

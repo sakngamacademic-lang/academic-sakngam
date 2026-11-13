@@ -1,26 +1,44 @@
 # แผนนำ Migration ขึ้น Hosted Supabase Staging (รออนุมัติ — ยังไม่ดำเนินการ)
 
-> สถานะ: **แผนเท่านั้น** · ยังไม่ได้เชื่อมต่อ Hosted Project · ยังไม่ได้ apply migration ใด ๆ
+> สถานะ: **แผน + dry run ฝั่ง repo ผ่านแล้ว** · Hosted `ifwernczbnkpadikqigj` ยังไม่มี migration ใด · ยังไม่ apply (รออนุมัติ)
 > ใช้เฉพาะข้อมูลทดสอบ (`*.test`, ชื่อสมมติ) · ไม่มีข้อมูลนักเรียน/บุคลากรจริง
 
-## 1. Migration ที่จะนำขึ้น (forward-only, เรียงตามเวลา)
+## 1. Migration ที่จะนำขึ้น (forward-only, เรียงตามเวลา) — ครบ 21 ไฟล์ (อัปเดต 13 พ.ย. 2569)
 
-| # | ไฟล์ | เนื้อหา |
-|---|---|---|
-| 1 | `20261112000100_foundation.sql` | default privileges, schema `private`, enum `app_role` |
-| 2 | `20261112000200_core_identity.sql` | `schools`, `profiles`, `user_roles`, trigger สร้าง profile |
-| 3 | `20261112000300_audit_logs.sql` | `audit_logs` (append-only) + trigger |
-| 4 | `20261112000400_rls_policies.sql` | helper functions + RLS core |
-| 5 | `20261113000100_get_my_access.sql` | RPC สิทธิ์ผู้ใช้ |
-| 6 | `20261114000100_master_data_tables.sql` | ปีการศึกษา ภาคเรียน ระดับชั้น ห้องเรียน กลุ่มสาระ |
-| 7 | `20261114000200_learning_area_scope.sql` | scope หัวหน้ากลุ่มสาระ |
-| 8 | `20261114000300_master_data_rls.sql` | RLS + RPC master data |
-| 9 | `20261115000100_teacher_registry.sql` | **Phase 1.5** ทะเบียนครู + RLS + RPC ผูกบัญชี |
-| 10 | `20261116000100_document_storage.sql` | **Phase 1.6** documents / files / file_events + RPC จัดเก็บเอกสาร |
-| 11 | `20261117000100_task_assignment.sql` | **Phase 1.7** tasks / task_assignments / assignment_events / view task_progress + RPC เผยแพร่ ยกเลิก + แม่แบบงาน (แก้ช่องโหว่ owner null ใน storage_begin_upload) |
+สถานะ Hosted `ifwernczbnkpadikqigj` (ผลตรวจของผู้ใช้): ไม่มี schema `supabase_migrations` และไม่มี `public.get_my_access()` → **ยังไม่มี migration ใดถูกติดตั้ง** ทั้ง 21 ไฟล์จะเป็น pending
+(`supabase db push` สร้างตาราง `supabase_migrations.schema_migrations` เองระหว่าง push — **ห้ามสร้างด้วยมือ**)
 
-ตรวจแล้วบน local (PostgreSQL 17 เท่ากับ Hosted): `supabase db reset` ผ่าน · pgTAP 156/156 · E2E 56/56
-ข้อควรระวัง: migration 9 ใช้ `on delete set null (profile_id)` ต้องใช้ PostgreSQL ≥ 15 (Hosted ใหม่เป็น 17)
+| # | ไฟล์ | เนื้อหา | ผลกระทบต่อข้อมูลเดิมบน Hosted |
+|---|---|---|---|
+| 1 | `20261112000100_foundation` | default privileges, schema `private`, enum `app_role` | สร้างใหม่เท่านั้น |
+| 2 | `20261112000200_core_identity` | `schools`, `profiles`, `user_roles`, trigger `on_auth_user_created` / `on_auth_user_email_changed` บน `auth.users` | **ไม่ backfill** — บัญชี Auth ที่มีอยู่แล้วจะยังไม่มีแถว `profiles` (ดูข้อ 5) · ไม่แก้/ลบ `auth.users` |
+| 3 | `20261112000300_audit_logs` | `audit_logs` (append-only) + trigger | สร้างใหม่ |
+| 4 | `20261112000400_rls_policies` | helper functions + RLS core | สร้างใหม่ |
+| 5 | `20261113000100_get_my_access` | RPC สิทธิ์ผู้ใช้ (แก้อาการค้าง "กำลังตรวจสอบสิทธิ์") | สร้างใหม่ |
+| 6 | `20261114000100_master_data_tables` | ปีการศึกษา ภาคเรียน ระดับชั้น ห้องเรียน กลุ่มสาระ | สร้างใหม่ |
+| 7 | `20261114000200_learning_area_scope` | scope หัวหน้ากลุ่มสาระ (เปลี่ยน unique ของ `user_roles`) | drop/สร้าง constraint บนตารางที่สร้างในข้อ 2 (ยังว่าง) |
+| 8 | `20261114000300_master_data_rls` | RLS + RPC master data | สร้างใหม่ |
+| 9 | `20261115000100_teacher_registry` | ทะเบียนครู + RPC ผูกบัญชี | สร้างใหม่ |
+| 10 | `20261116000100_document_storage` | documents / files / file_events + RPC จัดเก็บเอกสาร | สร้างใหม่ (ไม่แตะ schema `storage`) |
+| 11 | `20261117000100_task_assignment` | tasks / task_assignments / assignment_events + RPC | ผ่อน not null ของ `documents.owner_teacher_id` (ตารางข้อ 10) |
+| 12 | `20261118000100_curriculum_schema` | ตารางหลักสูตร 20 ตาราง + guard triggers | แทน check constraint ของ `documents` (เพิ่มชนิด `curriculum_source`) |
+| 13 | `20261118000200_curriculum_security` | RLS หลักสูตร + RPC version/cohort/mapping | แทน constraint ขนาดไฟล์ของ `files` (สูงสุด 100MB สำหรับเอกสารหลักสูตร) |
+| 14 | `20261118000300_curriculum_import` | Import Engine (staging → review → approve → commit) | สร้างใหม่ |
+| 15 | `20261118000400_curriculum_import_pdf_rows` | แถวรายหน้าจาก PDF | `create or replace` ฟังก์ชันจากข้อ 14 |
+| 16 | `20261118000500_curriculum_is_subjects` | รายวิชา IS ไม่สังกัดกลุ่มสาระ แยก ม.ต้น/ม.ปลาย | ผ่อน not null + แทน unique ของ `subjects` (ตารางข้อ 12, ยังว่าง) |
+| 17 | `20261118000600_conflict_register` | ทะเบียนข้อขัดแย้ง (needs_decision) | แทน status check ของ `source_conflicts` |
+| 18 | `20261118000700_curriculum_review_queue` | ตรวจความสัมพันธ์ข้ามชุดนำเข้า (อ่านอย่างเดียว) | สร้างใหม่ |
+| 19 | `20261118000800_curriculum_rules` | เกณฑ์ Compliance + สรุปโครงสร้าง | สร้างใหม่ |
+| 20 | `20261118000900_course_sections` | กลุ่มเรียน + ภาระงานครู | เพิ่ม unique (id, version) บนตารางข้อ 12 |
+| 21 | `20261119000100_bootstrap_school_role` | bootstrap บทบาทแรก (postgres เท่านั้น) | สร้างฟังก์ชันเท่านั้น ไม่รันเอง |
+
+ตรวจแล้ว (13 พ.ย. 2569)
+- ทั้ง 21 ไฟล์อยู่ใน Git (`git ls-files`) และลำดับเวลาไม่ซ้ำ
+- **ติดตั้งจากฐานข้อมูลว่างบน stack แยก** (Supabase local ชุดที่ 2, ไม่ใช้ seed): ผ่านครบ 21 ไฟล์ตามลำดับ → dependency ถูกต้อง
+- schema `public`/`private` + grants (ตาราง/คอลัมน์/ฟังก์ชัน) ของฐานข้อมูลที่ติดตั้งใหม่ **ตรงกับ local ทุกบรรทัด**
+- pgTAP บนฐานข้อมูลที่ติดตั้งใหม่: **397/397** (ไม่พึ่ง seed)
+- ไม่มีคำสั่งระดับบนสุดที่ลบ/ล้าง/เขียนทับข้อมูล (`drop table`, `truncate`, `delete`, `update`) — `update/delete` อยู่ในตัวฟังก์ชันเท่านั้น · `drop` มีเฉพาะ constraint ที่ถูกแทนทันที · ไม่ใช้ extension เพิ่ม · อ้าง `auth.users` (trigger) แต่ไม่แก้ข้อมูลใน `auth`
+- PostgreSQL local 17.11 (`major_version = 17`) — **Hosted ยังไม่ได้ยืนยันเวอร์ชัน** (ต้อง ≥ 15 สำหรับ `on delete set null (column)` ในข้อ 9; ฟังก์ชัน `hashtextextended` ต้อง ≥ 11)
 
 ## 2. ขั้นตอน (ทำเมื่อได้รับอนุมัติแต่ละขั้น)
 
@@ -45,3 +63,11 @@
 ## 4. Rollback
 
 Migration เป็น forward-only: หากพบปัญหาบน staging ให้แก้ด้วย migration ใหม่ หรือ reset staging database (ข้อมูลทดสอบเท่านั้น) ผ่าน Dashboard — ไม่แก้ไฟล์ migration เดิม
+
+## 5. หลัง Apply (ต้องได้รับอนุมัติแยก)
+
+1. บัญชี Auth ที่สร้างก่อน migration ไม่มีแถว `profiles` (trigger ทำงานเฉพาะบัญชีใหม่) → แอปจะแสดง "ไม่พบข้อมูลโปรไฟล์ของบัญชีนี้"
+   ทางแก้ที่ไม่ลบบัญชี: เพิ่ม `profiles` ให้บัญชีเดิมผ่าน SQL Editor (ระบุ id/email จาก `auth.users`) หลังสร้างแถว `schools` แล้ว
+2. สร้างแถว `schools` ของโรงเรียน (รหัส/ชื่อที่ฝ่ายวิชาการยืนยัน — ไม่ใช้ seed `SNW-DEV`)
+3. Bootstrap บทบาทแรกด้วย `private.bootstrap_school_role` (ดู `STAGING-LOGIN-RUNBOOK.md` ข้อ 4)
+4. รัน `scripts/staging/diagnose-login.sql` ยืนยันข้อ 1–8

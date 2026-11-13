@@ -63,9 +63,10 @@ export const officePortal: PortalConfig = {
     {
       title: "หลักสูตร",
       items: [
-        { path: "curriculum", label: "หลักสูตรสถานศึกษา", icon: BookOpen, plannedPhase: "Phase 2" },
-        { path: "standards", label: "มาตรฐาน & ตัวชี้วัด", icon: Target, plannedPhase: "Phase 2" },
-        { path: "subjects", label: "รายวิชา & โครงสร้าง", icon: ListChecks, plannedPhase: "Phase 2" },
+        { path: "curriculum", label: "หลักสูตรสถานศึกษา", icon: BookOpen },
+        { path: "curriculum/structure", label: "โครงสร้างรายวิชา", icon: ListChecks },
+        { path: "curriculum/indicators", label: "มาตรฐาน & ตัวชี้วัด", icon: Target },
+        { path: "curriculum/imports", label: "นำเข้า & ตรวจสอบ", icon: FileSpreadsheet },
       ],
     },
     {

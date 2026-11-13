@@ -22,12 +22,14 @@ export interface UploadTarget {
   documentId?: string;
   /** แนบเป็นแม่แบบของภาระงาน */
   taskId?: string;
+  /** เอกสารต้นทางหลักสูตร (PDF / Excel ≤ 100 MB, ฝ่ายวิชาการ) */
+  curriculumSource?: boolean;
   title?: string;
   category?: string;
 }
 
 export interface DocumentStorage {
-  upload(file: File, target: UploadTarget, onStage?: (s: "requesting" | "uploading" | "verifying") => void): Promise<{ fileId: string; documentId: string; version: number }>;
+  upload(file: File, target: UploadTarget, onStage?: (s: "requesting" | "uploading" | "verifying") => void): Promise<{ fileId: string; documentId: string; version: number; sha256: string }>;
   downloadUrl(fileId: string): Promise<{ url: string; fileName: string }>;
   /** ดาวน์โหลดด้วย presigned URL อายุ 5 นาที */
   download(fileId: string): Promise<void>;
@@ -36,7 +38,8 @@ export interface DocumentStorage {
 
 const functionsBase = () => env.VITE_FUNCTIONS_URL || `${env.VITE_SUPABASE_URL}/functions/v1`;
 
-async function call<T>(name: string, body: unknown): Promise<T> {
+/** เรียก Edge Function ด้วย JWT ของผู้ใช้ (ใช้ร่วมกับ curriculum-import-parse) */
+export async function callFunction<T>(name: string, body: unknown): Promise<T> {
   const { data } = await requireSupabase().auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new StorageError("กรุณาเข้าสู่ระบบ");
@@ -56,31 +59,33 @@ async function call<T>(name: string, body: unknown): Promise<T> {
 }
 
 /** ตรวจเบื้องต้นฝั่ง client (ฝั่ง server ตรวจซ้ำเสมอ รวม magic bytes) */
-export function precheck(file: File): { ext: string; mime: string } {
+export const MAX_SOURCE_BYTES = 100 * 1024 * 1024;
+
+export function precheck(file: File, maxBytes = MAX_FILE_BYTES): { ext: string; mime: string } {
   const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
   const mime = ACCEPTED[ext];
   if (!mime) throw new StorageError("รองรับเฉพาะไฟล์ PDF, Word (.doc/.docx) และ Excel (.xls/.xlsx)");
-  if (file.size < 1 || file.size > MAX_FILE_BYTES) throw new StorageError("ขนาดไฟล์ต้องไม่เกิน 20 MB");
+  if (file.size < 1 || file.size > maxBytes) throw new StorageError(`ขนาดไฟล์ต้องไม่เกิน ${maxBytes / 1024 / 1024} MB`);
   return { ext, mime };
 }
 
 export const edgeFunctionStorage: DocumentStorage = {
   async upload(file, target, onStage) {
-    const { mime } = precheck(file);
+    const { mime } = precheck(file, target.curriculumSource ? MAX_SOURCE_BYTES : MAX_FILE_BYTES);
     onStage?.("requesting");
-    const t = await call<{ fileId: string; documentId: string; version: number; uploadUrl: string; headers: Record<string, string> }>(
+    const t = await callFunction<{ fileId: string; documentId: string; version: number; uploadUrl: string; headers: Record<string, string> }>(
       "storage-upload-url",
-      { documentId: target.documentId ?? null, taskId: target.taskId ?? null, title: target.title, category: target.category, fileName: file.name, mimeType: mime, size: file.size },
+      { documentId: target.documentId ?? null, taskId: target.taskId ?? null, curriculumSource: target.curriculumSource ?? false, title: target.title, category: target.category, fileName: file.name, mimeType: mime, size: file.size },
     );
     onStage?.("uploading");
     const put = await fetch(t.uploadUrl, { method: "PUT", headers: t.headers, body: file }).catch(() => null);
     if (!put?.ok) throw new StorageError("อัปโหลดไฟล์ไม่สำเร็จ กรุณาลองใหม่");
     onStage?.("verifying");
-    await call("storage-confirm-upload", { fileId: t.fileId });
-    return { fileId: t.fileId, documentId: t.documentId, version: t.version };
+    const c = await callFunction<{ sha256: string }>("storage-confirm-upload", { fileId: t.fileId });
+    return { fileId: t.fileId, documentId: t.documentId, version: t.version, sha256: c.sha256 };
   },
   async downloadUrl(fileId) {
-    return call<{ url: string; fileName: string }>("storage-download-url", { fileId });
+    return callFunction<{ url: string; fileName: string }>("storage-download-url", { fileId });
   },
   async download(fileId) {
     // ดาวน์โหลดตรงจาก storage ด้วย presigned URL (Content-Disposition: attachment + ชื่อไฟล์ UTF-8)
@@ -88,6 +93,6 @@ export const edgeFunctionStorage: DocumentStorage = {
     window.location.assign(url);
   },
   async remove(fileId) {
-    await call("storage-delete", { fileId });
+    await callFunction("storage-delete", { fileId });
   },
 };

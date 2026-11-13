@@ -42,6 +42,9 @@ const CAPABILITIES = {
   "roles.manage": ["system_admin"],
   "teachers.manage": ["system_admin", "academic_head", "academic_staff"],
   "teachers.link": ["system_admin", "academic_head"],
+  "curriculum.edit": ["academic_head", "academic_staff", "learning_area_head"],
+  "curriculum.manage": ["academic_head", "academic_staff"],
+  "curriculum.approve": ["academic_head"],
 } satisfies Record<string, readonly AppRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;

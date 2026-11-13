@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "storage:dev": "node scripts/storage-dev.mjs",
     "functions:check": "deno check --config supabase/functions/deno.json supabase/functions/_dev/serve.ts",
-    "test:sigv4": "node --test scripts/sigv4-verify.test.mjs"
+    "test:sigv4": "node --test scripts/sigv4-verify.test.mjs",
+    "test:functions": "deno test --config supabase/functions/deno.json --allow-net --allow-env --allow-read --allow-sys supabase/functions/"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",

@@ -14,6 +14,7 @@ import { TeacherDocumentsPage } from "@/features/documents/pages/TeacherDocument
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
 import { TaskCreatePage } from "@/features/tasks/pages/TaskCreatePage";
 import { TaskDetailPage } from "@/features/tasks/pages/TaskDetailPage";
+import { curriculumMenuPages, curriculumSubRoutes } from "@/features/curriculum/routes";
 import { officePortal } from "./navigation";
 
 const TASK_MANAGERS: readonly AppRole[] = ["academic_head", "academic_staff", "learning_area_head"];
@@ -32,6 +33,7 @@ export const officeRoutes: RouteObject = {
     // หน้าย่อยของภาระงาน (ไม่อยู่ในเมนู) — guard ตามบทบาทเดียวกับ Permission Matrix
     { path: "tasks/create", element: <RequireRoles roles={TASK_MANAGERS}><TaskCreatePage /></RequireRoles> },
     { path: "tasks/:taskId", element: <RequireRoles roles={TASK_VIEWERS}><TaskDetailPage /></RequireRoles> },
+    ...curriculumSubRoutes,
     ...buildPortalRoutes(officePortal, {
     "": <OfficeDashboardPage />,
     "academic-years": <AcademicYearsPage />,
@@ -42,6 +44,7 @@ export const officeRoutes: RouteObject = {
     teachers: <TeachersPage />,
     documents: <TeacherDocumentsPage />,
     tasks: <TasksPage />,
+    ...curriculumMenuPages,
   }),
   ],
 };

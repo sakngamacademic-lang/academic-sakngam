@@ -101,3 +101,25 @@ erDiagram
 |---|---|
 | `v_classroom_curriculum` | ห้องเรียน → ฉบับหลักสูตรของรุ่น (`resolved` / `unresolved` / `ambiguous`) ผ่าน RPC `curriculum_resolve` — ไม่ใช้ปีปัจจุบัน |
 | `v_indicator_coverage` | ตัวชี้วัดแต่ละตัว × ฉบับหลักสูตร: `verified` / `pending_review` / `unmapped` + `evidence_incomplete` + `possible_duplicate` + `framework_complete` |
+
+## 6. ส่วนขยาย C1.5–C3 (migrations `20261118000500`–`20261118000900`)
+
+| ตาราง / ฟังก์ชัน | หน้าที่ |
+|---|---|
+| `subjects.subject_category` (`regular`/`is`) + `education_stage` | รายวิชา IS ไม่สังกัดกลุ่มสาระ แยก ม.ต้น/ม.ปลาย · unique: regular = (version, code) · is = (version, code, stage) |
+| `source_conflicts` + category / value_a / value_b / difference / impact_note / recommendation / decision_authority | ทะเบียนข้อขัดแย้ง · สถานะ open → needs_decision → resolved (หัวหน้าฝ่ายวิชาการเท่านั้น) |
+| `curriculum_review_queue()` / `curriculum_staged_structure()` | ตรวจความสัมพันธ์ข้ามชุดนำเข้า และยอดจากข้อมูลรอตรวจ (อ่านอย่างเดียว) |
+| `curriculum_rules` + `curriculum_compliance_check()` + `curriculum_structure_summary()` | เกณฑ์จากเอกสาร (มีแหล่ง/เวอร์ชัน, ยืนยันโดยมนุษย์) · ผล pass/warning/fail/insufficient_data จากข้อมูลที่บันทึกแล้ว |
+| `course_sections` → `course_section_teachers` → `teachers` · `v_teacher_load` | กลุ่มเรียนของหลักสูตรฉบับที่อนุมัติ · ครูหลายคน · แยกคาบ/ชั่วโมงสอน/ชั่วโมงกิจกรรม/หน่วยกิต |
+
+```mermaid
+erDiagram
+  curriculum_versions ||--o{ course_sections : "approved/active เท่านั้น"
+  subject_offerings ||--o{ course_sections : ""
+  learning_activities ||--o{ course_sections : ""
+  terms ||--o{ course_sections : ""
+  classrooms ||--o{ course_sections : "nullable"
+  course_sections ||--o{ course_section_teachers : ""
+  teachers ||--o{ course_section_teachers : ""
+  source_documents ||--o{ curriculum_rules : "source + locator"
+```

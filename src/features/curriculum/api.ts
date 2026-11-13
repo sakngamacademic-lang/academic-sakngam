@@ -559,8 +559,8 @@ export function useCurriculumCounts() {
         head("indicators"),
         sb.from("import_rows").select("id", { count: "exact", head: true }).in("status", ["pending", "valid", "warning", "error", "needs_review"]),
         sb.from("import_batches").select("id", { count: "exact", head: true }).not("status", "in", "(committed,rejected)"),
-        sb.from("source_conflicts").select("id", { count: "exact", head: true }).eq("status", "open"),
-        sb.from("source_conflicts").select("id", { count: "exact", head: true }).eq("status", "open").eq("impact", "blocking"),
+        sb.from("source_conflicts").select("id", { count: "exact", head: true }).neq("status", "resolved"),
+        sb.from("source_conflicts").select("id", { count: "exact", head: true }).neq("status", "resolved").eq("impact", "blocking"),
       ]);
       const c = (r: { count: number | null }) => r.count ?? 0;
       return {
@@ -630,6 +630,92 @@ export function useReviewQueue(versionId: string | undefined) {
       const { data, error } = await sb.rpc("curriculum_review_queue", args).in("resolution", ["staged_error", "missing"]).order("kind").order("row_no").limit(500);
       if (error) throw error;
       return { counts: { committed, staged, staged_error: stagedError, missing }, problems: (data ?? []) as ReviewQueueRow[] };
+    },
+  });
+}
+
+// ---------------------------------------------------------------- Compliance / Analytics (ข้อมูลจริงจากฐานข้อมูลเท่านั้น)
+export type ComplianceStatus = "pass" | "warning" | "fail" | "insufficient_data";
+export interface ComplianceRow {
+  rule_code: string;
+  rule_version: number;
+  title_th: string;
+  category: string;
+  source: string;
+  scope: string;
+  status: ComplianceStatus;
+  expected: string | null;
+  actual: string | null;
+  detail: string | null;
+}
+export const COMPLIANCE_LABELS: Record<ComplianceStatus, string> = { pass: "ผ่าน", warning: "เตือน", fail: "ไม่ผ่าน", insufficient_data: "ข้อมูลไม่พอ" };
+export function useCompliance(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "compliance", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => (await callRpc<ComplianceRow[]>("curriculum_compliance_check", { p_version_id: versionId })) ?? [],
+  });
+}
+export interface CurriculumRule {
+  id: string;
+  code: string;
+  version: number;
+  title_th: string;
+  category: string;
+  rule_type: string;
+  params: Record<string, unknown>;
+  source_locator: string | null;
+  source_document_id: string | null;
+  status: "draft" | "verified" | "retired";
+  proposed_by: string;
+  note: string | null;
+  verified_at: string | null;
+}
+export function useRules() {
+  return useQuery({
+    queryKey: [...curriculumKey, "rules"],
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().from("curriculum_rules")
+        .select("id, code, version, title_th, category, rule_type, params, source_locator, source_document_id, status, proposed_by, note, verified_at").order("code");
+      if (error) throw error;
+      return data as CurriculumRule[];
+    },
+  });
+}
+export interface StructureSummaryRow { grade_code: string; program_code: string | null; subject_type: "basic" | "additional"; subjects: number; credits: number; learning_hours: number }
+export function useStructureSummary(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "structure-summary", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => (await callRpc<StructureSummaryRow[]>("curriculum_structure_summary", { p_version_id: versionId })) ?? [],
+  });
+}
+/** สถานะแถวนำเข้าต่อชนิดชุด — จาก import_batches.counts (คำนวณโดยฐานข้อมูลทุกครั้งที่แถวเปลี่ยน) */
+export function useImportPipeline(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "pipeline", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().from("import_batches").select("kind, status, counts").eq("curriculum_version_id", versionId!).neq("status", "rejected");
+      if (error) throw error;
+      const out: Record<string, Record<string, number>> = {};
+      for (const b of (data ?? []) as { kind: string; counts: Record<string, number> }[]) {
+        const o = (out[b.kind] ??= {});
+        for (const [k, v] of Object.entries(b.counts ?? {})) o[k] = (o[k] ?? 0) + Number(v);
+      }
+      return out;
+    },
+  });
+}
+export function useMappingCounts(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "mapping-counts", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => {
+      const sb = requireSupabase();
+      const c = async (st: string) => (await sb.from("curriculum_indicator_mappings").select("id", { count: "exact", head: true }).eq("curriculum_version_id", versionId!).eq("status", st)).count ?? 0;
+      const [verified, pending, rejected] = await Promise.all([c("verified"), c("pending_review"), c("rejected")]);
+      return { verified, pending, rejected };
     },
   });
 }

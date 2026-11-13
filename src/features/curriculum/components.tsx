@@ -1,11 +1,13 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, FileSearch, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, FileSearch, Info, Loader2 } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-controls";
 import { cn } from "@/lib/utils";
-import { allVersions, PAGE_SIZE, useCurricula, VERSION_STATUS_LABELS, type VersionStatus } from "./api";
+import { callFunction } from "@/lib/storage";
+import { toast } from "@/lib/toast";
+import { allVersions, PAGE_SIZE, useCurricula, useSourceDocuments, VERSION_STATUS_LABELS, type SourceDocument, type VersionStatus } from "./api";
 
 const TABS = [
   { to: "/office/curriculum", label: "ภาพรวม", end: true },
@@ -15,6 +17,7 @@ const TABS = [
   { to: "/office/curriculum/structure", label: "โครงสร้าง" },
   { to: "/office/curriculum/indicators", label: "ตัวชี้วัด & Mapping" },
   { to: "/office/curriculum/imports", label: "แหล่งข้อมูล & นำเข้า" },
+  { to: "/office/curriculum/conflicts", label: "ข้อขัดแย้ง" },
   { to: "/office/curriculum/review", label: "ตรวจรายแถว" },
 ];
 
@@ -153,5 +156,47 @@ export function VersionStatusNotice({ status }: { status: VersionStatus | undefi
     <p role="status" data-testid="version-status-notice" className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
       <b>{VERSION_STATUS_LABELS[status]}</b> — ข้อมูลในฉบับนี้{status === "retired" ? "เลิกใช้แล้ว" : "ยังไม่ผ่านการอนุมัติ ไม่ใช่หลักสูตรที่ใช้งานจริง"}
     </p>
+  );
+}
+
+/**
+ * Source Viewer: หาไฟล์ส่วนที่ครอบคลุมหน้า PDF ฉบับเต็ม (เอกสารลูกเรียงตามรหัสทะเบียน) แล้วเปิด presigned URL แบบ inline ที่ #page=N
+ * โหลดเฉพาะเมื่อกด (ไม่โหลด PDF ทั้งเล่มเข้าหน้าจอ) · URL หมดอายุ 5 นาที · ตรวจสิทธิ์และบันทึก log ที่ฐานข้อมูล
+ */
+export function resolvePdfPart(docs: SourceDocument[], docId: string, page: number): { fileId: string; localPage: number; code: string } | null {
+  const doc = docs.find((d) => d.id === docId);
+  if (!doc) return null;
+  if (doc.file_id && (!doc.page_count || page <= doc.page_count)) return { fileId: doc.file_id, localPage: page, code: doc.register_code };
+  let start = 1;
+  for (const part of docs.filter((d) => d.parent_id === docId).sort((a, b) => a.register_code.localeCompare(b.register_code))) {
+    const n = part.page_count ?? 0;
+    if (page >= start && page < start + n && part.file_id) return { fileId: part.file_id, localPage: page - start + 1, code: part.register_code };
+    start += n;
+  }
+  return null;
+}
+
+export function SourcePdfLink({ docId, locator }: { docId: string | null | undefined; locator: string | null | undefined }) {
+  const docs = useSourceDocuments();
+  const [busy, setBusy] = useState(false);
+  const page = Number(/(?:^|;)pdf:(\d+)/.exec(locator ?? "")?.[1] ?? NaN);
+  if (!docId || !Number.isFinite(page)) return null;
+  const part = docs.data ? resolvePdfPart(docs.data, docId, page) : null;
+  if (!part) return null;
+  return (
+    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" disabled={busy} aria-label={`เปิดต้นฉบับ PDF หน้า ${page}`}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const r = await callFunction<{ url: string }>("storage-download-url", { fileId: part.fileId, inline: true });
+          window.open(`${r.url}#page=${part.localPage}`, "_blank", "noopener");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "เปิดไฟล์ไม่สำเร็จ");
+        } finally {
+          setBusy(false);
+        }
+      }}>
+      {busy ? <Loader2 className="animate-spin" /> : <ExternalLink />} PDF หน้า {page}
+    </Button>
   );
 }

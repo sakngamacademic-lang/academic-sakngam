@@ -36,10 +36,10 @@ export const uriEncode = (s: string, keepSlash = false) =>
     .join("");
 
 /** RFC 6266: ชื่อ ASCII สำรอง + ชื่อจริง (UTF-8) สำหรับชื่อไฟล์ภาษาไทย */
-export function contentDisposition(name: string) {
+export function contentDisposition(name: string, inline = false) {
   const ext = name.match(/\.[A-Za-z0-9]{1,5}$/)?.[0] ?? "";
   const fallback = /^[\x20-\x7e]+$/.test(name) && !/["\\]/.test(name) ? name : `document${ext}`;
-  return `attachment; filename="${fallback}"; filename*=UTF-8''${uriEncode(name)}`;
+  return `${inline ? "inline" : "attachment"}; filename="${fallback}"; filename*=UTF-8''${uriEncode(name)}`;
 }
 
 function amzDate(now: Date) {
@@ -116,7 +116,7 @@ export class S3CompatibleProvider implements StorageProvider {
 
   presignGet(key: string, o: PresignGetOptions) {
     return this.presign("GET", key, o.expiresInSeconds, {
-      "response-content-disposition": contentDisposition(o.downloadName),
+      "response-content-disposition": contentDisposition(o.downloadName, o.inline === true),
       "response-content-type": o.contentType,
     }, {});
   }

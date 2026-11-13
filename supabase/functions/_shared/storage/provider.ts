@@ -12,6 +12,8 @@ export interface PresignGetOptions {
   downloadName: string;
   contentType: string;
   expiresInSeconds: number;
+  /** แสดงในเบราว์เซอร์ (ใช้กับ PDF ต้นฉบับเพื่อเปิดตรงหน้า #page=N) — ค่าเริ่มต้น attachment */
+  inline?: boolean;
 }
 
 export interface ObjectHead {

@@ -21,7 +21,6 @@ import {
   DOC_TYPE_LABELS,
   insertRow,
   NORMALIZED_FIELDS,
-  rpc,
   useBatches,
   useConflicts,
   useCurricula,
@@ -36,7 +35,6 @@ export function ImportsPage() {
   const { can } = useAuth();
   const canManage = can("curriculum.manage");
   const canEdit = can("curriculum.edit");
-  const canApprove = can("curriculum.approve");
   const qc = useQueryClient();
   const sources = useSourceDocuments();
   const conflicts = useConflicts();
@@ -60,18 +58,6 @@ export function ImportsPage() {
       await refresh();
     }
   };
-  const resolve = async (id: string) => {
-    const resolution = window.prompt("ผลการตัดสินและเหตุผล (อ้างเอกสารระดับที่น่าเชื่อถือกว่า)");
-    if (!resolution) return;
-    try {
-      await rpc("source_conflict_resolve", { p_id: id, p_resolution: resolution });
-      toast.success("บันทึกผลการตัดสินแล้ว");
-      await refresh();
-    } catch (e) {
-      toast.error(dbErrorMessage(e));
-    }
-  };
-
   return (
     <>
       <PageHeader title="แหล่งข้อมูล & นำเข้า" description="อัปโหลด → อ่านไฟล์ → ตรวจ → ตรวจรายแถว → อนุมัติ (คนละคน) → บันทึก · ไฟล์ต้นฉบับเก็บแบบ private"
@@ -95,25 +81,12 @@ export function ImportsPage() {
         />
       </DashSection>
 
-      <DashSection id="conflicts" className="mt-4" title="ข้อขัดแย้งระหว่างเอกสาร" meta={`${conflicts.data?.filter((c) => c.status === "open").length ?? 0} เปิดอยู่`}
+      <DashSection id="conflicts" className="mt-4" title="ข้อขัดแย้งระหว่างเอกสาร"
+        meta={`${conflicts.data?.filter((c) => c.status !== "resolved").length ?? 0} ยังไม่ตัดสิน · ${conflicts.data?.length ?? 0} ทั้งหมด`}
         actions={canManage && <Button size="sm" variant="outline" onClick={() => setDialog("conflict")} disabled={!sources.data?.length}><Plus /> บันทึกข้อขัดแย้ง</Button>}>
-        {!conflicts.data?.length ? <p className="text-sm text-muted-foreground">ยังไม่มีข้อขัดแย้งที่บันทึก</p> : (
-          <ul className="divide-y text-sm">
-            {conflicts.data.map((c) => (
-              <li key={c.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2"><code className="text-xs">{c.conflict_code}</code>
-                    <Badge variant={c.impact === "blocking" ? "destructive" : "warning"}>{c.impact}</Badge>
-                    <Badge variant={c.status === "open" ? "outline" : "success"}>{c.status === "open" ? "เปิดอยู่" : "ตัดสินแล้ว"}</Badge>
-                    <span className="text-xs text-muted-foreground">{docCode.get(c.doc_a_id)}{c.doc_b_id ? ` ↔ ${docCode.get(c.doc_b_id)}` : ""}</span></p>
-                  <p className="mt-1">{c.description}</p>
-                  {c.resolution && <p className="text-xs text-muted-foreground">ผลตัดสิน: {c.resolution}</p>}
-                </div>
-                {canApprove && c.status === "open" && <Button size="sm" variant="outline" onClick={() => resolve(c.id)}>ตัดสิน</Button>}
-              </li>
-            ))}
-          </ul>
-        )}
+        <p className="text-sm text-muted-foreground">
+          ตรวจ คัดกรอง และตัดสินข้อขัดแย้งได้ที่ <Link className="text-primary underline-offset-4 hover:underline" to="/office/curriculum/conflicts">ทะเบียนข้อขัดแย้ง</Link>
+        </p>
       </DashSection>
 
       <DashSection id="batches" className="mt-4" title={<span className="flex items-center gap-2">ชุดนำเข้า <LiveBadge /></span>}

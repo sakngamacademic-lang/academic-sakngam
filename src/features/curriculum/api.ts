@@ -142,6 +142,7 @@ export interface SourceDocument {
   declared_curriculum_ref: string | null;
   sha256: string | null;
   file_id: string | null;
+  parent_id: string | null;
   notes: string | null;
 }
 export function useSourceDocuments() {
@@ -150,7 +151,7 @@ export function useSourceDocuments() {
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from("source_documents")
-        .select("id, register_code, title, doc_type, reliability, content_status, status, page_count, page_offset, declared_curriculum_ref, sha256, file_id, notes")
+        .select("id, register_code, title, doc_type, reliability, content_status, status, page_count, page_offset, declared_curriculum_ref, sha256, file_id, parent_id, notes")
         .order("register_code");
       if (error) throw error;
       return data as SourceDocument[];
@@ -165,16 +166,42 @@ export interface SourceConflict {
   doc_b_id: string | null;
   description: string;
   impact: "blocking" | "warning";
-  status: "open" | "resolved";
+  status: ConflictStatus;
   resolution: string | null;
+  category: ConflictCategory;
+  subject_ref: string | null;
+  locator_a: string | null;
+  locator_b: string | null;
+  value_a: string | null;
+  value_b: string | null;
+  difference: string | null;
+  impact_note: string | null;
+  recommendation: string | null;
+  decision_authority: DecisionAuthority;
+  resolved_at: string | null;
+  updated_at: string;
 }
+export type ConflictStatus = "open" | "needs_decision" | "resolved";
+export type ConflictCategory =
+  | "page_reference" | "credits" | "learning_hours" | "program_total" | "duplicate_code" | "subject_name"
+  | "subject_type" | "subject_code" | "missing_data" | "framework" | "other";
+export type DecisionAuthority = "academic_head" | "learning_area_head" | "academic_committee" | "director";
+export const CONFLICT_STATUS_LABELS: Record<ConflictStatus, string> = { open: "เปิด", needs_decision: "รอตัดสินใจ", resolved: "ตัดสินแล้ว" };
+export const CONFLICT_CATEGORY_LABELS: Record<ConflictCategory, string> = {
+  page_reference: "เลขหน้า/ที่มา", credits: "หน่วยกิต", learning_hours: "ชั่วโมงเรียน", program_total: "ยอดรวมแผนการเรียน",
+  duplicate_code: "รหัสซ้ำ/ชื่อต่าง", subject_name: "ชื่อรายวิชา", subject_type: "ประเภทรายวิชา", subject_code: "รหัสวิชา",
+  missing_data: "ข้อมูลไม่ครบ", framework: "กรอบหลักสูตรแกนกลาง", other: "อื่น ๆ",
+};
+export const AUTHORITY_LABELS: Record<DecisionAuthority, string> = {
+  academic_head: "หัวหน้าฝ่ายวิชาการ", learning_area_head: "หัวหน้ากลุ่มสาระ", academic_committee: "คณะกรรมการวิชาการ", director: "ผู้อำนวยการ",
+};
 export function useConflicts() {
   return useQuery({
     queryKey: [...curriculumKey, "conflicts"],
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from("source_conflicts")
-        .select("id, conflict_code, doc_a_id, doc_b_id, description, impact, status, resolution")
+        .select("id, conflict_code, doc_a_id, doc_b_id, description, impact, status, resolution, category, subject_ref, locator_a, locator_b, value_a, value_b, difference, impact_note, recommendation, decision_authority, resolved_at, updated_at")
         .order("conflict_code");
       if (error) throw error;
       return data as SourceConflict[];

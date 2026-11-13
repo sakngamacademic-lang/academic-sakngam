@@ -6,6 +6,17 @@
 -- =============================================================================
 begin read only;
 
+-- 0. รันก่อน: ถ้ามีรายการขาด ข้อ 2–6 อาจ error เพราะตาราง/ฟังก์ชันยังไม่มี
+-- 8. Migration ที่ repo มี แต่ hosted ยังไม่มี (ว่าง = ครบ) · อัปเดตรายการนี้เมื่อเพิ่ม migration
+select '8. migrations ที่ขาด' as check_item, e.v as missing_version,
+       case when e.v = '20261113000100' then 'get_my_access() ไม่มี → แอปค้าง/แจ้ง "ระบบฐานข้อมูลยังติดตั้งไม่ครบ"' end as impact
+  from (values ('20261112000100'),('20261112000200'),('20261112000300'),('20261112000400'),('20261113000100'),('20261114000100'),('20261114000200'),('20261114000300'),('20261115000100'),('20261116000100'),('20261117000100'),('20261118000100'),('20261118000200'),('20261118000300'),('20261118000400'),('20261118000500'),('20261118000600'),('20261118000700'),('20261118000800'),('20261118000900'),('20261119000100')) e(v)
+ where e.v not in (select version from supabase_migrations.schema_migrations)
+ order by 2;
+select '8b. ฟังก์ชันตรวจสิทธิ์' as check_item, to_regprocedure('public.get_my_access()') is not null as get_my_access_exists,
+       has_function_privilege('authenticated', to_regprocedure('public.get_my_access()'), 'execute') as authenticated_can_execute;
+
+
 with params as (select lower('owner@example.com') as email),  -- ← แก้อีเมล
 u as (select au.* from auth.users au, params where lower(au.email) = params.email)
 select

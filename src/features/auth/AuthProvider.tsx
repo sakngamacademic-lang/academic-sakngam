@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, 
 import type { Session } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { fetchMyAccess, type MyAccess } from "./api";
+import { AccessCheckError, ACCESS_TIMEOUT_MS, fetchMyAccess, type MyAccess } from "./api";
 import type { SignOutReason } from "./errors";
 import { can, sortRoles, type AppRole, type Capability } from "./roles";
 
@@ -15,6 +15,9 @@ interface AuthContextValue {
   access: MyAccess | null;
   accessLoading: boolean;
   accessError: unknown;
+  /** Supabase Auth ไม่ตอบภายในเวลาที่กำหนด (ค้างที่ขั้นเริ่มต้น session) */
+  authInitTimedOut: boolean;
+  retryAccess: () => void;
   roles: AppRole[];
   can: (capability: Capability) => boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -35,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [lastSignOutReason, setLastSignOutReason] = useState<SignOutReason | null>(null);
   /** true เมื่อผู้ใช้/ระบบสั่ง signOut เอง เพื่อแยกจากกรณี session หมดอายุ */
   const intentionalSignOut = useRef(false);
+  const [authInitTimedOut, setAuthInitTimedOut] = useState(false);
+
+  // ขั้นเริ่มต้น session (อ่าน storage + refresh token) ต้องจบภายในเวลาที่กำหนด มิฉะนั้นแสดงข้อผิดพลาดแทน loading
+  useEffect(() => {
+    if (status !== "loading") return;
+    const timer = setTimeout(() => setAuthInitTimedOut(true), ACCESS_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -63,7 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: 30_000,
     refetchOnWindowFocus: true,
     refetchInterval: ACCESS_REFRESH_MS,
-    retry: 1,
+    // ไม่ลองซ้ำเมื่อสาเหตุแก้ไม่ได้ด้วยการลองใหม่ (ไม่มีฟังก์ชัน / ไม่มีสิทธิ์ / ไม่มีโปรไฟล์)
+    retry: (count, error) => count < 1 && (!(error instanceof AccessCheckError) || ["network", "unknown"].includes(error.kind)),
   });
   const access = accessQuery.data ?? null;
 
@@ -105,6 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       access,
       accessLoading: accessQuery.isPending && status === "signed_in",
       accessError: accessQuery.error,
+      authInitTimedOut: authInitTimedOut && status === "loading",
+      retryAccess: () => void accessQuery.refetch(),
       roles,
       can: (capability) => can(roles, capability),
       signIn,
@@ -112,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastSignOutReason,
       clearSignOutReason: () => setLastSignOutReason(null),
     };
-  }, [status, session, access, accessQuery.isPending, accessQuery.error, signIn, signOut, lastSignOutReason]);
+  }, [status, session, access, accessQuery, authInitTimedOut, signIn, signOut, lastSignOutReason]);
 
   return <AuthContext value={value}>{children}</AuthContext>;
 }

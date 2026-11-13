@@ -7,7 +7,7 @@ import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { env, isSupabaseConfigured, supabaseProjectLabel } from "@/lib/env";
 import { useAuth } from "../AuthProvider";
-import { FullPageSpinner } from "../guards";
+import { AccessErrorScreen, FullPageSpinner } from "../guards";
 import { authErrorMessage, SIGN_OUT_MESSAGES } from "../errors";
 import { defaultPortalPath } from "../roles";
 import { AuthLayout, Field, FormAlert, inputClass } from "./AuthLayout";
@@ -19,7 +19,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
-  const { status, roles, access, accessLoading, signIn, lastSignOutReason } = useAuth();
+  const { status, roles, access, accessLoading, accessError, signIn, lastSignOutReason } = useAuth();
   const location = useLocation();
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +31,9 @@ export function LoginPage() {
 
   // เข้าสู่ระบบอยู่แล้ว → ไปหน้าที่ตั้งใจ หรือ portal ตามบทบาท
   if (status === "signed_in") {
-    if (accessLoading || !access) return <FullPageSpinner />;
+    if (accessLoading) return <FullPageSpinner />;
+    // ตรวจสิทธิ์ล้มเหลว (เช่น ไม่มีฟังก์ชัน get_my_access / ไม่มีโปรไฟล์) → แสดงสาเหตุ ไม่หมุนค้าง
+    if (accessError || !access) return <AccessErrorScreen error={accessError} />;
     if (access.account_status === "active") {
       const from = (location.state as { from?: string } | null)?.from;
       const target = from && from !== "/login" ? from : defaultPortalPath(roles);

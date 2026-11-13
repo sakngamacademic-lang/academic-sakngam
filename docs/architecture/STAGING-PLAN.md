@@ -1,11 +1,11 @@
 # แผนนำ Migration ขึ้น Hosted Supabase Staging (รออนุมัติ — ยังไม่ดำเนินการ)
 
-> สถานะ: **แผน + dry run ฝั่ง repo ผ่านแล้ว** · Hosted `ifwernczbnkpadikqigj` ยังไม่มี migration ใด · ยังไม่ apply (รออนุมัติ)
+> สถานะ: **แผน + dry run ฝั่ง repo ผ่านแล้ว** · Hosted `ifwercnzbnkpadikqigj` ยังไม่มี migration ใด · ยังไม่ apply (รออนุมัติ)
 > ใช้เฉพาะข้อมูลทดสอบ (`*.test`, ชื่อสมมติ) · ไม่มีข้อมูลนักเรียน/บุคลากรจริง
 
 ## 1. Migration ที่จะนำขึ้น (forward-only, เรียงตามเวลา) — ครบ 21 ไฟล์ (อัปเดต 13 พ.ย. 2569)
 
-สถานะ Hosted `ifwernczbnkpadikqigj` (ผลตรวจของผู้ใช้): ไม่มี schema `supabase_migrations` และไม่มี `public.get_my_access()` → **ยังไม่มี migration ใดถูกติดตั้ง** ทั้ง 21 ไฟล์จะเป็น pending
+สถานะ Hosted `ifwercnzbnkpadikqigj` (ผลตรวจของผู้ใช้): ไม่มี schema `supabase_migrations` และไม่มี `public.get_my_access()` → **ยังไม่มี migration ใดถูกติดตั้ง** ทั้ง 21 ไฟล์จะเป็น pending
 (`supabase db push` สร้างตาราง `supabase_migrations.schema_migrations` เองระหว่าง push — **ห้ามสร้างด้วยมือ**)
 
 | # | ไฟล์ | เนื้อหา | ผลกระทบต่อข้อมูลเดิมบน Hosted |

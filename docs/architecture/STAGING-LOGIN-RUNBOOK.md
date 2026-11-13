@@ -1,6 +1,6 @@
 # Runbook: เข้าสู่ระบบไม่ได้บน Vercel Preview (Supabase Staging) + Bootstrap บทบาทแรก
 
-> Project ref ที่แจ้ง: `ifwernczbnkpadikqigj` · ห้ามแตะ Production · ห้ามเปิด Self Signup · ห้ามใช้/เปิดเผย Service Role Key · ห้ามแก้ RLS · ห้ามลบบัญชีเดิม
+> Project ref ที่แจ้ง: `ifwercnzbnkpadikqigj` · ห้ามแตะ Production · ห้ามเปิด Self Signup · ห้ามใช้/เปิดเผย Service Role Key · ห้ามแก้ RLS · ห้ามลบบัญชีเดิม
 
 ## 1. อาการ "อีเมลหรือรหัสผ่านไม่ถูกต้อง" มาจากไหน
 
@@ -12,7 +12,7 @@
 
 | # | สาเหตุ | วิธีตรวจ |
 |---|---|---|
-| A | Vercel Preview ใช้ `VITE_SUPABASE_URL` ของ **project อื่น** (เช่น ตั้งค่าไว้เฉพาะ scope Production, หรือค่าเก่า) — บัญชีถูกสร้างใน `ifwernczbnkpadikqigj` แต่แอปไปถามอีก project | หน้า Login (build ใหม่) แสดง `Supabase <ref>` ใต้ฟอร์ม · หรือ DevTools → Network → คำขอ `…/auth/v1/token` ดูโดเมน · Vercel → Settings → Environment Variables ดูว่าค่าอยู่ใน scope **Preview** |
+| A | Vercel Preview ใช้ `VITE_SUPABASE_URL` ของ **project อื่น** (เช่น ตั้งค่าไว้เฉพาะ scope Production, หรือค่าเก่า) — บัญชีถูกสร้างใน `ifwercnzbnkpadikqigj` แต่แอปไปถามอีก project | หน้า Login (build ใหม่) แสดง `Supabase <ref>` ใต้ฟอร์ม · หรือ DevTools → Network → คำขอ `…/auth/v1/token` ดูโดเมน · Vercel → Settings → Environment Variables ดูว่าค่าอยู่ใน scope **Preview** |
 | B | แก้ env บน Vercel แล้ว **ยังไม่ Redeploy** — ค่า `VITE_*` ถูกฝังตอน build | Redeploy Preview (ไม่ใช้ build cache) แล้วตรวจข้อ A ซ้ำ |
 | C | บัญชี **ไม่มีรหัสผ่าน** — สร้างด้วย "Invite user"/Magic link หรือยืนยันอีเมลแล้วแต่ไม่ได้ตั้งรหัส | `diagnose-login.sql` ข้อ 1 → `has_password = false` · แก้: ส่ง "Reset password" จาก Dashboard หรือใช้หน้า "ลืมรหัสผ่าน" (ต้องตั้ง Site URL/Redirect URL ของ Preview ใน Auth → URL Configuration) |
 | D | รหัสผ่าน/อีเมลไม่ตรง (พิมพ์ผิด, ช่องว่างท้าย, อีเมลคนละตัว) | `diagnose-login.sql` ข้อ 1 `found = 0` = ไม่มีอีเมลนี้ใน project |
@@ -28,9 +28,9 @@
 
 ## 3. ขั้นตอนตรวจ (อ่านอย่างเดียว)
 
-1. Vercel: Settings → Environment Variables → scope **Preview**: `VITE_SUPABASE_URL = https://ifwernczbnkpadikqigj.supabase.co`, `VITE_SUPABASE_ANON_KEY` = anon/publishable key ของ project เดียวกัน, `VITE_APP_ENV = staging` → Redeploy
-2. เปิด Preview → หน้า Login ต้องแสดง `Supabase ifwernczbnkpadikqigj`
-3. Supabase Dashboard (project `ifwernczbnkpadikqigj`) → SQL Editor → วาง `scripts/staging/diagnose-login.sql` แก้อีเมล 2 จุด → Run (ไฟล์เปิด transaction แบบ read only และ rollback)
+1. Vercel: Settings → Environment Variables → scope **Preview**: `VITE_SUPABASE_URL = https://ifwercnzbnkpadikqigj.supabase.co`, `VITE_SUPABASE_ANON_KEY` = anon/publishable key ของ project เดียวกัน, `VITE_APP_ENV = staging` → Redeploy
+2. เปิด Preview → หน้า Login ต้องแสดง `Supabase ifwercnzbnkpadikqigj`
+3. Supabase Dashboard (project `ifwercnzbnkpadikqigj`) → SQL Editor → วาง `scripts/staging/diagnose-login.sql` แก้อีเมล 2 จุด → Run (ไฟล์เปิด transaction แบบ read only และ rollback)
 4. ส่งผลข้อ 1–7 กลับมา (ไม่มีรหัสผ่าน/hash/token ในผล)
 
 ## 4. Bootstrap บทบาทแรก (ทำหลังได้รับอนุมัติเท่านั้น)

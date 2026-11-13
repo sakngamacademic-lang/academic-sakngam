@@ -1,0 +1,6 @@
+# migration/SQL ต้องเป็น LF เสมอ (push จาก Windows แล้วได้ CRLF ใน function body บน hosted)
+*.sql text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.md text eol=lf

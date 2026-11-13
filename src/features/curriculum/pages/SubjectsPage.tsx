@@ -8,7 +8,7 @@ import { DataTable, PageHeader, TableToolbar } from "@/components/shared";
 import { useGradeLevels, useLearningAreas } from "@/features/master-data/api";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { SUBJECT_TYPE_LABELS, useSubjectDetail, useSubjects, type Subject } from "../api";
-import { CurriculumNav, EmptyState, formatLocator, Pager, SourceRef, useSelectedVersion, VersionPicker } from "../components";
+import { CurriculumNav, EmptyState, formatLocator, Pager, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 /** รายวิชา — แบ่งหน้า 25 รายการ (ไม่โหลดทั้งหมด) + รายละเอียดพร้อมแหล่งที่มา */
 export function SubjectsPage() {
@@ -44,6 +44,7 @@ export function SubjectsPage() {
           <option value="">ทุกชั้น</option>{grades.data?.filter((g) => g.is_active).map((g) => <option key={g.id} value={g.id}>{g.name_th}</option>)}
         </Select>
       </TableToolbar>
+      <VersionStatusNotice status={sel.selected?.status} />
       {!sel.loading && !sel.versions.length ? (
         <EmptyState title="ยังไม่มีหลักสูตร" />
       ) : (

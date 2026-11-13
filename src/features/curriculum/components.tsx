@@ -145,3 +145,13 @@ export function Notice({ tone = "info", children }: { tone?: "info" | "warning";
     </p>
   );
 }
+
+/** ฉบับที่ยังไม่อนุมัติ: ข้อมูลที่แสดงยังไม่ใช่หลักสูตรที่ใช้งานจริง */
+export function VersionStatusNotice({ status }: { status: VersionStatus | undefined }) {
+  if (!status || status === "approved" || status === "active") return null;
+  return (
+    <p role="status" data-testid="version-status-notice" className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+      <b>{VERSION_STATUS_LABELS[status]}</b> — ข้อมูลในฉบับนี้{status === "retired" ? "เลิกใช้แล้ว" : "ยังไม่ผ่านการอนุมัติ ไม่ใช่หลักสูตรที่ใช้งานจริง"}
+    </p>
+  );
+}

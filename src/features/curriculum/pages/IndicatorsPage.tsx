@@ -11,7 +11,7 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { curriculumKey, rpc, useCoverage, useFrameworkVersions, useIndicators, usePendingMappings } from "../api";
-import { CurriculumNav, EmptyState, Notice, Pager, SourceRef, useSelectedVersion, VersionPicker } from "../components";
+import { CurriculumNav, EmptyState, Notice, Pager, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 const COVERAGE_FILTERS = [
   { value: "", label: "ทั้งหมด" },
@@ -60,6 +60,7 @@ function GapReport() {
           {COVERAGE_FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
         </Select>
       </div>
+      <VersionStatusNotice status={sel.selected?.status} />
       {!sel.selected?.framework_version_id ? (
         <EmptyState title="หลักสูตรฉบับนี้ยังไม่ระบุกรอบหลักสูตรแกนกลาง">ระบุกรอบแกนกลางในหน้า “ฉบับหลักสูตร” เมื่อมีข้อมูลอ้างอิงที่ยืนยันแล้ว</EmptyState>
       ) : total === 0 && !q.isPending ? (

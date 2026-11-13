@@ -132,6 +132,8 @@ test.describe.serial("หลักสูตร — นำเข้าข้อ�
     await expect(page.getByText("บันทึกเข้าข้อมูลหลักแล้ว").first()).toBeVisible();
 
     await page.goto("/office/curriculum/subjects");
+    // บันทึกแล้วแต่ฉบับยังเป็นร่าง → ต้องแจ้งว่าไม่ใช่หลักสูตรที่ใช้งานจริง และ Dashboard ไม่นับเป็นหลักสูตรที่ใช้อยู่
+    await expect(page.getByTestId("version-status-notice")).toContainText("ไม่ใช่หลักสูตรที่ใช้งานจริง");
     const subjectRow = page.locator("table tbody tr").filter({ hasText: "E2E101" });
     await expect(subjectRow).toContainText("1.0");
     await expect(subjectRow).toContainText("20");
@@ -152,6 +154,9 @@ test.describe.serial("หลักสูตร — นำเข้าข้อ�
     await page.goto("/office/curriculum/versions");
     await page.getByTestId("version").filter({ hasText: "E2E-ฉบับร่าง" }).getByRole("button", { name: "อนุมัติ", exact: true }).click();
     await expect(page.getByTestId("version").filter({ hasText: "E2E-ฉบับร่าง" })).toContainText("อนุมัติแล้ว");
+    await page.goto("/office/curriculum/subjects");
+    await expect(page.getByTestId("version-status-notice")).toHaveCount(0);
+    await page.goto("/office/curriculum/versions");
 
     const head = await apiToken(page.request, "head@snw.test");
     const upd = await page.request.patch(`${SUPABASE_URL}/rest/v1/subjects?code=eq.E2E101`, { headers: rest(head), data: { name_th: "แก้หลังอนุมัติ" } });

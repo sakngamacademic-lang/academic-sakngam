@@ -5,7 +5,7 @@ import { Select } from "@/components/ui/form-controls";
 import { useGradeLevels } from "@/features/master-data/api";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { usePrograms, useStructure, type StructureRow } from "../api";
-import { CurriculumNav, EmptyState, formatLocator, useSelectedVersion, VersionPicker } from "../components";
+import { CurriculumNav, EmptyState, formatLocator, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 /** โครงสร้างรายวิชา: หลักสูตร → ฉบับ → แผน → ชั้น → ภาค */
 export function StructurePage() {
@@ -39,6 +39,7 @@ export function StructurePage() {
           <option value="">ทั้งปี</option><option value="1">ภาคเรียนที่ 1</option><option value="2">ภาคเรียนที่ 2</option>
         </Select>
       </div>
+      <VersionStatusNotice status={sel.selected?.status} />
       {!sel.loading && !sel.versions.length ? <EmptyState title="ยังไม่มีหลักสูตร" /> : q.error ? (
         <p role="alert" className="text-sm text-destructive">{dbErrorMessage(q.error)}</p>
       ) : q.isPending ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : !basic.length && !additional.length && !acts.length ? (

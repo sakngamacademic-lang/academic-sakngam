@@ -9,7 +9,7 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
 import { curriculumKey, insertRow, STAGE_LABELS, usePrograms, useSourceDocuments, type StudyProgram } from "../api";
-import { CurriculumNav, EmptyState, SourceRef, useSelectedVersion, VersionPicker } from "../components";
+import { CurriculumNav, EmptyState, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 /** แผนการเรียน — แยกตามที่พบจริงในเอกสาร (ห้ามรวมแผนที่รายวิชา/หน่วยกิตต่างกัน) */
 export function ProgramsPage() {
@@ -29,6 +29,7 @@ export function ProgramsPage() {
       <div className="mb-4">
         <VersionPicker value={sel.selected?.id ?? ""} onChange={sel.select} versions={sel.versions} />
       </div>
+      <VersionStatusNotice status={sel.selected?.status} />
       {!sel.loading && !sel.versions.length ? (
         <EmptyState title="ยังไม่มีหลักสูตร">สร้างหลักสูตรและฉบับร่างก่อน</EmptyState>
       ) : (

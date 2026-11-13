@@ -22,3 +22,17 @@ if (!parsed.success) {
 export const env = parsed.success ? parsed.data : envSchema.parse({});
 
 export const isSupabaseConfigured = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+
+/**
+ * ป้ายบอกว่าแอปเชื่อมกับ Supabase project ใด (ใช้ตรวจ Vercel Preview ว่าเชื่อมถูกตัว)
+ * — แสดงเฉพาะ project ref / host ซึ่งเป็นข้อมูลสาธารณะใน URL อยู่แล้ว ไม่ใช่ key
+ */
+export function supabaseProjectLabel(url = env.VITE_SUPABASE_URL): string | null {
+  if (!url) return null;
+  try {
+    const host = new URL(url).host;
+    return /^[a-z0-9]{20}\.supabase\.co$/.test(host) ? host.split(".")[0]! : host;
+  } catch {
+    return null;
+  }
+}

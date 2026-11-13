@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isSupabaseConfigured } from "@/lib/env";
+import { env, isSupabaseConfigured, supabaseProjectLabel } from "@/lib/env";
 import { useAuth } from "../AuthProvider";
 import { FullPageSpinner } from "../guards";
 import { authErrorMessage, SIGN_OUT_MESSAGES } from "../errors";
@@ -105,6 +105,11 @@ export function LoginPage() {
           ลืมรหัสผ่าน?
         </Link>
         <p className="text-xs text-muted-foreground">ระบบไม่เปิดให้สมัครสมาชิกเอง บัญชีสร้างโดยผู้ดูแลระบบ</p>
+        {supabaseProjectLabel() && (
+          <p className="text-xs text-muted-foreground" data-testid="supabase-project">
+            สภาพแวดล้อม {env.VITE_APP_ENV} · Supabase <code>{supabaseProjectLabel()}</code>
+          </p>
+        )}
       </div>
     </AuthLayout>
   );

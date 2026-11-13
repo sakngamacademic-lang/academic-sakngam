@@ -583,3 +583,53 @@ export async function insertRow(table: string, values: Record<string, unknown>) 
   const { error } = await requireSupabase().from(table).insert(values);
   if (error) throw error;
 }
+
+// ---------------------------------------------------------------- Review queue / ข้อมูลรอตรวจ (อ่านอย่างเดียว · ยังไม่ยืนยัน)
+export interface StagedStructureRow {
+  grade_code: string;
+  program_code: string | null;
+  term_no: number | null;
+  subject_type: "basic" | "additional" | "unresolved";
+  subjects: number;
+  credits: number;
+  learning_hours: number;
+  unresolved: number;
+}
+export function useStagedStructure(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "staged-structure", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => (await callRpc<StagedStructureRow[]>("curriculum_staged_structure", { p_version_id: versionId })) ?? [],
+  });
+}
+export interface ReviewQueueRow {
+  batch_id: string;
+  row_id: string;
+  row_no: number;
+  kind: string;
+  source_page: number | null;
+  row_status: string;
+  ref_kind: "subject" | "program";
+  ref_code: string;
+  resolution: "committed" | "staged" | "staged_error" | "missing";
+}
+export function useReviewQueue(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "review-queue", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => {
+      const sb = requireSupabase();
+      const args = { p_version_id: versionId };
+      // นับฝั่งเซิร์ฟเวอร์ (ไม่ดึงทุกแถว — PostgREST จำกัด 1,000 แถว) + ดึงเฉพาะรายการที่มีปัญหา
+      const count = async (res: ReviewQueueRow["resolution"]) => {
+        const { count: n, error } = await sb.rpc("curriculum_review_queue", args, { count: "exact", head: true }).eq("resolution", res);
+        if (error) throw error;
+        return n ?? 0;
+      };
+      const [committed, staged, stagedError, missing] = await Promise.all([count("committed"), count("staged"), count("staged_error"), count("missing")]);
+      const { data, error } = await sb.rpc("curriculum_review_queue", args).in("resolution", ["staged_error", "missing"]).order("kind").order("row_no").limit(500);
+      if (error) throw error;
+      return { counts: { committed, staged, staged_error: stagedError, missing }, problems: (data ?? []) as ReviewQueueRow[] };
+    },
+  });
+}

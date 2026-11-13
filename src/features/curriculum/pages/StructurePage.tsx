@@ -4,11 +4,29 @@ import { DashSection, LiveBadge } from "@/components/dashboard";
 import { Select } from "@/components/ui/form-controls";
 import { useGradeLevels } from "@/features/master-data/api";
 import { dbErrorMessage } from "@/lib/db-errors";
-import { usePrograms, useStructure, type StructureRow } from "../api";
-import { CurriculumNav, EmptyState, formatLocator, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
+import { usePrograms, useReviewQueue, useStagedStructure, useStructure, type StagedStructureRow, type StructureRow } from "../api";
+import { CurriculumNav, EmptyState, formatLocator, Notice, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
+import { cn } from "@/lib/utils";
 
 /** โครงสร้างรายวิชา: หลักสูตร → ฉบับ → แผน → ชั้น → ภาค */
 export function StructurePage() {
+  const [view, setView] = useState<"verified" | "staged">("verified");
+  return (
+    <>
+      <PageHeader title="โครงสร้างรายวิชา" description="ข้อมูลที่ยืนยันแล้วแยกจากข้อมูลรอตรวจเสมอ · ยอดรวมคำนวณจากรายการที่แสดง" />
+      <CurriculumNav />
+      <div role="tablist" aria-label="ชุดข้อมูล" className="mb-4 flex flex-wrap gap-1">
+        {([["verified", "ข้อมูลที่ยืนยันแล้ว"], ["staged", "ข้อมูลรอตรวจ (ยังไม่ยืนยัน)"]] as const).map(([k, l]) => (
+          <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
+            className={cn("h-9 rounded-full border px-3 text-sm", view === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+        ))}
+      </div>
+      {view === "verified" ? <VerifiedStructure /> : <StagedStructure />}
+    </>
+  );
+}
+
+function VerifiedStructure() {
   const sel = useSelectedVersion();
   const programs = usePrograms(sel.selected?.id);
   const grades = useGradeLevels();
@@ -25,8 +43,6 @@ export function StructurePage() {
 
   return (
     <>
-      <PageHeader title="โครงสร้างรายวิชา" description="แสดงตามข้อมูลที่ผ่านการตรวจแล้ว · ยอดรวมคำนวณจากรายการที่แสดง" />
-      <CurriculumNav />
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <VersionPicker value={sel.selected?.id ?? ""} onChange={sel.select} versions={sel.versions} />
         <Select value={program} onChange={(e) => setProgram(e.target.value)} aria-label="แผนการเรียน" className="sm:w-56">
@@ -91,5 +107,71 @@ function SubjectTable({ id, title, rows, sum }: { id: string; title: string; row
         </div>
       )}
     </DashSection>
+  );
+}
+
+const RES_LABEL = { committed: "บันทึกแล้ว", staged: "รอตรวจในชุดอื่น", staged_error: "มีแต่แถวผิดพลาด", missing: "ไม่พบ" } as const;
+
+/** ยอดจาก "ข้อมูลรอตรวจ" ต่อชั้น × แผน × ภาค — ไม่ใช่หลักสูตรที่ใช้งานจริง และไม่ใช้รายงานผู้บริหาร */
+function StagedStructure() {
+  const sel = useSelectedVersion();
+  const s = useStagedStructure(sel.selected?.id);
+  const q = useReviewQueue(sel.selected?.id);
+  const [grade, setGrade] = useState("M1");
+  const rows = (s.data ?? []).filter((r) => r.grade_code === grade);
+  const programs = [...new Set(rows.map((r) => r.program_code ?? "–"))];
+  const cell = (p: string, term: number, type: StagedStructureRow["subject_type"]) => {
+    const r = rows.find((x) => (x.program_code ?? "–") === p && x.term_no === term && x.subject_type === type);
+    return r ? `${Number(r.credits).toFixed(1)} (${r.learning_hours})` : "–";
+  };
+  const grades = [...new Set((s.data ?? []).map((r) => r.grade_code))].sort();
+  return (
+    <>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <VersionPicker value={sel.selected?.id ?? ""} onChange={sel.select} versions={sel.versions} />
+        <Select value={grade} onChange={(e) => setGrade(e.target.value)} aria-label="ระดับชั้น" className="sm:w-32">
+          {grades.map((g) => <option key={g} value={g}>{g.replace("M", "ม.")}</option>)}
+        </Select>
+      </div>
+      <Notice tone="warning">ข้อมูลรอตรวจจากชุดนำเข้า — <b>ยังไม่ผ่านการอนุมัติ</b> ใช้ตรวจความสอดคล้องเท่านั้น หน่วยกิต/ชั่วโมงมาจากแถวรายวิชาที่เสนอ (ไม่แก้ค่าให้ตรงหัวตาราง)</Notice>
+      <DashSection id="queue" title="ความสัมพันธ์ข้ามชุดนำเข้า" meta={q.data ? `${q.data.counts.staged + q.data.counts.committed + q.data.counts.staged_error + q.data.counts.missing} การอ้างอิง` : undefined}>
+        {q.error ? <p role="alert" className="text-sm text-destructive">{dbErrorMessage(q.error)}</p> : (
+          <>
+            <ul className="flex flex-wrap gap-3 text-sm">
+              {(["committed", "staged", "staged_error", "missing"] as const).map((k) => (
+                <li key={k} className="rounded-lg border px-3 py-2"><span className="text-muted-foreground">{RES_LABEL[k]}</span> <b className="tabular-nums">{q.data?.counts[k] ?? "…"}</b></li>
+              ))}
+            </ul>
+            {q.data?.problems.length ? (
+              <ul className="mt-3 divide-y text-sm">
+                {q.data.problems.slice(0, 50).map((p) => (
+                  <li key={`${p.row_id}-${p.ref_kind}`} className="py-1.5">แถว {p.row_no} ({p.kind}) อ้าง{p.ref_kind === "subject" ? "รายวิชา" : "แผน"} <code className="text-xs">{p.ref_code}</code> — {RES_LABEL[p.resolution]} · PDF หน้า {p.source_page}</li>
+                ))}
+              </ul>
+            ) : q.data && <p className="mt-3 text-sm text-muted-foreground">ทุกการอ้างอิงพบรายการรอตรวจที่ไม่ผิดพลาด — บันทึกชุดแผนการเรียนและรายวิชาก่อน แล้วตรวจซ้ำชุดการจัดรายวิชา/กิจกรรม</p>}
+          </>
+        )}
+      </DashSection>
+      <DashSection id="staged-grade" className="mt-4" title={`ยอดต่อแผน · ${grade.replace("M", "ม.")}`} meta="หน่วยกิต (ชั่วโมง)">
+        {s.isPending ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : !rows.length ? <p className="text-sm text-muted-foreground">ไม่มีข้อมูลรอตรวจของชั้นนี้</p> : (
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[36rem] text-sm">
+              <caption className="sr-only">ยอดหน่วยกิตและชั่วโมงจากข้อมูลรอตรวจ</caption>
+              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2">แผน</th><th className="py-2 text-right">พื้นฐาน ภ.1</th><th className="py-2 text-right">พื้นฐาน ภ.2</th><th className="py-2 text-right">เพิ่มเติม ภ.1</th><th className="py-2 text-right">เพิ่มเติม ภ.2</th><th className="py-2 text-right">จับคู่ไม่ได้</th></tr></thead>
+              <tbody>
+                {programs.map((p) => (
+                  <tr key={p} className="border-b last:border-0">
+                    <td className="py-2"><code className="text-xs">{p}</code></td>
+                    <td className="py-2 text-right tabular-nums">{cell(p, 1, "basic")}</td><td className="py-2 text-right tabular-nums">{cell(p, 2, "basic")}</td>
+                    <td className="py-2 text-right tabular-nums">{cell(p, 1, "additional")}</td><td className="py-2 text-right tabular-nums">{cell(p, 2, "additional")}</td>
+                    <td className="py-2 text-right tabular-nums">{rows.filter((r) => (r.program_code ?? "–") === p).reduce((n, r) => n + r.unresolved, 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DashSection>
+    </>
   );
 }

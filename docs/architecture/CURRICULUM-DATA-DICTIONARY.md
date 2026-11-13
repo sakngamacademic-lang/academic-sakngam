@@ -1,6 +1,6 @@
 # Curriculum Data Dictionary (C1.0)
 
-> สถานะ: ออกแบบ รออนุมัติ C1.1 · ชื่อตาราง/คอลัมน์ตรงกับ [ERD](CURRICULUM-ERD.md) และ [Import Plan](CURRICULUM-IMPORT-PLAN.md)
+> สถานะ: **ตรงกับ migration** `20261118000100`–`20261118000400` · ชื่อตาราง/คอลัมน์ตรงกับ [ERD](CURRICULUM-ERD.md) และ [Import Plan](CURRICULUM-IMPORT-PLAN.md)
 > ค่าในคอลัมน์ "ตัวอย่างรูปแบบ" เป็นรูปแบบเท่านั้น ไม่ใช่ข้อมูลหลักสูตรจริง — ค่าจริงต้องมาจาก Source Register
 
 ## 0. ข้อกำหนดร่วม
@@ -36,6 +36,8 @@
 | version_label | text | unique ต่อ framework (ข้อความตามเอกสาร) |
 | published_year_be | int | 2500–2700 |
 | status | text | `draft` \| `published` |
+| is_complete | boolean | false = reference dataset ยังไม่ครบ → UI ไม่แสดง % coverage เป็นผลสมบูรณ์ |
+| source_citation | text | not null |
 
 ### `framework_learning_areas`
 | คอลัมน์ | ชนิด | ข้อกำหนด |
@@ -52,20 +54,24 @@
 | name_th | text | not null |
 | level_order | int | เรียงลำดับ |
 
-### `standards`
+### `learning_standards`
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
 | framework_version_id | uuid | FK |
 | framework_learning_area_id | uuid | FK (version เดียวกัน — ตรวจด้วย composite FK) |
 | code | text | unique ต่อ version (รูปแบบตามเอกสาร) |
 | statement_th | text | not null |
+| source_citation | text | not null |
 
 ### `indicators`
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
-| standard_id | uuid | FK |
+| framework_version_id | uuid | composite FK กับ standard/grade — ใช้กันการ mapping ข้ามกรอบ |
+| standard_id | uuid | FK `learning_standards` |
 | framework_grade_level_id | uuid | FK |
 | code | text | unique ต่อ standard + grade |
+| full_code | text | รหัสเต็มตามเอกสาร · unique ต่อ framework version (ใช้อ้างในการนำเข้า) |
+| source_citation | text | not null |
 | indicator_kind | text | `grade` (ตัวชี้วัดชั้นปี) \| `stage` (ตัวชี้วัดช่วงชั้น) — ยืนยันชนิดที่มีจริงจากเอกสารของ framework version |
 | statement_th | text | not null |
 
@@ -92,7 +98,10 @@
 | framework_status | text | `confirmed` \| `provisional` — ฉบับ 2569 = `provisional` จนกว่า CF-02 ปิด (D2) |
 | status | text | `draft` → `under_review` → `approved` → `active` → `retired` (เปลี่ยนผ่าน RPC) |
 | announcement_source_id | uuid | FK `source_documents` — ประกาศใช้หลักสูตร |
-| announcement_locator | text | หน้าที่อ้างอิงในประกาศ |
+| announcement_locator | text | หน้าที่อ้างอิงในประกาศ (บังคับเมื่อพ้น draft) |
+| subject_code_pattern | text null | regex แนวปฏิบัติรหัสวิชา (V12 เตือน) — กำหนดจากเอกสารเท่านั้น |
+| based_on_version_id | uuid null | ฉบับต้นทางเมื่อสร้างด้วย `curriculum_version_clone` |
+| submitted_by / submitted_at, activated_at, retired_at | | บันทึกโดย RPC |
 | approved_by / approved_at | uuid / timestamptz | ต้องเป็น H และเป็นมนุษย์ |
 
 สิทธิ์: อ่าน H S L E A; T อ่านเฉพาะ `approved`/`active` · แก้ H S (draft) · อนุมัติ H (RPC `curriculum_version_approve`)
@@ -142,6 +151,7 @@ unique `nulls not distinct (entry_academic_year_id, entry_grade_level_id, study_
 ### `subject_offerings` (P, V) — โครงสร้างหลักสูตร
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
+| curriculum_version_id | uuid | composite FK กับ subject/program (version เดียวกัน) |
 | subject_id | uuid | composite FK |
 | study_program_id | uuid null | null = ทุกแผน |
 | grade_level_id | uuid | composite FK |
@@ -163,11 +173,14 @@ unique `nulls not distinct (subject_id, study_program_id, grade_level_id, term_n
 | term_no | smallint null | |
 | activity_hours | int | ≥ 0 — **ชั่วโมงกิจกรรม** (แยกจาก learning_hours) |
 
-### `subject_learning_outcomes` (P, V) — ผลการเรียนรู้ของรายวิชาเพิ่มเติม
+### `subject_learning_outcomes` (P, V) — ผลการเรียนรู้ / ตัวชี้วัดระหว่างทาง
 | คอลัมน์ | ชนิด | ข้อกำหนด |
 |---|---|---|
+| curriculum_version_id | uuid | composite FK |
 | subject_id | uuid | composite FK |
-| code | text | unique ต่อ subject |
+| outcome_kind | text | `learning_outcome` (ผลการเรียนรู้) \| `interim_indicator` (ตัวชี้วัดระหว่างทาง) |
+| code | text | unique ต่อ subject + kind |
+| indicator_id | uuid null | ตัวชี้วัดปลายทางที่แตกมา (global) |
 | statement_th | text | not null |
 
 ### `curriculum_indicator_mappings` (P, V)
@@ -176,8 +189,10 @@ unique `nulls not distinct (subject_id, study_program_id, grade_level_id, term_n
 | subject_id | uuid | composite FK |
 | indicator_id | uuid null | FK global `indicators` |
 | learning_outcome_id | uuid null | composite FK `subject_learning_outcomes` |
+| curriculum_version_id | uuid | composite FK กับ subject |
 | coverage | text | `primary` \| `supporting` |
-| note | text | |
+| status | text | `pending_review` → `verified` \| `rejected` (RPC `curriculum_mapping_review`) |
+| review_note, verified_by, verified_at | | ผู้ตรวจ (มนุษย์) และเวลา |
 
 check: มีค่าอย่างใดอย่างหนึ่งระหว่าง indicator_id / learning_outcome_id · unique ต่อคู่ · trigger: indicator ต้องอยู่ใน framework_version ของ curriculum_version เดียวกัน และกลุ่มสาระตรงกัน (ผ่าน `national_area_code`)
 
@@ -200,7 +215,9 @@ check: มีค่าอย่างใดอย่างหนึ่งระ�
 | content_status | text | `has_content` \| `empty` \| `duplicate` \| `variant` (CF-04, SRC-02) |
 | duplicate_of_id | uuid null | ชี้เอกสารต้นแบบเมื่อซ้ำ |
 | reliability | text | `A` \| `B` \| `C` \| `D` (นิยามใน Source Register §2) |
-| curriculum_version_id | uuid null | |
+
+> ไม่มี `curriculum_version_id` ในตารางนี้ (กัน FK วนกับ `curriculum_versions.announcement_source_id`) — เอกสารผูกกับฉบับผ่าน `import_batches` และ `announcement_source_id`
+
 | learning_area_id | uuid null | |
 | grade_scope | text null | ตามเอกสาร |
 | issued_year_be | int null | |
@@ -230,7 +247,10 @@ check: มีค่าอย่างใดอย่างหนึ่งระ�
 | kind | text | `study_programs` \| `subjects` \| `subject_offerings` \| `learning_activities` \| `learning_outcomes` \| `indicator_mappings` |
 | learning_area_id | uuid null | ขอบเขตของ L |
 | status | text | `uploaded` → `parsed` → `validated` → `needs_review` → `approved` → `committed` · `rejected` · `failed` |
-| parser | text | ชื่อ/เวอร์ชันตัวอ่านไฟล์ (`xlsx@…`, `pdf-text@…`, `manual`, `ai-proposal@…`) |
+| parser | text | ชื่อ/เวอร์ชันตัวอ่านไฟล์ (`exceljs@4.4.0`, `unpdf@0.12.1`, `manual`) |
+| column_mapping | jsonb | Excel: `{sheet, header_row, first_row, last_row, columns, constants, expected_year_be}` · PDF: `{pages}` |
+| status_note | text | เหตุผลปฏิเสธ / อ่านไฟล์ไม่สำเร็จ |
+| committed_by | uuid | |
 | counts | jsonb | total / valid / warning / error / approved / skipped |
 | created_by | uuid | |
 | approved_by / approved_at | uuid / timestamptz | ≠ created_by (D3) · มนุษย์เท่านั้น |
@@ -264,14 +284,25 @@ check: มีค่าอย่างใดอย่างหนึ่งระ�
 | `grade_levels` | `national_grade_code text null` | map ระดับชั้น ↔ `framework_grade_levels.code` |
 | `documents` | `kind` เพิ่ม `curriculum_source` | เก็บไฟล์ต้นฉบับใน storage เดิม (Phase 1.6) |
 
-## 5. RPC ที่วางแผน (C1.1–C1.3)
+## 5. RPC (ตาม migration — ผู้เรียกต้องเป็นมนุษย์ `private.require_human()` เว้นแต่ระบุ)
 
 | RPC | ผู้เรียก | หน้าที่ |
 |---|---|---|
-| `curriculum_version_submit(id)` | H S | draft → under_review |
-| `curriculum_version_approve(id)` | H (มนุษย์) | under_review → approved (ล็อกข้อมูลทั้งฉบับ) |
-| `curriculum_version_activate(id)` / `retire(id)` | H | approved → active → retired |
-| `curriculum_implementation_set(...)` | H | กำหนดรุ่นที่ใช้ฉบับ (ต้องอ้าง source) |
-| `import_row_decide(row_id, decision, normalized, note)` | H S L(scope) | needs_review/valid/warning → approved / skipped |
-| `import_batch_approve(batch_id)` | H, ≠ ผู้สร้าง | ทุกแถว approved/skipped และไม่มี error |
-| `import_batch_commit(batch_id)` | H | เขียนข้อมูลหลักในธุรกรรมเดียว + ใส่ provenance |
+| `curriculum_version_submit(id)` | H S | draft → under_review (ต้องมีประกาศ + locator) |
+| `curriculum_version_return(id)` | H | under_review → draft |
+| `curriculum_version_approve(id)` | H | under_review → approved (ล็อกเนื้อหาทั้งฉบับ) |
+| `curriculum_version_activate(id)` / `curriculum_version_retire(id)` | H | approved → active → retired |
+| `curriculum_version_set_framework_status(id, status)` | H | confirmed / provisional (D2) |
+| `curriculum_version_clone(id, label)` | H S | แก้ฉบับที่อนุมัติ = สร้าง draft ใหม่พร้อม provenance (mapping → pending_review) |
+| `curriculum_implementation_set(...)` | H | กำหนดรุ่น (ฉบับต้อง approved/active, ต้องอ้างเอกสาร) |
+| `curriculum_resolve(year, grade, program)` | ทุกบทบาท | resolved / unresolved / ambiguous |
+| `source_conflict_resolve(id, resolution)` | H | ปิดข้อขัดแย้ง |
+| `curriculum_mapping_review(id, status, note)` | H S L(scope) | verified / rejected |
+| `storage_begin_curriculum_source_upload(name, mime, size)` | H S | อัปโหลดเอกสารต้นทาง PDF/Excel ≤ 100 MB (private) |
+| `curriculum_import_parse_target(batch)` | H S L(scope) | ข้อมูลสำหรับ Edge Function อ่านไฟล์ |
+| `curriculum_import_store_rows(batch, actor, parser, rows)` | **service_role เท่านั้น** | parser เขียนแถว staging (ตรวจ V-rules ทันที) |
+| `curriculum_import_add_row(...)` | H S L(scope) | กรอกแถวเองพร้อมอ้างหน้า/เซลล์ |
+| `curriculum_import_row_decide(row, approve\|skip\|revalidate, normalized, note)` | H S L(scope) | ตัดสินรายแถว (แถว error / ไม่มีค่า อนุมัติไม่ได้) |
+| `curriculum_import_batch_approve(batch)` | H ≠ ผู้สร้าง | ทุกแถว approved/skipped · ไม่มี blocking conflict |
+| `curriculum_import_batch_reject(batch, reason)` | H S L(scope) | ปฏิเสธชุด |
+| `curriculum_import_batch_commit(batch)` | H | เขียนข้อมูลหลักในธุรกรรมเดียว + provenance |

@@ -98,3 +98,23 @@ stateDiagram-v2
 
 pgTAP: แถว error commit ไม่ได้ · ผู้สร้างอนุมัติ batch ตนเองไม่ได้ · L ตัดสินแถวนอกกลุ่มสาระไม่ได้ · service_role / AI อนุมัติไม่ได้ · commit แล้วข้อมูลหลักมี provenance ครบ · version `approved` แก้ไม่ได้ · ข้ามโรงเรียนไม่ได้
 E2E: อัปโหลด Excel ตัวอย่าง **ที่สร้างขึ้นเพื่อทดสอบ (ไม่ใช่ข้อมูลจริง)** → preview → แก้ → อนุมัติ → commit
+
+## 8. Implementation (C1.2) — ตรงกับ migration และ Edge Function
+
+| ส่วน | ไฟล์ |
+|---|---|
+| Validation / review / commit RPC | `supabase/migrations/20261118000300_curriculum_import.sql`, `20261118000400_curriculum_import_pdf_rows.sql` |
+| Parser | `supabase/functions/curriculum-import-parse/` + `_shared/curriculum-parse.ts` (exceljs สำหรับ .xlsx, unpdf สำหรับ PDF ไม่มี OCR) |
+
+ช่องของ `import_rows.normalized` ต่อชนิด (ตรงกับ `private.curriculum_validate`):
+
+| kind | ช่อง |
+|---|---|
+| study_programs | code, name_th, stage |
+| subjects | code, name_th, name_en, learning_area_code, subject_type, grade_code, credits, learning_hours, description_th |
+| subject_offerings | subject_code, program_code, grade_code, term_no, offering_kind, hours_per_week, sort_order |
+| learning_activities | activity_type, name_th, program_code, grade_code, term_no, activity_hours |
+| learning_outcomes | subject_code, outcome_kind, code, statement_th, indicator_full_code |
+| indicator_mappings | subject_code, indicator_full_code, coverage |
+
+ข้อจำกัดที่ทราบ: `.xls` (รุ่นเก่า) ต้องแปลงเป็น `.xlsx` ก่อน (เลี่ยง `xlsx@0.18.5` บน npm ที่มีช่องโหว่) · ภาษาไทยใน PDF ที่ฟอนต์แมปผิดถูกแจ้ง `GARBLED_TEXT` และหน้าที่เป็นภาพแจ้ง `NO_TEXT` (ไม่มี OCR)

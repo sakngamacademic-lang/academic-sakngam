@@ -24,7 +24,7 @@ import {
   type ImportBatch,
   type ImportRow,
 } from "../api";
-import { CurriculumNav, EmptyState, Notice, Pager } from "../components";
+import { CurriculumNav, EmptyState, Notice, Pager, SourcePdfLink } from "../components";
 
 const SEVERITY = { error: "destructive", warning: "warning", info: "info" } as const;
 
@@ -93,7 +93,7 @@ export function ReviewPage() {
                 {rows.error && <p role="alert" className="text-sm text-destructive">{dbErrorMessage(rows.error)}</p>}
                 {rows.data?.rows.length === 0 && <p className="text-sm text-muted-foreground">ไม่มีแถว{status ? "ในสถานะนี้" : " — กด “อ่านไฟล์” หรือเพิ่มแถวด้วยมือ"}</p>}
                 <ul className="space-y-3">
-                  {rows.data?.rows.map((r) => <RowCard key={`${r.id}-${r.status}`} row={r} kind={batch.kind} editable={canWork} onDone={refresh} />)}
+                  {rows.data?.rows.map((r) => <RowCard key={`${r.id}-${r.status}`} row={r} kind={batch.kind} editable={canWork} onDone={refresh} sourceDocId={batch.source_document_id} />)}
                 </ul>
                 <Pager page={page} total={rows.data?.total ?? 0} onPage={setPage} />
               </DashSection>
@@ -136,7 +136,7 @@ function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }
   );
 }
 
-function RowCard({ row, kind, editable, onDone }: { row: ImportRow; kind: string; editable: boolean; onDone: () => Promise<unknown> }) {
+function RowCard({ row, kind, editable, onDone, sourceDocId }: { row: ImportRow; kind: string; editable: boolean; onDone: () => Promise<unknown>; sourceDocId: string }) {
   const [draft, setDraft] = useState<Record<string, string>>(row.normalized ?? {});
   const [busy, setBusy] = useState(false);
   const fields = NORMALIZED_FIELDS[kind] ?? [];
@@ -161,6 +161,7 @@ function RowCard({ row, kind, editable, onDone }: { row: ImportRow; kind: string
         <b>แถว {row.row_no}</b>
         <Badge variant={row.status === "error" ? "destructive" : row.status === "approved" || row.status === "committed" ? "success" : row.status === "skipped" ? "outline" : "warning"}>{ROW_STATUS_LABELS[row.status]}</Badge>
         <span className="text-xs text-muted-foreground">{loc} · เสนอโดย {row.proposed_by === "ai" ? "AI" : row.proposed_by === "manual" ? "กรอกมือ" : "parser"}</span>
+        {row.source_page && <SourcePdfLink docId={sourceDocId} locator={`pdf:${row.source_page}`} />}
       </div>
       {row.issues?.length > 0 && (
         <ul className="mb-2 space-y-1" aria-label="ปัญหาที่ตรวจพบ">

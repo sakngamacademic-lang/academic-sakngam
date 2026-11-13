@@ -8,7 +8,7 @@ import { DataTable, PageHeader, TableToolbar } from "@/components/shared";
 import { useGradeLevels, useLearningAreas } from "@/features/master-data/api";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { SUBJECT_TYPE_LABELS, useSubjectDetail, useSubjects, type Subject } from "../api";
-import { CurriculumNav, EmptyState, formatLocator, Pager, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
+import { CurriculumNav, EmptyState, formatLocator, Pager, SourcePdfLink, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 /** รายวิชา — แบ่งหน้า 25 รายการ (ไม่โหลดทั้งหมด) + รายละเอียดพร้อมแหล่งที่มา */
 export function SubjectsPage() {
@@ -89,7 +89,7 @@ function SubjectDetailDialog({ id, onClose, areaName, gradeName }: { id: string 
               <div><dt className="text-muted-foreground">ชั้น</dt><dd>{s.grade_level_id ? gradeName.get(s.grade_level_id) : "–"}</dd></div>
               <div><dt className="text-muted-foreground">หน่วยกิต</dt><dd>{Number(s.credits).toFixed(1)}</dd></div>
               <div><dt className="text-muted-foreground">ชั่วโมงเรียน</dt><dd>{s.learning_hours}</dd></div>
-              <div><dt className="text-muted-foreground">แหล่งข้อมูล</dt><dd><SourceRef code={s.source?.register_code} locator={s.source_locator} /></dd></div>
+              <div><dt className="text-muted-foreground">แหล่งข้อมูล</dt><dd className="flex flex-wrap items-center gap-1"><SourceRef code={s.source?.register_code} locator={s.source_locator} /> <SourcePdfLink docId={s.source_document_id} locator={s.source_locator} /></dd></div>
             </dl>
             <p className="text-xs text-muted-foreground">
               สถานะการตรวจ: {s.import_row_id ? "นำเข้าผ่านการตรวจรายแถวและอนุมัติแล้ว" : "บันทึกด้วยมือ"} · ความน่าเชื่อถือของแหล่ง: {s.source?.reliability ?? "–"}

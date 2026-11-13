@@ -18,6 +18,7 @@ const TABS = [
   { to: "/office/curriculum/indicators", label: "ตัวชี้วัด & Mapping" },
   { to: "/office/curriculum/imports", label: "แหล่งข้อมูล & นำเข้า" },
   { to: "/office/curriculum/conflicts", label: "ข้อขัดแย้ง" },
+  { to: "/office/curriculum/reports", label: "รายงาน" },
   { to: "/office/curriculum/review", label: "ตรวจรายแถว" },
 ];
 

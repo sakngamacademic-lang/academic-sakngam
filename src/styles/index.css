@@ -107,3 +107,17 @@
     line-height: 1.4;
   }
 }
+
+/* รายงานสำหรับพิมพ์ / บันทึกเป็น PDF — พิมพ์เฉพาะเนื้อหารายงาน พื้นขาว ตัวอักษรเข้ม */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body * { visibility: hidden; }
+  #print-report, #print-report * { visibility: visible; }
+  #print-report { position: absolute; inset: 0 auto auto 0; width: 100%; color: #111 !important; background: #fff !important; }
+  #print-report * { color: #111 !important; background: transparent !important; border-color: #bbb !important; box-shadow: none !important; }
+  #print-report .no-print { display: none !important; }
+  :root, html, body { color-scheme: light !important; background: #fff !important; }
+  #print-report tr, #print-report h3 { break-inside: avoid; }
+  #print-report h3 { break-after: avoid; }
+  #print-report table { font-size: 10pt; }
+}

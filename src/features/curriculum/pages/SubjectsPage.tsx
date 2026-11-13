@@ -60,7 +60,7 @@ export function SubjectsPage() {
               { key: "code", header: "รหัส", cell: (s) => <code className="text-xs">{s.code}</code>, className: "w-24" },
               { key: "name", header: "ชื่อวิชา", cell: (s) => <span className="font-medium">{s.name_th}</span> },
               { key: "type", header: "ประเภท", cell: (s) => <Badge variant={s.subject_type === "basic" ? "default" : "info"}>{SUBJECT_TYPE_LABELS[s.subject_type]}</Badge> },
-              { key: "area", header: "กลุ่มสาระ", cell: (s) => areaName.get(s.learning_area_id) ?? "–", hideOnMobile: true },
+              { key: "area", header: "กลุ่มสาระ", cell: (s) => subjectAreaLabel(s, areaName), hideOnMobile: true },
               { key: "grade", header: "ชั้น", cell: (s) => (s.grade_level_id ? gradeName.get(s.grade_level_id) : "–") },
               { key: "credit", header: "หน่วยกิต", cell: (s) => <span className="tabular-nums">{Number(s.credits).toFixed(1)}</span> },
               { key: "hours", header: "ชั่วโมง", cell: (s) => <span className="tabular-nums">{s.learning_hours}</span> },
@@ -85,7 +85,7 @@ function SubjectDetailDialog({ id, onClose, areaName, gradeName }: { id: string 
           <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1 text-sm">
             <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-3">
               <div><dt className="text-muted-foreground">ประเภท</dt><dd>{SUBJECT_TYPE_LABELS[s.subject_type]}</dd></div>
-              <div><dt className="text-muted-foreground">กลุ่มสาระ</dt><dd>{areaName.get(s.learning_area_id) ?? "–"}</dd></div>
+              <div><dt className="text-muted-foreground">กลุ่มสาระ</dt><dd>{subjectAreaLabel(s, areaName)}</dd></div>
               <div><dt className="text-muted-foreground">ชั้น</dt><dd>{s.grade_level_id ? gradeName.get(s.grade_level_id) : "–"}</dd></div>
               <div><dt className="text-muted-foreground">หน่วยกิต</dt><dd>{Number(s.credits).toFixed(1)}</dd></div>
               <div><dt className="text-muted-foreground">ชั่วโมงเรียน</dt><dd>{s.learning_hours}</dd></div>
@@ -130,4 +130,10 @@ function SubjectDetailDialog({ id, onClose, areaName, gradeName }: { id: string 
       </DialogContent>
     </Dialog>
   );
+}
+
+/** IS ไม่สังกัดกลุ่มสาระ (ตามเล่มหลักสูตร) — แสดงช่วงชั้นแทน */
+function subjectAreaLabel(s: { learning_area_id: string | null; subject_category?: string; education_stage?: string | null }, areaName: Map<string, string>) {
+  if (s.subject_category === "is") return `IS · ${s.education_stage === "upper_secondary" ? "ม.ปลาย" : "ม.ต้น"} (ไม่สังกัดกลุ่มสาระ)`;
+  return (s.learning_area_id && areaName.get(s.learning_area_id)) || "–";
 }

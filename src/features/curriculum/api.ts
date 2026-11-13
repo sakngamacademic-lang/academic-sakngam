@@ -64,7 +64,7 @@ export const DOC_TYPE_LABELS: Record<string, string> = {
 /** รูปแบบช่องที่ต้องกรอกต่อชนิดการนำเข้า (ตรงกับ private.curriculum_validate) */
 export const NORMALIZED_FIELDS: Record<string, string[]> = {
   study_programs: ["code", "name_th", "stage"],
-  subjects: ["code", "name_th", "name_en", "learning_area_code", "subject_type", "grade_code", "credits", "learning_hours", "description_th"],
+  subjects: ["code", "name_th", "name_en", "learning_area_code", "subject_type", "grade_code", "credits", "learning_hours", "description_th", "subject_category", "education_stage"],
   subject_offerings: ["subject_code", "program_code", "grade_code", "term_no", "offering_kind", "hours_per_week", "sort_order"],
   learning_activities: ["activity_type", "name_th", "program_code", "grade_code", "term_no", "activity_hours"],
   learning_outcomes: ["subject_code", "outcome_kind", "code", "statement_th", "indicator_full_code"],
@@ -212,8 +212,12 @@ export interface Subject {
   code: string;
   name_th: string;
   name_en: string | null;
-  learning_area_id: string;
+  /** null ได้เฉพาะรายวิชา IS (subject_category = "is") */
+  learning_area_id: string | null;
   subject_type: "basic" | "additional";
+  subject_category: "regular" | "is";
+  /** ใช้กับ IS เท่านั้น — แยก IS ม.ต้น/ม.ปลาย ที่ใช้รหัสเดียวกัน */
+  education_stage: "lower_secondary" | "upper_secondary" | null;
   grade_level_id: string | null;
   credits: number;
   learning_hours: number;
@@ -222,7 +226,7 @@ export interface Subject {
   source_locator: string;
   import_row_id: string | null;
 }
-const SUBJECT_COLS = "id, code, name_th, name_en, learning_area_id, subject_type, grade_level_id, credits, learning_hours, description_th, source_document_id, source_locator, import_row_id";
+const SUBJECT_COLS = "id, code, name_th, name_en, learning_area_id, subject_type, grade_level_id, credits, learning_hours, description_th, source_document_id, source_locator, import_row_id, subject_category, education_stage";
 
 export function useSubjects(versionId: string | undefined, f: { search: string; area: string; type: string; grade: string; page: number }) {
   return useQuery({

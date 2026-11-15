@@ -1,0 +1,37 @@
+# Data Transfer: Local curriculum staging → Supabase Staging (`ifwercnzbnkpadikqigj`)
+
+> ห้ามรันบน Production · ห้าม reset · ห้ามลบข้อมูลเดิม · ไฟล์ SQL ที่สร้างมีข้อมูลหลักสูตรที่ยังไม่อนุมัติ → **ห้าม commit** (`transfer-out/` อยู่ใน .gitignore)
+
+## ย้ายอะไร
+| ตาราง | เงื่อนไข | การแมป |
+|---|---|---|
+| `source_documents` | ทั้งหมด (SRC-01 + 6 ส่วน) | `file_id = null` (ไฟล์อยู่ storage local — ผูกใหม่หลังอัปโหลด R2 และตรวจ SHA256) |
+| `source_conflicts` | ยังไม่ตัดสิน | สถานะคงเดิม (`needs_decision`) |
+| `school_curricula`, `curriculum_versions` | ฉบับ `draft` เท่านั้น | กรอบแกนกลาง = null (ยังไม่ยืนยัน) |
+| `import_batches`, `import_rows` | ยังไม่มีการอนุมัติ/บันทึก | สถานะ `needs_review` / `error` คงเดิม · source page / sheet / cell / raw / normalized / issues คงเดิม |
+| `curriculum_rules` | `draft` เท่านั้น | – |
+
+ทุกตาราง: **UUID เดิม** · `school_id` → โรงเรียนปลายทางตามรหัส · ผู้สร้าง → บัญชีปลายทางที่ระบุ · ไม่ย้าย: บัญชีผู้ใช้ ครู seed โรงเรียน seed audit เดิม
+
+สคริปต์ **ปฏิเสธ** ถ้าพบข้อมูลที่ approved / committed / verified / active (ต้องตัดสินใจแยก)
+
+## ความปลอดภัยของไฟล์ที่สร้าง
+- transaction เดียว — ผิดพลาดใด ๆ = ไม่มีอะไรเปลี่ยน
+- `insert … on conflict (id) do nothing` → รันซ้ำได้ไม่สร้างซ้ำ
+- ถ้าปลายทางมีแถว id เดียวกันแต่เนื้อหาต่าง → **abort** (ไม่เขียนทับ)
+- ตรวจจำนวนแถวหลังย้ายทุกตาราง ไม่ตรง → abort
+- บันทึก `audit_logs` (`table_name = 'data_transfer'`) พร้อม sha256 ของข้อมูลแต่ละตาราง
+- `rollback-*.sql` ลบเฉพาะ id ที่ย้าย และปฏิเสธถ้ามีแถวที่คนตรวจ/อนุมัติแล้ว
+
+## ผลทดสอบ (stack แยก, 15 พ.ย. 2569)
+ย้าย 7 + 80 + 1 + 5 + 1,453 + 43 แถว → รันซ้ำจำนวนไม่เปลี่ยน → hash ของ import_rows / conflicts ตรงต้นทาง → แก้แถวปลายทาง 1 แถวแล้วรันซ้ำ = abort ไม่เขียนทับ → rollback เหลือ 0 (โรงเรียน/โปรไฟล์ไม่ถูกแตะ)
+
+## ขั้นตอน (ต้องได้รับอนุมัติก่อนรันบน Staging)
+1. Backup local: `docker exec supabase_db_academic-sakngam pg_dump -U postgres -d postgres -Fc > backup.dump`
+2. สร้างไฟล์: `node scripts/transfer/export-curriculum-staging.mjs --school-code <รหัสโรงเรียนบน staging> --actor-email <อีเมลบัญชีบน staging> --out transfer-out`
+3. ตรวจ `manifest-*.json` (จำนวนแถว + sha256)
+4. รัน `transfer-*.sql` ใน SQL Editor ของ Staging (หรือ `psql` ด้วย connection string ของ Staging)
+5. ตรวจ: `select table_name, new_data->'tables' from audit_logs where table_name = 'data_transfer'`
+
+## ข้อที่ต้องตัดสินใจ
+- **Two-person approval**: ชุดนำเข้าจะมีผู้สร้าง = บัญชีที่ระบุ ผู้อนุมัติต้องเป็นหัวหน้าฝ่ายวิชาการ **คนละคน** — ถ้าใช้บัญชี academic_head เดิมเป็นผู้สร้าง ต้องมี academic_head คนที่สองเพื่ออนุมัติ (หรือใช้บัญชีเจ้าหน้าที่วิชาการเป็นผู้สร้าง)

@@ -480,6 +480,15 @@ export function useErrorSummary(batchId: string | undefined) {
   });
 }
 
+/** แถว needs_review ที่ไม่มีข้อสังเกตระดับ error/warning (ผู้ตรวจกดอนุมัติเป็นกลุ่มได้ — ฐานข้อมูลตรวจซ้ำอีกชั้น) */
+export async function fetchCleanRowIds(batchId: string): Promise<string[]> {
+  const { data, error } = await requireSupabase().from("import_rows").select("id, issues").eq("batch_id", batchId).eq("status", "needs_review").limit(5000);
+  if (error) throw error;
+  return (data ?? [])
+    .filter((r) => !((r.issues ?? []) as { severity: string }[]).some((i) => i.severity === "error" || i.severity === "warning"))
+    .map((r) => r.id as string);
+}
+
 export interface CoverageRow {
   indicator_id: string;
   full_code: string;

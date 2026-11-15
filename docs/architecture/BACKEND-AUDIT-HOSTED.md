@@ -38,3 +38,11 @@
   ทำให้ profile และบทบาท `academic_head` ถูกลบตามไปด้วย (audit_logs: DELETE profiles/user_roles) — บัญชีใหม่ไม่มี profile/บทบาท
   ผลกระทบ: ยังไม่มีผู้อนุมัติ (Two-person) ที่ใช้งานได้ · ต้อง bootstrap บทบาทใหม่ผ่าน SQL (`private.bootstrap_school_role`) ซึ่งทำได้อีกครั้ง
   เพราะโรงเรียนนี้ไม่มี academic_head/system_admin ที่ active แล้ว
+
+## อัปเดต (บัญชี academic_head กลับมาแล้ว)
+- Hosted: `academic_head` (sakngamacademic) และ `academic_staff` (namemini7) มีบทบาทและ profile ครบ · migration ล่าสุดบน Hosted `20261123000100`
+- เพิ่ม `SetupChecklist` (หน้าแดชบอร์ดฝ่ายวิชาการ/หลักสูตร): แสดงลำดับตั้งค่ากลุ่มสาระ → ระดับชั้น → ปี → ภาคเรียน → ห้อง จากข้อมูลจริง (ปุ่มเพิ่มกลุ่มสาระ/ระดับชั้นมาตรฐานมีอยู่แล้วในหน้าข้อมูลพื้นฐาน)
+- เพิ่ม migration `20261124000100_curriculum_import_approve_clean.sql` (**ยังไม่ apply บน Hosted**): `curriculum_import_rows_approve_clean`
+  ให้คนกดอนุมัติกลุ่มแถว needs_review ที่ไม่มี error/warning (≤500/ครั้ง, ตรวจซ้ำด้วย validator, บันทึกผู้ตัดสิน) · อนุมัติ “ชุด” ยังต้องหัวหน้าที่ไม่ใช่ผู้สร้าง
+- หน้าตรวจ: ปุ่ม “อนุมัติแถวที่ไม่มีข้อสังเกต” (มีกล่องยืนยัน), “ตรวจซ้ำทั้งชุด”, แผงข้อผิดพลาดแยก dependency/ต้องตัดสินใจ
+- R2: โค้ด adapter/Edge Functions/เอกสาร (`STORAGE.md` §3) เตรียมไว้แล้ว รอ Phase R2 และ Credentials

@@ -18,6 +18,7 @@ import { daysUntil, formatDateLongTH, formatDateTH, formatNumberTH } from "@/lib
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useClassrooms, useGradeLevels, useLearningAreas } from "@/features/master-data/api";
 import { useTeachers } from "@/features/teachers/api";
+import { SetupChecklist } from "@/features/master-data/SetupChecklist";
 import { useCurrentPeriod } from "../use-current-period";
 import { useReviewQueue, useTasks } from "@/features/tasks/api";
 
@@ -224,6 +225,7 @@ export function OfficeDashboardPage() {
         title="แดชบอร์ดฝ่ายวิชาการ"
         description={[access?.school?.name_th, period.label, formatDateLongTH(new Date())].filter(Boolean).join(" · ")}
       />
+      <SetupChecklist />
 
       <QuickActions items={actions} />
       <MasterDataSummary />

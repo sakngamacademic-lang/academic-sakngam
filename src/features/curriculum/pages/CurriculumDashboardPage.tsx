@@ -8,6 +8,7 @@ import {
   allVersions, BATCH_KIND_LABELS, COMPLIANCE_LABELS, CONFLICT_CATEGORY_LABELS, useClassroomCurriculum, useCompliance, useConflicts, useCurricula,
   useCurriculumCounts, useFrameworkVersions, useImportPipeline, useMappingCounts, useStructureSummary, type ComplianceStatus,
 } from "../api";
+import { SetupChecklist } from "@/features/master-data/SetupChecklist";
 import { CurriculumNav, EmptyState, Notice, useSelectedVersion, VersionBadge, VersionPicker } from "../components";
 
 /** Dashboard หลักสูตร — ตัวเลขจริงจากฐานข้อมูลเท่านั้น (ว่าง = Empty state ไม่ใช่ KPI ปลอม) */
@@ -27,6 +28,7 @@ export function CurriculumDashboardPage() {
     <>
       <PageHeader title="หลักสูตรสถานศึกษา" description="Curriculum Intelligence — ข้อมูลทุกค่าต้องมาจากเอกสารต้นทางที่ลงทะเบียนและผ่านการตรวจโดยคน" />
       <CurriculumNav />
+      <SetupChecklist />
       {counts.error && <p role="alert" className="mb-4 text-sm text-destructive">{dbErrorMessage(counts.error)}</p>}
       {frameworks.data && !frameworks.data.some((f) => f.is_complete) && (
         <Notice tone="warning">

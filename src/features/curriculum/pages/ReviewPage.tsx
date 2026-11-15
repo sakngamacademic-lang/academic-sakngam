@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Database, Plus, RefreshCw, RotateCcw, SkipForward, X } from "lucide-react";
-import { PageHeader } from "@/components/shared";
+import { Check, CheckCheck, Database, Plus, RefreshCw, RotateCcw, SkipForward, X } from "lucide-react";
+import { ConfirmDialog, PageHeader } from "@/components/shared";
 import { DashSection, KpiCard } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   BATCH_KIND_LABELS,
   BATCH_STATUS_LABELS,
   curriculumKey,
+  fetchCleanRowIds,
   NORMALIZED_FIELDS,
   ROW_STATUS_LABELS,
   rpc,
@@ -138,8 +139,26 @@ function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }
   onAction: (fn: string, args: Record<string, unknown>, ok: string) => Promise<void>; onAdd: () => void;
 }) {
   const open = batch.counts?.total && (batch.counts.total ?? 0) > (batch.counts.approved ?? 0) + (batch.counts.skipped ?? 0);
+  const [confirmClean, setConfirmClean] = useState<string[] | null>(null);
+  const approveClean = async (ids: string[]) => {
+    for (let i = 0; i < ids.length; i += 500) {
+      await onAction("curriculum_import_rows_approve_clean", { p_batch_id: batch.id, p_row_ids: ids.slice(i, i + 500) }, `อนุมัติแถวที่ไม่มีข้อสังเกตแล้ว (${Math.min(i + 500, ids.length)}/${ids.length})`);
+    }
+  };
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
+      {canWork && batch.status === "needs_review" && (
+        <Button size="sm" variant="outline" title="อนุมัติเฉพาะแถวที่ไม่มีข้อสังเกตระดับผิดพลาด/คำเตือน — ผู้ตรวจต้องยืนยันว่าเทียบต้นฉบับแล้ว"
+          onClick={async () => { try { setConfirmClean(await fetchCleanRowIds(batch.id)); } catch (e) { toast.error(dbErrorMessage(e)); } }}><CheckCheck /> อนุมัติแถวที่ไม่มีข้อสังเกต</Button>
+      )}
+      <ConfirmDialog
+        open={confirmClean !== null}
+        onOpenChange={(o) => !o && setConfirmClean(null)}
+        title={`อนุมัติ ${confirmClean?.length ?? 0} แถวที่ไม่มีข้อสังเกต?`}
+        description="การกดนี้เป็นการตัดสินของคุณ (บันทึกชื่อผู้ตัดสิน) — โปรดตรวจเทียบต้นฉบับ/ที่มา (หน้า PDF) ก่อน แถวที่มีข้อผิดพลาดหรือคำเตือนจะไม่ถูกอนุมัติ และการอนุมัติ “ชุด” ยังต้องให้หัวหน้าฝ่ายวิชาการอีกคนทำ"
+        confirmLabel="ยืนยัน อนุมัติแถว"
+        onConfirm={() => approveClean(confirmClean ?? [])}
+      />
       {canWork && ["uploaded", "failed", "needs_review"].includes(batch.status) && <Button size="sm" variant="outline" onClick={onAdd}><Plus /> เพิ่มแถวด้วยมือ</Button>}
       {canWork && batch.status === "needs_review" && (
         <Button size="sm" variant="outline" title="คำนวณข้อผิดพลาดใหม่ทุกแถวที่ยังไม่ได้ตัดสิน — ไม่อนุมัติและไม่แก้ค่าต้นฉบับ"

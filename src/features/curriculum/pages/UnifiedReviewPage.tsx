@@ -164,7 +164,7 @@ function Workbench({ batch, report, canWork, isHead, isCreator, onDone }: { batc
             <li key={r.id} data-testid="unified-row" className="flex items-start gap-3 rounded-xl border p-3 text-sm">
               {canWork && ["pass", "warning", "error"].includes(cls) && <input type="checkbox" aria-label={`เลือกแถว ${r.row_no}`} checked={picked.has(r.id)} onChange={() => toggle(r.id)} className="mt-1" />}
               <div className="min-w-0 flex-1">
-                <p className="font-medium">#{r.row_no} {n.code ?? n.subject_code ?? ""} {n.name_th ?? ""} {n.grade_code ? `· ${n.grade_code}` : ""}</p>
+                <p className="font-medium">#{r.row_no} {batch.kind === "study_programs" ? "" : (n.code ?? n.subject_code ?? "")} {n.name_th ?? ""} {n.grade_code ? `· ${n.grade_code}` : ""}</p>
                 {r.issues.filter((i) => i.severity !== "info").map((i, k) => (
                   <p key={k} className="flex items-start gap-1 text-xs"><AlertTriangle className={cn("mt-0.5 size-3 shrink-0", i.severity === "error" ? "text-destructive" : "text-warning")} />{ERROR_LABELS[i.code] ?? i.message_th}</p>
                 ))}

@@ -9,6 +9,7 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
 import { curriculumKey, insertRow, STAGE_LABELS, usePrograms, useSourceDocuments, type StudyProgram } from "../api";
+import { isProgramNameConfirmed, PROGRAM_NAME_PENDING } from "../program-labels";
 import { CurriculumNav, EmptyState, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 /** แผนการเรียน — แยกตามที่พบจริงในเอกสาร (ห้ามรวมแผนที่รายวิชา/หน่วยกิตต่างกัน) */
@@ -41,8 +42,7 @@ export function ProgramsPage() {
           emptyText="ยังไม่มีแผนการเรียนในฉบับนี้ — นำเข้าหรือเพิ่มจากเอกสารต้นทาง"
           rowKey={(p) => p.id}
           columns={[
-            { key: "code", header: "รหัส", cell: (p) => <code className="text-xs">{p.code}</code>, className: "w-28" },
-            { key: "name", header: "ชื่อแผนการเรียน", cell: (p) => <span className="font-medium">{p.name_th}</span> },
+            { key: "name", header: "ชื่อแผนการเรียน", cell: (p) => isProgramNameConfirmed(p.name_th) ? <span className="font-medium">{p.name_th}</span> : <span className="font-medium text-warning">{PROGRAM_NAME_PENDING} — ฝ่ายวิชาการโปรดตรวจ</span> },
             { key: "stage", header: "ช่วงชั้น", cell: (p) => STAGE_LABELS[p.stage] },
             { key: "src", header: "แหล่งที่มา", cell: (p) => <SourceRef locator={p.source_locator} /> },
           ]}

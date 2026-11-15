@@ -81,7 +81,7 @@ export function VersionsPage() {
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       กรอบแกนกลาง: {v.framework_version_id ? fwLabel.get(v.framework_version_id) : "ยังไม่ระบุ"} ({v.framework_status === "confirmed" ? "ยืนยันแล้ว" : "provisional"})
                       {" · "}ประกาศใช้: {v.announcement_source_id ? formatLocator(v.announcement_locator) : "ยังไม่อ้างเอกสาร"}
-                      {v.hours_per_credit && ` · ชม./หน่วยกิต (ใช้เตือนเท่านั้น): ${v.hours_per_credit}`}
+                      {v.hours_per_credit && ` · ชั่วโมง/หน่วยกิต (ใช้เตือนเท่านั้น): ${v.hours_per_credit}`}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">

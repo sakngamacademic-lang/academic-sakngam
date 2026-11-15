@@ -5,6 +5,7 @@ import { Select } from "@/components/ui/form-controls";
 import { useGradeLevels } from "@/features/master-data/api";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { usePrograms, useReviewQueue, useStagedStructure, useStructure, type StagedStructureRow, type StructureRow } from "../api";
+import { programNameByCode } from "../program-labels";
 import { CurriculumNav, EmptyState, formatLocator, Notice, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +117,7 @@ const RES_LABEL = { committed: "บันทึกแล้ว", staged: "รอ
 function StagedStructure() {
   const sel = useSelectedVersion();
   const s = useStagedStructure(sel.selected?.id);
+  const progs = usePrograms(sel.selected?.id);
   const q = useReviewQueue(sel.selected?.id);
   const [grade, setGrade] = useState("M1");
   const rows = (s.data ?? []).filter((r) => r.grade_code === grade);
@@ -157,11 +159,11 @@ function StagedStructure() {
           <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <table className="w-full min-w-[36rem] text-sm">
               <caption className="sr-only">ยอดหน่วยกิตและชั่วโมงจากข้อมูลรอตรวจ</caption>
-              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2">แผน</th><th className="py-2 text-right">พื้นฐาน ภ.1</th><th className="py-2 text-right">พื้นฐาน ภ.2</th><th className="py-2 text-right">เพิ่มเติม ภ.1</th><th className="py-2 text-right">เพิ่มเติม ภ.2</th><th className="py-2 text-right">จับคู่ไม่ได้</th></tr></thead>
+              <thead><tr className="border-b text-left text-xs text-muted-foreground"><th className="py-2">แผน</th><th className="py-2 text-right">พื้นฐาน ภาคเรียน 1</th><th className="py-2 text-right">พื้นฐาน ภาคเรียน 2</th><th className="py-2 text-right">เพิ่มเติม ภาคเรียน 1</th><th className="py-2 text-right">เพิ่มเติม ภาคเรียน 2</th><th className="py-2 text-right">จับคู่ไม่ได้</th></tr></thead>
               <tbody>
                 {programs.map((p) => (
                   <tr key={p} className="border-b last:border-0">
-                    <td className="py-2"><code className="text-xs">{p}</code></td>
+                    <td className="py-2">{programNameByCode(p, progs.data)}</td>
                     <td className="py-2 text-right tabular-nums">{cell(p, 1, "basic")}</td><td className="py-2 text-right tabular-nums">{cell(p, 2, "basic")}</td>
                     <td className="py-2 text-right tabular-nums">{cell(p, 1, "additional")}</td><td className="py-2 text-right tabular-nums">{cell(p, 2, "additional")}</td>
                     <td className="py-2 text-right tabular-nums">{rows.filter((r) => (r.program_code ?? "–") === p).reduce((n, r) => n + r.unresolved, 0)}</td>

@@ -12,7 +12,9 @@ import { downloadXlsx, type Cell, type Sheet } from "@/lib/xlsx-lite";
 import {
   AUTHORITY_LABELS, COMPLIANCE_LABELS, CONFLICT_CATEGORY_LABELS, CONFLICT_STATUS_LABELS, curriculumKey, useCompliance, useConflicts, useMappingCounts,
   useSourceDocuments, useStagedStructure, useStructureSummary, VERSION_STATUS_LABELS, type ComplianceRow,
+  usePrograms,
 } from "../api";
+import { programNameByCode } from "../program-labels";
 import { CurriculumNav, formatLocator, Notice, useSelectedVersion, VersionPicker } from "../components";
 
 type Row = { grade: string; program: string; type: string; subjects: number; credits: number; hours: number };
@@ -58,12 +60,13 @@ export function ReportsPage() {
   const mapping = useMappingCounts(id);
   const docs = useSourceDocuments();
   const areas = useLearningAreas();
+  const progs = usePrograms(sel.selected?.id);
   const generated = useMemo(() => new Date(), []);
 
   const rows: Row[] = useMemo(() => draft
-    ? (staged.data ?? []).filter((r) => r.subject_type !== "unresolved").map((r) => ({ grade: r.grade_code, program: r.program_code ?? "ทุกแผน", type: r.subject_type, subjects: r.subjects, credits: Number(r.credits), hours: r.learning_hours }))
-    : (verified.data ?? []).map((r) => ({ grade: r.grade_code, program: r.program_code ?? "ทุกแผน", type: r.subject_type, subjects: r.subjects, credits: Number(r.credits), hours: r.learning_hours })),
-  [draft, staged.data, verified.data]);
+    ? (staged.data ?? []).filter((r) => r.subject_type !== "unresolved").map((r) => ({ grade: r.grade_code, program: programNameByCode(r.program_code, progs.data), type: r.subject_type, subjects: r.subjects, credits: Number(r.credits), hours: r.learning_hours }))
+    : (verified.data ?? []).map((r) => ({ grade: r.grade_code, program: programNameByCode(r.program_code, progs.data), type: r.subject_type, subjects: r.subjects, credits: Number(r.credits), hours: r.learning_hours })),
+  [draft, staged.data, verified.data, progs.data]);
   const grades = [...new Set(rows.map((r) => r.grade))].sort();
   const programs = [...new Set(rows.map((r) => r.program))].sort();
   const agg = (f: (r: Row) => boolean) => rows.filter(f).reduce((a, r) => ({ s: a.s + r.subjects, c: a.c + r.credits, h: a.h + r.hours }), { s: 0, c: 0, h: 0 });
@@ -95,7 +98,7 @@ export function ReportsPage() {
       ["วันจัดทำ", generated.toLocaleString("th-TH")], ["ผู้จัดทำ", access?.display_name ?? ""], ["ผู้ตรวจสอบ", reviewer]];
     const sheets: Sheet[] = [
       { name: "ข้อมูลรายงาน", rows: meta },
-      { name: "1-2 โครงสร้าง หน่วยกิต ชั่วโมง", rows: [["ชั้น", "แผน", "พื้นฐาน (วิชา)", "พื้นฐาน (นก.)", "พื้นฐาน (ชม.)", "เพิ่มเติม (วิชา)", "เพิ่มเติม (นก.)", "เพิ่มเติม (ชม.)", "รวม นก.", "รวม ชม."], ...structureRows] },
+      { name: "1-2 โครงสร้าง หน่วยกิต ชั่วโมง", rows: [["ชั้น", "แผน", "พื้นฐาน (วิชา)", "พื้นฐาน (หน่วยกิต)", "พื้นฐาน (ชั่วโมงเรียน)", "เพิ่มเติม (วิชา)", "เพิ่มเติม (หน่วยกิต)", "เพิ่มเติม (ชั่วโมงเรียน)", "รวมหน่วยกิต", "รวมชั่วโมงเรียน"], ...structureRows] },
       { name: "4 การกระจายรายวิชา", rows: [["กลุ่มสาระ", "พื้นฐาน", "เพิ่มเติม"], ...dist.map(([k, v]) => [areaName.get(k) ?? k, v.basic, v.additional])] },
       { name: "5 ผลตรวจตามเกณฑ์", rows: [["รหัส", "เวอร์ชัน", "เกณฑ์", "ขอบเขต", "ผล", "คาดหวัง", "จริง", "แหล่งอ้างอิง", "หมายเหตุ"], ...(compliance.data ?? []).map((r) => [r.rule_code, r.rule_version, r.title_th, r.scope, COMPLIANCE_LABELS[r.status], r.expected, r.actual, r.source, r.detail])] },
       { name: "6 ข้อขัดแย้ง", rows: [["รหัส", "หมวด", "ประเด็น", "หน้า", "ค่า A", "ค่า B", "ผู้มีอำนาจ", "สถานะ"], ...(conflicts.data ?? []).map((c) => [c.conflict_code, CONFLICT_CATEGORY_LABELS[c.category], c.description, `${formatLocator(c.locator_a)}${c.locator_b ? ` / ${formatLocator(c.locator_b)}` : ""}`, c.value_a, c.value_b, AUTHORITY_LABELS[c.decision_authority], CONFLICT_STATUS_LABELS[c.status]])] },
@@ -135,7 +138,7 @@ export function ReportsPage() {
 
         <ReportSection n="1–2" title="โครงสร้างหลักสูตร · หน่วยกิตและชั่วโมงเรียน" kind="fact" note={draft ? "จากแถวรอตรวจ (ยังไม่อนุมัติ) — ค่าเป็นไปตามแถวรายวิชาที่เสนอ" : undefined}>
           {!structureRows.length ? <Empty draft={draft} /> : (
-            <Table head={["ชั้น", "แผน", "พื้นฐาน วิชา", "นก.", "ชม.", "เพิ่มเติม วิชา", "นก.", "ชม.", "รวม นก.", "รวม ชม."]}
+            <Table head={["ชั้น", "แผน", "พื้นฐาน วิชา", "หน่วยกิต", "ชั่วโมงเรียน", "เพิ่มเติม วิชา", "หน่วยกิต", "ชั่วโมงเรียน", "รวมหน่วยกิต", "รวมชั่วโมงเรียน"]}
               rows={structureRows.map((r) => r.map((c, i) => (i === 0 ? String(c).replace("M", "ม.") : typeof c === "number" && [3, 6, 8].includes(i) ? c.toFixed(1) : c)))} />
           )}
         </ReportSection>

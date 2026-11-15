@@ -14,6 +14,7 @@ import { requireSupabase } from "@/lib/supabase";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { curriculumKey, rpc, useBatchReports, useBatches } from "../api";
+import { isProgramNameConfirmed, programName, programNameByCode } from "../program-labels";
 import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion, VersionPicker } from "../components";
 import { downloadCsv } from "../export";
 
@@ -193,11 +194,12 @@ export function RegistryPage() {
         <DashSection id="programs" title="แผนการเรียน & การจัดวิชา" meta={`${reg.data?.programs.length ?? 0} แผน`}>
           <ul className="space-y-1 text-sm">
             {reg.data?.programs.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2"><code className="text-xs">{p.code}</code><span className="font-medium">{p.name_th}</span>
+              <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2"><span className="font-medium">{programName(p.name_th)}</span>
                 <Badge variant="outline">{p.stage === "lower_secondary" ? "ม.ต้น" : "ม.ปลาย"}</Badge>
                 <span className="ml-auto text-xs text-muted-foreground">จัดวิชา {reg.data!.offerings.filter((o) => o.study_program_id === p.id && o.is_active).length} รายการ</span></li>
             ))}
           </ul>
+          {reg.data?.programs.some((p) => !isProgramNameConfirmed(p.name_th)) && <Notice tone="warning">มีแผนการเรียนที่ชื่อยังไม่ชัดเจน — แสดงเป็น “รอยืนยันชื่อแผนการเรียน” ฝ่ายวิชาการโปรดตรวจที่หน้า “แผนการเรียน” (ระบบไม่เดาชื่อ)</Notice>}
           {!reg.data?.programs.length && <p className="text-sm text-muted-foreground">ยังไม่มีแผนการเรียนในทะเบียน</p>}
         </DashSection>
       )}
@@ -216,7 +218,7 @@ export function RegistryPage() {
                 <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2" data-testid="proposal">
                   <code className="text-xs">{s?.code}</code> {s?.name_th} → <Badge variant="info">{CATEGORY_LABELS[p.proposed.subject_category]}</Badge>
                   <Badge variant={p.confidence >= 0.9 ? "success" : "warning"}>มั่นใจ {Math.round(p.confidence * 100)}%</Badge>
-                  <span className="text-xs text-muted-foreground">จัดในแผน {p.evidence.programs?.join(", ")}{p.evidence.source_text_mentions_dual_study ? " · ต้นฉบับระบุทวิศึกษา" : " · ไม่มีข้อความยืนยัน"}</span>
+                  <span className="text-xs text-muted-foreground">จัดในแผน {p.evidence.programs?.map((c) => programNameByCode(c, reg.data?.programs)).join(", ")}{p.evidence.source_text_mentions_dual_study ? " · ต้นฉบับระบุทวิศึกษา" : " · ไม่มีข้อความยืนยัน"}</span>
                   {canEdit && <span className="ml-auto flex gap-1">
                     <Button size="sm" variant="outline" onClick={() => void act("curriculum_proposals_decide", { p_ids: [p.id], p_accept: true }, () => "รับข้อเสนอแล้ว")}>รับ</Button>
                     <Button size="sm" variant="ghost" onClick={() => { const r = window.prompt("เหตุผลที่ปฏิเสธ (อย่างน้อย 10 ตัวอักษร)"); if (r) void act("curriculum_proposals_decide", { p_ids: [p.id], p_accept: false, p_note: r }, () => "ปฏิเสธข้อเสนอแล้ว"); }}>ปฏิเสธ</Button></span>}

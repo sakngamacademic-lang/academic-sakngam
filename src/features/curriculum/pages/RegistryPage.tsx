@@ -128,10 +128,14 @@ export function RegistryPage() {
           { ok: of.total === 0 || builtOff >= of.total, label: "การจัดวิชาตามแผน/ชั้น/ภาคเรียน", detail: `เข้าทะเบียน ${builtOff} จาก ${of.total} รายการ${builtOff < of.total ? " — ส่วนที่เหลือรอรายวิชาข้างต้นเข้าทะเบียนก่อน" : ""}` },
           { ok: (reg.data.proposals.length ?? 0) === 0, label: "ข้อเสนอจัดหมวดวิชา (ทวิศึกษา) ที่รอตัดสิน", detail: reg.data.proposals.length ? `${reg.data.proposals.length} รายการ — ดูแท็บข้อเสนอ` : "ไม่มี" },
         ];
-        const ready = items[0]!.ok && items[1]!.ok && items[6]!.ok;
+        const usable = items[0]!.ok && items[1]!.ok; // ใช้ทะเบียนส่วนที่ตรวจแล้วได้
+        const complete = usable && items.every((i) => i.ok); // ครบทุกรายการ → พร้อมให้หัวหน้าอนุมัติฉบับ
+        const subjTotal = active.length + sj.warning + sj.conflict + sj.error;
+        const level = complete ? { label: "หลักสูตรครบถ้วน พร้อมอนุมัติ", variant: "success" as const } : usable ? { label: "พร้อมใช้งานบางส่วน", variant: "warning" as const } : { label: "ยังไม่พร้อมใช้งาน", variant: "destructive" as const };
         return (
           <section aria-label="ความพร้อมใช้งานของทะเบียน" className="mb-4 rounded-2xl border p-4" data-testid="registry-readiness">
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">ความพร้อมใช้งานของทะเบียน <Badge variant={ready ? "success" : "warning"}>{ready ? "พร้อมส่งหัวหน้าอนุมัติฉบับ" : "ยังมีรายการค้าง"}</Badge></h2>
+            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">ความพร้อมใช้งานของทะเบียน <Badge variant={level.variant}>{level.label}</Badge></h2>
+            <p className="mb-2 text-xs text-muted-foreground" data-testid="readiness-level">{complete ? "ครบทุกรายการ — ส่งให้หัวหน้าฝ่ายวิชาการ (คนละคนกับผู้จัดทำ) อนุมัติฉบับได้" : usable ? `ใช้ทะเบียนส่วนที่ตรวจแล้วได้ (รายวิชา ${active.length}/${subjTotal} · จัดวิชา ${builtOff}/${of.total}) — ยังไม่ควรขออนุมัติฉบับจนกว่ารายการ • ด้านล่างจะครบ` : "ต้องมีแผนและรายวิชาในทะเบียนก่อน"}</p>
             <ul className="space-y-1 text-sm">
               {items.map((i) => (
                 <li key={i.label} className="flex flex-wrap items-start gap-2"><span aria-hidden="true">{i.ok ? "✔" : "•"}</span>

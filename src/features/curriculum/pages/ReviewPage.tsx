@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Database, Plus, RotateCcw, SkipForward, X } from "lucide-react";
+import { Check, Database, Plus, RefreshCw, RotateCcw, SkipForward, X } from "lucide-react";
 import { PageHeader } from "@/components/shared";
 import { DashSection, KpiCard } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
   rpc,
   useBatches,
   useBatchRows,
+  useErrorSummary,
   type ImportBatch,
   type ImportRow,
 } from "../api";
@@ -87,6 +88,7 @@ export function ReviewPage() {
               <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="ความคืบหน้าการตรวจ">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
               </div>
+              <ErrorSummaryPanel batchId={batch.id} />
               <BatchActions batch={batch} isCreator={isCreator} canApprove={can("curriculum.approve")} canWork={can("curriculum.edit")}
                 onAction={batchAction} onAdd={() => setAdding(true)} />
               <DashSection id="rows" title="แถวข้อมูล" meta={`${rows.data?.total ?? 0} แถว`}>
@@ -106,6 +108,31 @@ export function ReviewPage() {
   );
 }
 
+const CAUSE_LABELS = {
+  dependency: "รอข้อมูลต้นทางถูกบันทึกก่อน (แก้ได้เมื่อชุดแผน/รายวิชาอนุมัติ+บันทึก แล้วกด “ตรวจซ้ำทั้งชุด”)",
+  source_or_master_data: "ต้องให้ฝ่ายวิชาการตัดสินใจ (ต้นฉบับไม่ระบุ หรือข้อมูลพื้นฐานโรงเรียนยังไม่มี)",
+  review_note: "หมายเหตุสำหรับผู้ตรวจ",
+} as const;
+
+function ErrorSummaryPanel({ batchId }: { batchId: string }) {
+  const summary = useErrorSummary(batchId);
+  const errors = (summary.data ?? []).filter((r) => r.severity === "error");
+  if (!errors.length) return null;
+  return (
+    <DashSection id="error-summary" title="ข้อผิดพลาดแยกตามสาเหตุ" meta={`${errors.reduce((a, r) => a + Number(r.rows), 0)} รายการ`}>
+      <ul className="space-y-1 text-sm" data-testid="error-summary">
+        {errors.map((r) => (
+          <li key={`${r.code}-${r.field}-${r.status}`} className="flex flex-wrap items-center gap-2">
+            <Badge variant="destructive">{r.code}</Badge>
+            <span className="tabular-nums">{Number(r.rows)} แถว</span>
+            <span className="text-muted-foreground">{r.field ? `ช่อง ${r.field} · ` : ""}{CAUSE_LABELS[r.cause]}</span>
+          </li>
+        ))}
+      </ul>
+    </DashSection>
+  );
+}
+
 function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }: {
   batch: ImportBatch; isCreator: boolean; canApprove: boolean; canWork: boolean;
   onAction: (fn: string, args: Record<string, unknown>, ok: string) => Promise<void>; onAdd: () => void;
@@ -114,6 +141,10 @@ function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       {canWork && ["uploaded", "failed", "needs_review"].includes(batch.status) && <Button size="sm" variant="outline" onClick={onAdd}><Plus /> เพิ่มแถวด้วยมือ</Button>}
+      {canWork && batch.status === "needs_review" && (
+        <Button size="sm" variant="outline" title="คำนวณข้อผิดพลาดใหม่ทุกแถวที่ยังไม่ได้ตัดสิน — ไม่อนุมัติและไม่แก้ค่าต้นฉบับ"
+          onClick={() => onAction("curriculum_import_batch_revalidate", { p_batch_id: batch.id }, "ตรวจซ้ำทั้งชุดแล้ว (ไม่มีการอนุมัติอัตโนมัติ)")}><RefreshCw /> ตรวจซ้ำทั้งชุด</Button>
+      )}
       {batch.status === "needs_review" && canApprove && (
         isCreator ? (
           <Button size="sm" disabled title="กติกา 2 คน: ผู้สร้างชุดอนุมัติเองไม่ได้"><Check /> อนุมัติชุด (ต้องเป็นหัวหน้าฯ อีกคน)</Button>

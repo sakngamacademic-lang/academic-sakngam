@@ -457,6 +457,29 @@ export function useBatchRows(batchId: string | undefined, status: string, page: 
   });
 }
 
+export interface ErrorSummaryRow {
+  batch_id: string;
+  kind: string;
+  status: string;
+  code: string;
+  severity: "error" | "warning" | "info";
+  field: string | null;
+  cause: "dependency" | "source_or_master_data" | "review_note";
+  rows: number;
+}
+/** สรุป error ตามรหัส/สาเหตุ (อ่านอย่างเดียว) — dependency = แก้ได้เมื่อบันทึกชุดต้นทางก่อนแล้ว "ตรวจซ้ำ" */
+export function useErrorSummary(batchId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "error-summary", batchId],
+    enabled: !!batchId,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc("curriculum_import_error_summary", { p_batch_id: batchId! });
+      if (error) throw error;
+      return (data ?? []) as ErrorSummaryRow[];
+    },
+  });
+}
+
 export interface CoverageRow {
   indicator_id: string;
   full_code: string;

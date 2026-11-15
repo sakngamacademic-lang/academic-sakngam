@@ -41,11 +41,13 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
   const [note, setNote] = useState("");
   const [skip, setSkip] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState(false);
+  const [ack, setAck] = useState(false); // รับทราบว่าหลักฐานยังไม่ครบ (เฉพาะกลุ่มที่ขาดหลักฐาน)
+  const gaps = [...new Set(g.items.map((i) => i.gap).filter((x): x is string => !!x))];
   const [done, setDone] = useState<Set<string>>(new Set()); // บันทึกสำเร็จแล้วในรอบนี้ — ไม่ส่งซ้ำ
   const [failed, setFailed] = useState<Map<string, string>>(new Map());
   const running = useRef(false);
   const chosen = g.items.filter((i) => !skip.has(i.conflict.id) && !done.has(i.conflict.id));
-  const valid = canResolve && option >= 0 && chosen.length > 0 && note.trim().length >= NOTE_MIN;
+  const valid = canResolve && (g.readiness !== "gap" || ack) && option >= 0 && chosen.length > 0 && note.trim().length >= NOTE_MIN;
   const apply = async () => {
     if (running.current || option < 0) return;
     running.current = true;
@@ -56,7 +58,7 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
       for (const i of chosen) {
         // ระบุหลักฐานของรายการนั้นลงในมติ เพื่อให้ Audit Log อ่านได้ว่าตัดสินบนค่าใด
         const evidence = i.evidence.map((e) => `${e.source} หน้า ${e.page}: ${e.text}`).join(" | ");
-        const text = `[มติกลุ่ม: ${g.title}] ${label} — ${note.trim()} (หลักฐาน: ${evidence})`.slice(0, 1900);
+        const text = `[มติกลุ่ม: ${g.title}] ${label} — ${note.trim()}${g.readiness === "gap" ? " [ผู้ดูแลรับทราบว่าหลักฐานยังไม่ครบ]" : ""} (หลักฐาน: ${evidence})`.slice(0, 1900);
         try {
           await rpc("source_conflict_resolve", { p_id: i.conflict.id, p_resolution: text });
           ok.add(i.conflict.id);
@@ -68,7 +70,7 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
       running.current = false;
       setDone(ok);
       setFailed(bad);
-      if (bad.size === 0) { setNote(""); setOption(-1); }
+      if (bad.size === 0) { setNote(""); setOption(-1); setAck(false); }
       await qc.invalidateQueries({ queryKey: curriculumKey });
     }
     if (bad.size === 0) toast.success(`บันทึกมติสำเร็จ ${chosen.length} รายการ`);
@@ -84,6 +86,12 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
         </div>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{g.summary}</p>
+      {g.readiness === "gap" && (
+        <Notice tone="warning">
+          หลักฐานยังไม่ครบ — ระบบไม่เสนอให้ปิดกลุ่มนี้ ผู้ดูแลต้องตรวจและรับผิดชอบการตัดสินเอง:
+          <ul className="list-disc pl-5">{gaps.map((x) => <li key={x}>{x}</li>)}</ul>
+        </Notice>
+      )}
       <Button size="sm" variant="ghost" className="mt-2 px-2" onClick={() => setOpen(!open)}>{open ? "ซ่อนหลักฐานรายข้อ" : "ดูหลักฐานและผลกระทบรายข้อ"}</Button>
       {open && (
         <ul className="mt-2 space-y-3">
@@ -121,6 +129,12 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
           </fieldset>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} aria-label={`เหตุผลของกลุ่ม ${g.title}`}
             className="w-full rounded-md border bg-background p-2 text-sm" placeholder={`ระบุเหตุผลและเอกสารอ้างอิง (อย่างน้อย ${NOTE_MIN} ตัวอักษร)`} />
+          {g.readiness === "gap" && (
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" checked={ack} onChange={(e) => setAck(e.target.checked)} />
+              <span>รับทราบว่าหลักฐานของกลุ่มนี้ยังไม่ครบ และขอตัดสินด้วยดุลยพินิจของผู้ดูแลหลักสูตร</span>
+            </label>
+          )}
           {failed.size > 0 && (
             <Notice tone="warning">
               บันทึกไม่สำเร็จ {failed.size} รายการ (ที่สำเร็จแล้วไม่ถูกส่งซ้ำ):

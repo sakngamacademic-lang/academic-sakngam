@@ -14,6 +14,7 @@ import { TeacherDocumentsPage } from "@/features/documents/pages/TeacherDocument
 import { TasksPage } from "@/features/tasks/pages/TasksPage";
 import { TaskCreatePage } from "@/features/tasks/pages/TaskCreatePage";
 import { TaskDetailPage } from "@/features/tasks/pages/TaskDetailPage";
+import { AssessmentPage } from "@/features/assessment/pages/AssessmentPage";
 import { ReviewsPage } from "@/features/tasks/pages/ReviewsPage";
 import { curriculumMenuPages, curriculumSubRoutes } from "@/features/curriculum/routes";
 import { officePortal } from "./navigation";
@@ -46,6 +47,7 @@ export const officeRoutes: RouteObject = {
     documents: <TeacherDocumentsPage />,
     tasks: <TasksPage />,
     reviews: <ReviewsPage />,
+    assessment: <AssessmentPage />,
     ...curriculumMenuPages,
   }),
   ],

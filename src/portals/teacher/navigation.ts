@@ -20,7 +20,7 @@ export const teacherPortal: PortalConfig = {
     {
       title: "การสอน",
       items: [
-        { path: "courses", label: "รายวิชาที่สอน", icon: BookOpenCheck, plannedPhase: "Phase 2" },
+        { path: "courses", label: "คะแนนและผลการเรียน", icon: BookOpenCheck },
         { path: "homeroom", label: "ห้องที่ปรึกษา", icon: Users, plannedPhase: "Phase 2" },
       ],
     },

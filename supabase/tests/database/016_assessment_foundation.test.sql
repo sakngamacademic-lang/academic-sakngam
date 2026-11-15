@@ -2,7 +2,7 @@
 -- ⚠️ fixture ทดสอบ (ชื่อสมมติ ไม่ใช่ข้อมูลนักเรียนจริง) · rollback
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(22);
 
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A'), ('bbbbbbbb-0000-4000-a000-000000000000', 'T-B', 'โรงเรียน B');
 insert into auth.users (id, email, raw_app_meta_data) values
@@ -89,6 +89,16 @@ insert into public.attendance_records (course_section_id, student_id, session_da
   ('dddddddd-8888-4000-a000-000000000001', 'eeeeeeee-0000-4000-a000-000000000001', '1958-06-01', 'present'),
   ('dddddddd-8888-4000-a000-000000000001', 'eeeeeeee-0000-4000-a000-000000000002', '1958-06-01', 'absent');
 select is((select pending_work::int from public.v_section_student_progress where student_id = 'eeeeeeee-0000-4000-a000-000000000002'), 1, 'นับงานค้าง (missing) ได้');
+
+-- เส้นทางที่ UI ใช้: upsert ตามกุญแจเฉพาะ (แก้คะแนน/เวลาเรียนซ้ำได้โดยไม่สร้างแถวซ้ำ)
+insert into public.assessment_scores (component_id, student_id, score, status) values ('dddddddd-aaaa-4000-a000-000000000001', 'eeeeeeee-0000-4000-a000-000000000002', 45, 'recorded')
+  on conflict (component_id, student_id) do update set score = excluded.score, status = excluded.status;
+update public.assessment_scores set score = 40 where component_id = 'dddddddd-aaaa-4000-a000-000000000001' and student_id = 'eeeeeeee-0000-4000-a000-000000000002';
+select is((select count(*)::int from public.assessment_scores where component_id = 'dddddddd-aaaa-4000-a000-000000000001' and student_id = 'eeeeeeee-0000-4000-a000-000000000002'), 1, 'upsert คะแนนไม่สร้างแถวซ้ำ');
+insert into public.attendance_records (course_section_id, student_id, session_date, period_no, status) values ('dddddddd-8888-4000-a000-000000000001', 'eeeeeeee-0000-4000-a000-000000000001', '1958-06-01', 1, 'late')
+  on conflict (course_section_id, student_id, session_date, period_no) do update set status = excluded.status;
+select is((select status from public.attendance_records where student_id = 'eeeeeeee-0000-4000-a000-000000000001' and session_date = '1958-06-01'), 'late', 'upsert เวลาเรียนแก้สถานะเดิม');
+update public.attendance_records set status = 'present' where student_id = 'eeeeeeee-0000-4000-a000-000000000001' and session_date = '1958-06-01';
 
 -- เกณฑ์ยังไม่ยืนยัน → คำนวณไม่ได้
 select is(public.course_grades_compute('dddddddd-8888-4000-a000-000000000001') ->> 'status', 'insufficient_data', 'ไม่มีเกณฑ์ที่ยืนยัน = insufficient_data');

@@ -72,7 +72,7 @@ export const officePortal: PortalConfig = {
     {
       title: "วัดและประเมินผล",
       items: [
-        { path: "assessment", label: "ทะเบียนผลการเรียน", icon: GraduationCap, plannedPhase: "Phase 2", roles: ACADEMIC_AND_EXEC },
+        { path: "assessment", label: "ทะเบียนผลการเรียน", icon: GraduationCap, roles: ACADEMIC_AND_EXEC },
         { path: "tracking", label: "ติดตาม 0 / ร / มส", icon: ShieldAlert, plannedPhase: "Phase 2", roles: ACADEMIC_AND_EXEC },
       ],
     },

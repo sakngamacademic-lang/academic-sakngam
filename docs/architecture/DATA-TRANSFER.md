@@ -63,3 +63,11 @@ curriculum_versions 1 (draft), import_batches 6 (needs_review), import_rows 2,83
 FK orphan 0, unique collision 0, ปลายทางว่าง
 ไม่ผ่าน 2 ข้อตามคาด (blocker): ยังไม่มีบัญชี `academic_staff` และไม่มี `academic_head` อื่นนอกจากผู้สร้าง
 → ต้องสร้างบัญชีและรัน `private.grant_school_role(...)` ก่อนย้ายจริง
+
+## โหมดแบ่งไฟล์ `--chunked` (สำหรับ SQL Editor)
+
+SQL Editor รับไฟล์เดียวขนาดหลาย MB ไม่ไหว (ข้อผิดพลาด `unterminated dollar-quoted string`) จึงมี `--chunked`
+สร้าง `part-NN-<table>-<k>of<n>.sql` ที่แต่ละไฟล์เป็น transaction ของตัวเอง ทำซ้ำได้ (`on conflict (id) do nothing`),
+ตรวจ id ซ้ำแต่เนื้อหาต่าง และตรวจจำนวนแถว; รันตามลำดับเลขไฟล์ (ไฟล์สุดท้าย = audit)
+`--part-kb <n>` ปรับขนาด (ค่าเริ่มต้น 150KB ของ JSON; ไฟล์ภาษาไทยจะใหญ่ประมาณ 2 เท่า)
+ทดสอบบน stack แยก: 28 ไฟล์ผ่าน จำนวนแถวตรงต้นทาง สถานะคงเดิม และรันซ้ำไม่เกิดแถวซ้ำ

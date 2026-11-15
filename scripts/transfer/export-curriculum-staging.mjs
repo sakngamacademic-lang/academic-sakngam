@@ -26,6 +26,8 @@ import { join, resolve } from "node:path";
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) => (a.startsWith("--") ? [...acc, [a.slice(2), all[i + 1]]] : acc), []));
 const DRY = process.argv.includes("--dry-run");
+const CHUNKED = process.argv.includes("--chunked"); // แบ่งการโอนจริงเป็นไฟล์เล็ก (SQL Editor รับไฟล์ใหญ่ไม่ไหว)
+const PART_LIMIT = Number(args["part-kb"] ?? 150) * 1024;
 const DB = args.db ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const OUT = resolve(args.out ?? "transfer-out");
 const SCHOOL_CODE = args["school-code"];
@@ -116,6 +118,8 @@ insert into _rep (item, detail, ok) select 'มี academic_head อย่าง
   jsonb_build_object('heads', (select count(*) from public.user_roles ur join _ctx c on true where ur.role = 'academic_head' and ur.school_id = c.school_id and ur.user_id is distinct from c.actor_id)),
   exists (select 1 from public.user_roles ur join _ctx c on true where ur.role = 'academic_head' and ur.school_id = c.school_id and ur.user_id is distinct from c.actor_id);
 `;
+const CTX = sql.slice(sql.indexOf("create temp table _ctx"));
+const parts = [];
 const deletes = [];
 
 for (const t of TABLES) {
@@ -164,6 +168,33 @@ do $chk$ declare n int; begin
   if n <> ${rows.length} then raise exception '${t.name}: จำนวนแถวหลังย้าย % ≠ ต้นทาง ${rows.length}', n; end if;
 end $chk$;
 `;
+  if (CHUNKED) {
+    const groups = []; let cur = [], size = 0;
+    for (const r of rows) { const l = JSON.stringify(r).length; if (cur.length && size + l > PART_LIMIT) { groups.push(cur); cur = []; size = 0; } cur.push(r); size += l; }
+    if (cur.length) groups.push(cur);
+    groups.forEach((g, k) => {
+      const pl = JSON.stringify(g);
+      if (pl.includes("$x$")) throw new Error(`ข้อมูล ${t.name} มีลำดับอักขระที่ใช้ quoting`);
+      parts.push({ table: t.name, k: k + 1, of: groups.length, rows: g.length, text: `-- PART ${t.name} ${k + 1}/${groups.length}: ${g.length} แถว · รันซ้ำได้ (on conflict do nothing) · ไม่ลบ/ไม่เขียนทับ
+begin;
+${CTX}create temp table _src on commit drop as select * from jsonb_populate_recordset(null::public.${t.name}, ${lit(pl)}::jsonb);
+do $chk$ declare n int; begin
+  select count(*) into n from public.${t.name} d join _src s on s.id = d.id
+   where (${compareCols.map((c) => `d.${c}`).join(", ")}) is distinct from (${compareCols.map((c) => `s.${c}`).join(", ")});
+  if n > 0 then raise exception '${t.name}: มี % แถวที่ id ซ้ำแต่เนื้อหาต่างจากต้นทาง — ไม่เขียนทับ', n; end if;
+end $chk$;
+insert into public.${t.name} (${cols.join(", ")})
+select ${sel} from _src r
+on conflict (id) do nothing;
+do $chk$ declare n int; begin
+  select count(*) into n from public.${t.name} d join _src s on s.id = d.id;
+  if n <> ${g.length} then raise exception '${t.name}: จำนวนแถวหลังย้าย % ≠ ${g.length}', n; end if;
+end $chk$;
+select '${t.name} ${k + 1}/${groups.length}: ${g.length} แถว OK' as result;
+commit;
+` });
+    });
+  }
   const ids = rows.map((r) => `'${r.id}'`).join(",");
   deletes.unshift(`delete from public.${t.name} where id in (${ids});`);
   if (t.name === "import_rows") guards.push(`if exists (select 1 from public.import_rows where id in (${ids}) and (status in ('approved','committed','skipped') or decision_by is not null)) then raise exception 'มีแถวที่คนตรวจแล้ว — ยกเลิก rollback'; end if;`);
@@ -206,6 +237,15 @@ select school_id, actor_id, 'data_transfer', null, 'INSERT', ${lit(JSON.stringif
 select '${Object.entries(manifest.tables).map(([k, v]) => `${k}=${v.rows}`).join(" ")}' as transferred;
 commit;
 `;
+if (CHUNKED) {
+  parts.push({ table: "audit", k: 1, of: 1, rows: 0, text: `-- PART audit: บันทึก audit_logs การโอน (รันเป็นไฟล์สุดท้ายหลังทุกส่วนผ่าน)
+begin;
+${CTX}insert into public.audit_logs (school_id, actor_id, table_name, record_id, action, new_data)
+select school_id, actor_id, 'data_transfer', null, 'INSERT', ${lit(JSON.stringify({ kind: "local_curriculum_staging", chunked: true, generated_at: manifest.generated_at, tables: manifest.tables }))}::jsonb from _ctx;
+select 'audit OK' as result;
+commit;
+` });
+}
 rollback += `do $g$ begin\n  ${guards.join("\n  ")}\nend $g$;\n${deletes.join("\n")}\ncommit;\n`;
 const files = { sql: join(OUT, `transfer-${ts}.sql`), rollback: join(OUT, `rollback-${ts}.sql`), manifest: join(OUT, `manifest-${ts}.json`) };
 writeFileSync(files.sql, sql);
@@ -259,7 +299,10 @@ if (DRY) {
   }
   files.dryRo = roFiles;
 }
+if (CHUNKED) {
+  files.parts = parts.map((x, i) => { const f = join(OUT, `part-${String(i + 1).padStart(2, "0")}-${x.table}-${x.k}of${x.of}.sql`); writeFileSync(f, x.text); return f; });
+}
 writeFileSync(files.rollback, rollback);
 manifest.files = Object.fromEntries(Object.entries(files).filter(([k]) => k !== "manifest").map(([k, f]) => [k, { path: f, sha256: createHash("sha256").update(k === "sql" ? sql : rollback).digest("hex") }]));
 writeFileSync(files.manifest, JSON.stringify(manifest, null, 2));
-console.log(JSON.stringify({ out: OUT, tables: manifest.tables, dryrun: DRY ? files.dry : null, dryrunReadonlyFiles: DRY ? files.dryRo.length : 0 }, null, 1));
+console.log(JSON.stringify({ out: OUT, tables: manifest.tables, dryrun: DRY ? files.dry : null, dryrunReadonlyFiles: DRY ? files.dryRo.length : 0, parts: CHUNKED ? files.parts.length : 0 }, null, 1));

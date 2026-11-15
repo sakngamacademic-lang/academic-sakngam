@@ -41,6 +41,7 @@ const CAPABILITIES = {
   "learningareas.manage": ["system_admin", "academic_head"],
   "roles.manage": ["system_admin"],
   "teachers.manage": ["system_admin", "academic_head", "academic_staff"],
+  "students.manage": ["academic_head", "academic_staff"], // ตรงกับ RLS: private.is_office_staff()
   "teachers.link": ["system_admin", "academic_head"],
   "curriculum.edit": ["academic_head", "academic_staff", "learning_area_head"],
   "curriculum.manage": ["academic_head", "academic_staff"],

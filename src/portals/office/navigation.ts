@@ -47,7 +47,7 @@ export const officePortal: PortalConfig = {
       title: "ทะเบียน",
       items: [
         { path: "teachers", label: "ครูและบุคลากร", icon: UserRound, roles: REGISTRY_VIEW },
-        { path: "students", label: "นักเรียน", icon: Users, plannedPhase: "Phase 1.12", roles: ACADEMIC_AND_EXEC },
+        { path: "students", label: "นักเรียน", icon: Users, roles: ACADEMIC_AND_EXEC },
       ],
     },
     {

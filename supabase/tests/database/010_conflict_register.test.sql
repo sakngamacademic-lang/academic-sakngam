@@ -2,7 +2,7 @@
 -- ⚠️ fixture ทดสอบ (rollback)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(11);
 
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values
@@ -11,7 +11,7 @@ insert into auth.users (id, email, raw_app_meta_data) values
   ('aaaaaaaa-0000-4000-a000-000000000006', 't@a.test',     '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}');
 insert into public.user_roles (user_id, school_id, role, learning_area_id) values
   ('aaaaaaaa-0000-4000-a000-000000000002', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head', null),
-  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff', null),
+  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head', null),
   ('aaaaaaaa-0000-4000-a000-000000000006', 'aaaaaaaa-0000-4000-a000-000000000000', 'teacher', null);
 create function pg_temp.login(p_uid uuid) returns void language plpgsql as $$
 begin
@@ -40,7 +40,6 @@ select throws_ok($$select public.source_conflict_annotate('dddddddd-9999-4000-a0
 select lives_ok($$select public.source_conflict_set_status('dddddddd-9999-4000-a000-000000000001', 'needs_decision')$$, 'คัดกรองเป็น needs_decision ได้');
 select throws_ok($$select public.source_conflict_set_status('dddddddd-9999-4000-a000-000000000001', 'resolved')$$,
   'P0001', null, 'เจ้าหน้าที่ปิดข้อขัดแย้งผ่านการคัดกรองไม่ได้');
-select throws_ok($$select public.source_conflict_resolve('dddddddd-9999-4000-a000-000000000001', 'ตัดสินเอง')$$, '42501', null, 'เจ้าหน้าที่ตัดสินไม่ได้');
 
 reset role;
 select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000006');

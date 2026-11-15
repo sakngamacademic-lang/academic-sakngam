@@ -43,8 +43,8 @@ const CAPABILITIES = {
   "teachers.manage": ["system_admin", "academic_head", "academic_staff"],
   "students.manage": ["academic_head", "academic_staff"], // ตรงกับ RLS: private.is_office_staff()
   "teachers.link": ["system_admin", "academic_head"],
-  "curriculum.edit": ["academic_head", "academic_staff", "learning_area_head"],
-  "curriculum.manage": ["academic_head", "academic_staff"],
+  "curriculum.edit": ["academic_head", "learning_area_head"], // ผู้ดูแลหลักสูตรบัญชีเดียว + หัวหน้ากลุ่มสาระที่ได้รับมอบหมาย (ตรงกับ RLS: private.is_curriculum_admin())
+  "curriculum.manage": ["academic_head"],
   "curriculum.approve": ["academic_head"],
 } satisfies Record<string, readonly AppRole[]>;
 

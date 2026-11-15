@@ -110,7 +110,7 @@ export function RegistryPage() {
         {canEdit && <Button size="sm" onClick={() => setConfirmBuild(true)}><DatabaseZap /> สร้างทะเบียนจากหลักฐานนำเข้า</Button>}
         {can("curriculum.manage") && v && <Button size="sm" variant="outline" onClick={() => { const l = window.prompt("ชื่อฉบับใหม่ (เช่น พุทธศักราช 2570)"); if (l?.trim()) void act("curriculum_version_clone", { p_source_id: v.id, p_version_label: l.trim() }, () => "คัดลอกเป็นฉบับร่างใหม่แล้ว — เปิดฉบับใหม่แล้วแก้เฉพาะรายการที่เปลี่ยน"); }}><Copy /> คัดลอกเป็นปีถัดไป</Button>}
       </div>
-      {v && v.status !== "draft" && <Notice>ฉบับนี้ไม่ใช่แบบร่าง — แก้ไขไม่ได้ (ต้องคัดลอกเป็นฉบับใหม่) การอนุมัติฉบับเป็นของหัวหน้าฝ่ายวิชาการ (Two-person เดิม)</Notice>}
+      {v && v.status !== "draft" && <Notice>ฉบับนี้ไม่ใช่แบบร่าง — แก้ไขไม่ได้ (ต้องคัดลอกเป็นฉบับใหม่) การจัดการทะเบียน (ร่าง) แยกจากการประกาศใช้อย่างเป็นทางการ — ส่งตรวจ/อนุมัติ/ใช้งานฉบับเป็นขั้นตอนแยกที่หน้า “ฉบับหลักสูตร” โดยผู้ดูแลหลักสูตร</Notice>}
       <section aria-label="สรุปทะเบียน" className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <KpiCard label="รายวิชาในทะเบียน" value={active.length} loading={reg.isPending} />
         <KpiCard label="แผนการเรียน" value={reg.data?.programs.length ?? 0} loading={reg.isPending} />
@@ -136,7 +136,7 @@ export function RegistryPage() {
         return (
           <section aria-label="ความพร้อมใช้งานของทะเบียน" className="mb-4 rounded-2xl border p-4" data-testid="registry-readiness">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">ความพร้อมใช้งานของทะเบียน <Badge variant={level.variant}>{level.label}</Badge></h2>
-            <p className="mb-2 text-xs text-muted-foreground" data-testid="readiness-level">{complete ? "ครบทุกรายการ — ส่งให้หัวหน้าฝ่ายวิชาการ (คนละคนกับผู้จัดทำ) อนุมัติฉบับได้" : usable ? `ใช้ทะเบียนส่วนที่ตรวจแล้วได้ (รายวิชา ${active.length}/${subjTotal} · จัดวิชา ${builtOff}/${of.total}) — ยังไม่ควรขออนุมัติฉบับจนกว่ารายการ • ด้านล่างจะครบ` : "ต้องมีแผนและรายวิชาในทะเบียนก่อน"}</p>
+            <p className="mb-2 text-xs text-muted-foreground" data-testid="readiness-level">{complete ? "ครบทุกรายการ — ผู้ดูแลหลักสูตรส่งตรวจและอนุมัติฉบับ (ประกาศใช้) ได้ที่หน้า “ฉบับหลักสูตร”" : usable ? `ใช้ทะเบียนส่วนที่ตรวจแล้วได้ (รายวิชา ${active.length}/${subjTotal} · จัดวิชา ${builtOff}/${of.total}) — ยังไม่ควรขออนุมัติฉบับจนกว่ารายการ • ด้านล่างจะครบ` : "ต้องมีแผนและรายวิชาในทะเบียนก่อน"}</p>
             <ul className="space-y-1 text-sm">
               {items.map((i) => (
                 <li key={i.label} className="flex flex-wrap items-start gap-2"><span aria-hidden="true">{i.ok ? "✔" : "•"}</span>
@@ -260,7 +260,7 @@ export function RegistryPage() {
       )}
 
       <ConfirmDialog open={confirmBuild} onOpenChange={setConfirmBuild} title="สร้างทะเบียนจากหลักฐานนำเข้า?"
-        description="ระบบสร้างแผน รายวิชา การจัดวิชา และกิจกรรมตามลำดับ dependency จากแถวที่ผ่านการตรวจ (ไม่มี error/ข้อขัดแย้ง/คำเตือน) พร้อมเก็บหน้า PDF — หลักฐานนำเข้า 2,832 แถวไม่ถูกแก้หรือเปลี่ยนสถานะ · ฉบับยังเป็นแบบร่างจนกว่าหัวหน้าฝ่ายวิชาการ (คนละคนกับผู้จัดทำ) อนุมัติ"
+        description="ระบบสร้างแผน รายวิชา การจัดวิชา และกิจกรรมตามลำดับ dependency จากแถวที่ผ่านการตรวจ (ไม่มี error/ข้อขัดแย้ง/คำเตือน) พร้อมเก็บหน้า PDF — หลักฐานนำเข้า 2,832 แถวไม่ถูกแก้หรือเปลี่ยนสถานะ · ฉบับยังเป็นแบบร่างจนกว่าจะประกาศใช้ (ขั้นตอนแยก)"
         confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id, p_include_warnings: withWarnings, ...(srcId && srcId !== v!.id ? { p_source_version_id: srcId } : {}) }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
     </>
   );

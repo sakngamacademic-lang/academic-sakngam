@@ -34,7 +34,7 @@ const ERROR_LABELS: Record<string, string> = {
 const sum = (rs: BatchReport[], k: keyof BatchReport) => rs.reduce((a, r) => a + Number(r[k] ?? 0), 0);
 
 export function UnifiedReviewPage() {
-  const { can, access } = useAuth();
+  const { can } = useAuth();
   const batches = useBatches();
   const reports = useBatchReports();
   const areas = useLearningAreas();
@@ -60,13 +60,12 @@ export function UnifiedReviewPage() {
   const batch = batches.data?.find((b) => b.id === report?.batch_id);
   const canWork = can("curriculum.edit") && batch?.status === "needs_review";
   const isHead = can("curriculum.approve");
-  const isCreator = batch?.created_by === access?.user_id;
 
   if (!batches.data?.length && !batches.isPending) return (<><PageHeader title="ตรวจหลักสูตร (หน้าเดียว)" description="" /><CurriculumNav /><EmptyState title="ยังไม่มีชุดนำเข้า">นำเข้าไฟล์หลักสูตรที่หน้า “แหล่งข้อมูล & นำเข้า” ก่อน</EmptyState></>);
 
   return (
     <>
-      <PageHeader title="ตรวจหลักสูตร (หน้าเดียว)" description="ระบบเรียงลำดับ dependency ให้อัตโนมัติ — แถวผิดพลาดและข้อขัดแย้งอนุมัติไม่ได้ · ผู้ตรวจกดอนุมัติเอง · หัวหน้าฝ่ายวิชาการ (คนละคนกับผู้สร้างชุด) อนุมัติชุดสุดท้าย" />
+      <PageHeader title="ตรวจหลักสูตร (หน้าเดียว)" description="ระบบเรียงลำดับ dependency ให้อัตโนมัติ — แถวผิดพลาดและข้อขัดแย้งอนุมัติไม่ได้ · ผู้ตรวจกดอนุมัติเอง · ผู้ดูแลหลักสูตร (หัวหน้าฝ่ายวิชาการ) อนุมัติชุดด้วยบัญชีเดียว — บันทึกผู้อนุมัติและหน้า PDF ทุกครั้ง" />
       <CurriculumNav />
       <ol className="mb-5 grid gap-2 md:grid-cols-3 xl:grid-cols-6" aria-label="ลำดับการตรวจ">
         <li className={cn("rounded-xl border p-3 text-sm", foundationOk ? "border-success/40" : "border-warning/50 bg-warning/10")}>
@@ -105,14 +104,14 @@ export function UnifiedReviewPage() {
             <KpiCard label="ผิดพลาด" value={report.error} tone="alert" />
             <KpiCard label="อนุมัติแล้ว" value={report.approved + report.skipped + report.committed} tone="ok" />
           </section>
-          <Workbench batch={batch} report={report} canWork={canWork} isHead={isHead} isCreator={isCreator} onDone={refresh} />
+          <Workbench batch={batch} report={report} canWork={canWork} isHead={isHead} onDone={refresh} />
         </>
       )}
     </>
   );
 }
 
-function Workbench({ batch, report, canWork, isHead, isCreator, onDone }: { batch: NonNullable<ReturnType<typeof useBatches>["data"]>[number]; report: BatchReport; canWork: boolean; isHead: boolean; isCreator: boolean; onDone: () => void }) {
+function Workbench({ batch, report, canWork, isHead, onDone }: { batch: NonNullable<ReturnType<typeof useBatches>["data"]>[number]; report: BatchReport; canWork: boolean; isHead: boolean; onDone: () => void }) {
   const [cls, setCls] = useState<RowClass>("pass");
   const [page, setPage] = useState(0);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -184,11 +183,9 @@ function Workbench({ batch, report, canWork, isHead, isCreator, onDone }: { batc
       <Pager page={page} total={rows.data?.total ?? 0} onPage={setPage} />
 
       <div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4">
-        {batch.status === "needs_review" && isHead && (isCreator
-          ? <Button size="sm" disabled title="กติกา 2 คน"><Lock /> ผู้สร้างชุดอนุมัติชุดเองไม่ได้ (ต้องหัวหน้าอีกคน)</Button>
-          : <Button size="sm" onClick={() => setBulk("approve")}>ตรวจสรุปและอนุมัติชุด…</Button>)}
+        {batch.status === "needs_review" && isHead && <Button size="sm" onClick={() => setBulk("approve")}>ตรวจสรุปและอนุมัติชุด…</Button>}
         {batch.status === "approved" && isHead && <Button size="sm" onClick={() => act("curriculum_import_batch_commit", { p_batch_id: batch.id }, "บันทึกเข้าข้อมูลหลักแล้ว (อ้างอิงหน้า PDF ทุกแถว)").then(() => undefined, () => undefined)}>บันทึกเข้าข้อมูลหลัก</Button>}
-        {batch.status === "needs_review" && !isHead && <p className="text-xs text-muted-foreground">การอนุมัติชุดสุดท้ายเป็นของหัวหน้าฝ่ายวิชาการ (คนละคนกับผู้สร้างชุด)</p>}
+        {batch.status === "needs_review" && !isHead && <p className="text-xs text-muted-foreground">การอนุมัติชุดเป็นของผู้ดูแลหลักสูตร (หัวหน้าฝ่ายวิชาการ)</p>}
       </div>
 
       <ConfirmDialog open={confirmPass !== null} onOpenChange={(o) => !o && setConfirmPass(null)} title={`อนุมัติ ${confirmPass?.length ?? 0} แถวที่ผ่านการตรวจ?`}

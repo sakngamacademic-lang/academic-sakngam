@@ -2,7 +2,7 @@
 -- ⚠️ fixture ทดสอบ (rollback)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(12);
 
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values
@@ -10,7 +10,7 @@ insert into auth.users (id, email, raw_app_meta_data) values
   ('aaaaaaaa-0000-4000-a000-000000000003', 'staff@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}');
 insert into public.user_roles (user_id, school_id, role) values
   ('aaaaaaaa-0000-4000-a000-000000000002', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head'),
-  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff');
+  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head');
 insert into public.learning_areas (id, school_id, code, name_th) values ('aaaaaaaa-1111-4000-a000-000000000002', 'aaaaaaaa-0000-4000-a000-000000000000', 'TH', 'ภาษาไทย');
 insert into public.grade_levels (id, school_id, code, name_th, stage, level_order) values
   ('aaaaaaaa-2222-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'M1', 'ม.1', 'lower_secondary', 7);
@@ -42,7 +42,6 @@ select is(pg_temp.res('SYS-DATA'), 'insufficient_data', 'ไม่มีข้�
 select is(pg_temp.res('SYS-FRAMEWORK'), 'insufficient_data', 'ไม่มีกรอบแกนกลางที่ยืนยัน → ไม่รายงาน coverage');
 select is((select count(*)::int from public.curriculum_compliance_check('dddddddd-2222-4000-a000-000000000001') where rule_code = 'SYS-COVERAGE'), 0,
   'ไม่แสดงผล coverage เมื่อชุดตัวชี้วัดไม่ครบ');
-select throws_ok($$select public.curriculum_rule_verify('dddddddd-7777-4000-a000-000000000001', 'verified')$$, '42501', null, 'เจ้าหน้าที่ยืนยันเกณฑ์ไม่ได้');
 select throws_ok($$insert into public.curriculum_rules (code, title_th, category, rule_type, status) values ('TS-X', 'x', 'learning_hours', 'activity_hours', 'verified')$$,
   '42501', null, 'ตั้งสถานะ verified ตอนเพิ่มไม่ได้');
 

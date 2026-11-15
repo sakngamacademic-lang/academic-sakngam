@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(21);
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values ('aaaaaaaa-0000-4000-a000-000000000003', 'staff@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}');
-insert into public.user_roles (user_id, school_id, role) values ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff');
+insert into public.user_roles (user_id, school_id, role) values ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head');
 insert into public.learning_areas (school_id, code, name_th, sort_order) values ('aaaaaaaa-0000-4000-a000-000000000000', 'TH', 'ภาษาไทย', 1), ('aaaaaaaa-0000-4000-a000-000000000000', 'CT', 'การงานอาชีพ', 2);
 insert into public.grade_levels (school_id, code, name_th, stage, level_order) values ('aaaaaaaa-0000-4000-a000-000000000000', 'M4', 'ม.4', 'upper_secondary', 10);
 insert into public.source_documents (id, school_id, register_code, title, doc_type, reliability) values ('dddddddd-0000-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'SRC-01', 'ทดสอบ', 'curriculum_book', 'A');

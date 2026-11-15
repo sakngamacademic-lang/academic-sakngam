@@ -10,8 +10,8 @@ insert into auth.users (id, email, raw_app_meta_data) values
   ('aaaaaaaa-0000-4000-a000-000000000003', 'staff@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}'),
   ('bbbbbbbb-0000-4000-a000-000000000003', 'staff@b.test', '{"school_id":"bbbbbbbb-0000-4000-a000-000000000000"}');
 insert into public.user_roles (user_id, school_id, role) values
-  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff'),
-  ('bbbbbbbb-0000-4000-a000-000000000003', 'bbbbbbbb-0000-4000-a000-000000000000', 'academic_staff');
+  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head'),
+  ('bbbbbbbb-0000-4000-a000-000000000003', 'bbbbbbbb-0000-4000-a000-000000000000', 'academic_head');
 insert into public.grade_levels (school_id, code, name_th, stage, level_order) values
   ('aaaaaaaa-0000-4000-a000-000000000000', 'M2', 'ม.2', 'lower_secondary', 8);
 insert into public.learning_areas (id, school_id, code, name_th, sort_order) values ('30000000-0000-4000-a000-0000000000aa', 'aaaaaaaa-0000-4000-a000-000000000000', 'TH', 'ภาษาไทย', 1);

@@ -60,7 +60,7 @@ export function ImportsPage() {
   };
   return (
     <>
-      <PageHeader title="แหล่งข้อมูล & นำเข้า" description="อัปโหลด → อ่านไฟล์ → ตรวจ → ตรวจรายแถว → อนุมัติ (คนละคน) → บันทึก · ไฟล์ต้นฉบับเก็บแบบ private"
+      <PageHeader title="แหล่งข้อมูล & นำเข้า" description="อัปโหลด → อ่านไฟล์ → ตรวจ → ตรวจรายแถว → อนุมัติโดยผู้ดูแลหลักสูตร → บันทึก · ไฟล์ต้นฉบับเก็บแบบ private"
         actions={canManage && <Button onClick={() => setDialog("source")}><FileUp /> ลงทะเบียนเอกสาร</Button>} />
       <CurriculumNav />
 

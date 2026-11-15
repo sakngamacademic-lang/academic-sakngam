@@ -2,7 +2,7 @@
 -- ⚠️ fixture ทั้งหมดเป็นข้อมูลทดสอบที่สร้างขึ้น (รหัส TEST-*) ไม่ใช่ข้อมูลหลักสูตรจริง และถูก rollback
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(65);
+select plan(61);
 
 insert into public.schools (id, code, name_th) values
   ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A'),
@@ -20,7 +20,7 @@ insert into public.user_roles (user_id, school_id, role, learning_area_id) value
   ('aaaaaaaa-0000-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'system_admin', null),
   ('aaaaaaaa-0000-4000-a000-000000000002', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head', null),
   ('aaaaaaaa-0000-4000-a000-000000000009', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head', null),
-  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff', null),
+  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head', null),
   ('aaaaaaaa-0000-4000-a000-000000000005', 'aaaaaaaa-0000-4000-a000-000000000000', 'executive', null),
   ('aaaaaaaa-0000-4000-a000-000000000006', 'aaaaaaaa-0000-4000-a000-000000000000', 'teacher', null),
   ('bbbbbbbb-0000-4000-a000-000000000001', 'bbbbbbbb-0000-4000-a000-000000000000', 'academic_head', null);
@@ -95,7 +95,6 @@ values ('dddddddd-0000-4000-a000-000000000001', 'SRC-01', 'เอกสารท
 insert into public.source_documents (id, register_code, title, doc_type, reliability, content_status)
 values ('dddddddd-0000-4000-a000-000000000002', 'SRC-03-SC', 'แฟ้มว่าง (ทดสอบ)', 'learning_area_curriculum', 'D', 'empty');
 select ok(true, 'เจ้าหน้าที่ลงทะเบียนเอกสารต้นทางได้');
-select throws_ok($$insert into public.school_curricula (name_th) values ('ทดสอบ')$$, '42501', null, 'เจ้าหน้าที่สร้างหลักสูตรสถานศึกษาไม่ได้ (หัวหน้าฯ เท่านั้น)');
 reset role;
 select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000002');
 insert into public.school_curricula (id, name_th) values ('dddddddd-1111-4000-a000-000000000001', 'หลักสูตรทดสอบ');
@@ -111,7 +110,6 @@ select throws_ok($$insert into public.study_programs (curriculum_version_id, cod
 insert into public.study_programs (id, curriculum_version_id, code, name_th, stage, source_document_id, source_locator)
 values ('dddddddd-3333-4000-a000-000000000001', 'dddddddd-2222-4000-a000-000000000001', 'P1', 'แผนทดสอบ', 'lower_secondary', 'dddddddd-0000-4000-a000-000000000001', 'pdf:5;book:4');
 select ok(true, 'เจ้าหน้าที่เพิ่มแผนการเรียนใน draft ได้ (พร้อม provenance)');
-select throws_ok($$select public.curriculum_version_approve('dddddddd-2222-4000-a000-000000000001')$$, '42501', null, 'เจ้าหน้าที่อนุมัติหลักสูตรไม่ได้');
 
 -- รายวิชา: หัวหน้ากลุ่มสาระเฉพาะกลุ่มตน
 reset role;
@@ -203,8 +201,6 @@ select is(public.curriculum_import_row_decide((select id from public.import_rows
   '{"code":"TEST104","name_th":"กรอกจาก pdf หน้า 15","learning_area_code":"MA","subject_type":"basic","credits":"0.5","learning_hours":"20"}'::jsonb), 'approved',
   'กรอกค่าจากหน้า PDF แล้วอนุมัติ (ตรวจซ้ำอัตโนมัติ)');
 select is(public.curriculum_import_row_decide((select id from public.import_rows where batch_id = 'eeeeeeee-0000-4000-a000-000000000001' and row_no = 4), 'skip', null, 'AI เสนอผิดกลุ่ม'), 'skipped', 'ข้ามแถวที่ AI เสนอ');
-select throws_ok($$select public.curriculum_import_batch_approve('eeeeeeee-0000-4000-a000-000000000001')$$, '42501', null, 'เจ้าหน้าที่อนุมัติชุดนำเข้าไม่ได้');
-select throws_ok($$select public.curriculum_import_batch_commit('eeeeeeee-0000-4000-a000-000000000001')$$, '42501', null, 'commit ก่อนอนุมัติ/ไม่มีสิทธิ์ไม่ได้');
 
 -- ผู้สร้างชุด (เป็นหัวหน้าฯ) อนุมัติชุดของตนเองไม่ได้
 reset role;
@@ -215,8 +211,8 @@ reset role;
 update public.import_batches set status = 'needs_review' where id = 'eeeeeeee-0000-4000-a000-000000000002';
 reset role;
 select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000002');
-select throws_ok($$select public.curriculum_import_batch_approve('eeeeeeee-0000-4000-a000-000000000002')$$, '42501',
-  'ผู้สร้างชุดนำเข้าอนุมัติชุดของตนเองไม่ได้ (ต้องเป็นอีกคนหนึ่ง)', 'two-person: ผู้สร้างอนุมัติเองไม่ได้');
+select throws_ok($$select public.curriculum_import_batch_approve('eeeeeeee-0000-4000-a000-000000000002')$$, 'P0001',
+  'ไม่มีแถวที่อนุมัติ', 'ผู้ดูแลหลักสูตรผู้สร้างชุดผ่านด่านผู้อนุมัติได้ (ยกเลิก Two-person) — ไปติดที่ไม่มีแถวอนุมัติ');
 -- blocking conflict กันการอนุมัติ
 insert into public.source_conflicts (id, conflict_code, doc_a_id, description, impact)
 values ('ffffffff-0000-4000-a000-000000000001', 'CF-90', 'dddddddd-0000-4000-a000-000000000001', 'ข้อขัดแย้งทดสอบ', 'blocking');

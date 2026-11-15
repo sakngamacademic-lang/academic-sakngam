@@ -41,7 +41,7 @@ const ERROR_LABELS: Record<string, string> = {
 
 /** ตรวจรายแถว: Raw | Normalized | Issues | ตำแหน่งต้นฉบับ · อนุมัติ/ข้าม/แก้ ผ่าน RPC จริง */
 export function ReviewPage() {
-  const { can, access } = useAuth();
+  const { can } = useAuth();
   const [params, setParams] = useSearchParams();
   const batches = useBatches();
   const batchId = params.get("batch") ?? batches.data?.find((b) => b.status === "needs_review")?.id ?? batches.data?.[0]?.id;
@@ -68,7 +68,6 @@ export function ReviewPage() {
   const pct = c.total ? Math.round((done / c.total) * 100) : 0;
   const reviewing = batch?.status === "needs_review";
   const canWork = can("curriculum.edit") && reviewing;
-  const isCreator = batch?.created_by === access?.user_id;
 
   return (
     <>
@@ -99,7 +98,7 @@ export function ReviewPage() {
                 <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
               </div>
               <ErrorSummaryPanel batchId={batch.id} />
-              <BatchActions batch={batch} isCreator={isCreator} canApprove={can("curriculum.approve")} canWork={can("curriculum.edit")}
+              <BatchActions batch={batch} canApprove={can("curriculum.approve")} canWork={can("curriculum.edit")}
                 onAction={batchAction} onAdd={() => setAdding(true)} />
               <DashSection id="rows" title="แถวข้อมูล" meta={`${rows.data?.total ?? 0} แถว`}>
                 {rows.error && <p role="alert" className="text-sm text-destructive">{dbErrorMessage(rows.error)}</p>}
@@ -144,8 +143,8 @@ function ErrorSummaryPanel({ batchId }: { batchId: string }) {
   );
 }
 
-function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }: {
-  batch: ImportBatch; isCreator: boolean; canApprove: boolean; canWork: boolean;
+function BatchActions({ batch, canApprove, canWork, onAction, onAdd }: {
+  batch: ImportBatch; canApprove: boolean; canWork: boolean;
   onAction: (fn: string, args: Record<string, unknown>, ok: string) => Promise<void>; onAdd: () => void;
 }) {
   const open = batch.counts?.total && (batch.counts.total ?? 0) > (batch.counts.approved ?? 0) + (batch.counts.skipped ?? 0);
@@ -165,7 +164,7 @@ function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }
         open={confirmClean !== null}
         onOpenChange={(o) => !o && setConfirmClean(null)}
         title={`อนุมัติ ${confirmClean?.length ?? 0} แถวที่ไม่มีข้อสังเกต?`}
-        description="การกดนี้เป็นการตัดสินของคุณ (บันทึกชื่อผู้ตัดสิน) — โปรดตรวจเทียบต้นฉบับ/ที่มา (หน้า PDF) ก่อน แถวที่มีข้อผิดพลาดหรือคำเตือนจะไม่ถูกอนุมัติ และการอนุมัติ “ชุด” ยังต้องให้หัวหน้าฝ่ายวิชาการอีกคนทำ"
+        description="การกดนี้เป็นการตัดสินของคุณ (บันทึกชื่อผู้ตัดสิน) — โปรดตรวจเทียบต้นฉบับ/ที่มา (หน้า PDF) ก่อน แถวที่มีข้อผิดพลาดหรือคำเตือนจะไม่ถูกอนุมัติ"
         confirmLabel="ยืนยัน อนุมัติแถว"
         onConfirm={() => approveClean(confirmClean ?? [])}
       />
@@ -175,12 +174,8 @@ function BatchActions({ batch, isCreator, canApprove, canWork, onAction, onAdd }
           onClick={() => onAction("curriculum_import_batch_revalidate", { p_batch_id: batch.id }, "ตรวจซ้ำทั้งชุดแล้ว (ไม่มีการอนุมัติอัตโนมัติ)")}><RefreshCw /> ตรวจซ้ำทั้งชุด</Button>
       )}
       {batch.status === "needs_review" && canApprove && (
-        isCreator ? (
-          <Button size="sm" disabled title="กติกา 2 คน: ผู้สร้างชุดอนุมัติเองไม่ได้"><Check /> อนุมัติชุด (ต้องเป็นหัวหน้าฯ อีกคน)</Button>
-        ) : (
           <Button size="sm" disabled={!!open} title={open ? "ยังมีแถวที่ไม่ได้ตรวจ" : undefined}
             onClick={() => onAction("curriculum_import_batch_approve", { p_batch_id: batch.id }, "อนุมัติชุดนำเข้าแล้ว")}><Check /> อนุมัติชุด</Button>
-        )
       )}
       {batch.status === "approved" && canApprove && (
         <Button size="sm" onClick={() => onAction("curriculum_import_batch_commit", { p_batch_id: batch.id }, "บันทึกเข้าข้อมูลหลักแล้ว")}><Database /> บันทึกเข้าข้อมูลหลัก</Button>

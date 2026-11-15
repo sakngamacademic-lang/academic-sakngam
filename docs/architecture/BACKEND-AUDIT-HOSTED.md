@@ -60,3 +60,9 @@
 - ฟังก์ชัน: `curriculum_registry_build` (สร้างทะเบียนจากหลักฐานตามลำดับ dependency; ไม่แก้ `import_rows`), `curriculum_registry_propose`, `curriculum_proposals_decide`,
   `curriculum_subject_set_active` (ยกเลิก/คืนพร้อมเหตุผล), `curriculum_version_clone` (แก้ให้รองรับ IS/ทวิศึกษา/สืบทอด), `curriculum_compare_versions`
 - หน้า `/office/curriculum/registry` · pgTAP `022` (18) ผ่าน · ประวัติเปลี่ยนแปลง = `audit_logs` เดิม
+
+## ผู้ดูแลหลักสูตรบัญชีเดียว — migration `20261129000100` (เตรียมไฟล์ · ยังไม่ apply บน Hosted)
+- `private.is_curriculum_admin()` = `academic_head`; แทน `is_office_staff()` เฉพาะ RLS/RPC ของหลักสูตร (14 ฟังก์ชัน + 12 policy) · เจ้าหน้าที่ (`academic_staff`) แก้หลักสูตรไม่ได้ · `learning_area_head` แก้ได้เฉพาะกลุ่มสาระที่ได้รับมอบหมาย
+- ยกเลิก Two-person เฉพาะชุดนำเข้า: เอา check `approved_by <> created_by` และเงื่อนไขใน `curriculum_import_batch_approve` ออก (ยังบังคับ approved_by เมื่อสถานะ approved/committed)
+- แยกทะเบียน (ร่าง) จากการประกาศใช้ฉบับ: ส่งตรวจ/อนุมัติ/ใช้งาน/เลิกใช้ฉบับยังเป็นขั้นตอนแยก ต้องมีเอกสารประกาศใช้ + เลขหน้า
+- Audit: trigger เดิมครบ (รวมการอนุมัติชุด) · pgTAP `023` (12) + ปรับ 008/010/012/018–022 ผ่านทั้งหมด

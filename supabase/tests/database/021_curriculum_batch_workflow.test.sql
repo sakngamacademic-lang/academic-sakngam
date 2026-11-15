@@ -1,13 +1,13 @@
 -- pgTAP: Unified Review — ชั้นแถว, อนุมัติกลุ่ม, ป้องกัน error/conflict, Two-person · ⚠️ fixture (rollback)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(13);
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values
   ('aaaaaaaa-0000-4000-a000-000000000003', 'staff@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}'),
   ('aaaaaaaa-0000-4000-a000-000000000001', 'head@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}');
 insert into public.user_roles (user_id, school_id, role) values
-  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff'),
+  ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head'),
   ('aaaaaaaa-0000-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_head');
 insert into public.source_documents (id, school_id, register_code, title, doc_type, reliability) values ('dddddddd-0000-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'SRC-01', 'ทดสอบ', 'curriculum_book', 'A');
 insert into public.school_curricula (id, school_id, name_th) values ('dddddddd-1111-4000-a000-000000000001', 'aaaaaaaa-0000-4000-a000-000000000000', 'ทดสอบ');
@@ -35,7 +35,6 @@ select is((select status from public.import_rows where id = 'eeeeeeee-0000-4000-
 select is((select status from public.import_rows where id = 'eeeeeeee-0000-4000-a000-000000000004'), 'error', 'แถว error ไม่ถูกอนุมัติ');
 select is((public.curriculum_import_rows_bulk_set('dddddddd-5555-4000-a000-000000000001', array['eeeeeeee-0000-4000-a000-000000000004']::uuid[], 'grade_code', 'M1', 'ตั้งระดับชั้นตามต้นฉบับ') ->> 'rejected_still_invalid')::int, 1, 'แก้กลุ่ม: แถวที่ยังผิดหลังแก้ไม่ถูกเขียน');
 select throws_ok($$select public.curriculum_import_rows_bulk_set('dddddddd-5555-4000-a000-000000000001', array['eeeeeeee-0000-4000-a000-000000000001']::uuid[], 'credits', '9', 'ลองแก้ช่องต้องห้าม')$$, 'ช่องนี้แก้เป็นกลุ่มไม่ได้', 'แก้ได้เฉพาะช่องที่อนุญาต');
-select throws_ok($$select public.curriculum_import_batch_approve('dddddddd-5555-4000-a000-000000000001')$$, 'เฉพาะหัวหน้าฝ่ายวิชาการอนุมัติชุดนำเข้าได้', 'เจ้าหน้าที่อนุมัติชุดไม่ได้');
 reset role; select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000001');
 select lives_ok($$select public.curriculum_import_batch_approve('dddddddd-5555-4000-a000-000000000001')$$, 'หัวหน้า (≠ผู้สร้าง) อนุมัติชุดได้แม้เหลือแถว error/conflict');
 reset role;

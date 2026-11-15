@@ -7,7 +7,7 @@ import { consistent, HOURS_PER_CREDIT, ITEM, SOURCE_LABELS } from "./conflict-in
  */
 export type Tier = "evidence" | "source_error" | "decide";
 export const TIER_LABELS: Record<Tier, string> = {
-  evidence: "1. ปิดได้ด้วยหลักฐานที่ชัดเจน",
+  evidence: "1. มีหลักฐานชัดเจน (ข้อเสนอ — ผู้ดูแลหลักสูตรเป็นผู้ยืนยัน)",
   source_error: "2. ข้อผิดพลาดในต้นฉบับ PDF (เล่มขัดแย้งกันเอง)",
   decide: "3. ต้องให้ผู้ดูแลหลักสูตรตัดสิน",
 };

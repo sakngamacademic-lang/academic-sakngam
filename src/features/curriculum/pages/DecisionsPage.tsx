@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -9,17 +9,17 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { requireSupabase } from "@/lib/supabase";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
-import { curriculumKey, rpc, useConflicts } from "../api";
+import { curriculumKey, rpc, useConflicts, useSourceDocuments } from "../api";
 import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion } from "../components";
 import { groupConflicts, TIER_LABELS, type DecisionGroup, type Tier } from "../conflict-groups";
 
 const NOTE_MIN = 10;
 const MISSING = [
-  { code: "ว22120", why: "แถวเก่าจากการอ่านรหัส “ว 221201” ผิด — ผูกกับข้อขัดแย้งเรื่องรูปแบบรหัส ว221201/ว21201", plan: "ตัดสินกลุ่ม “รหัส ว221201/ว221202” ก่อน แล้วให้ฝ่ายวิชาการลงทะเบียนข้อขัดแย้งแยกสำหรับแถวนี้" },
-  { code: "ง30213", why: "ตรวจพบความขัดแย้งในทะเบียน แต่ยังไม่มีรายการ CF — ชั่วโมงไม่ตรงเกณฑ์ (กรณีปิดได้ด้วยหลักฐาน)", plan: "ลงทะเบียนข้อขัดแย้งใหม่พร้อมหลักฐาน PDF แล้วจัดเข้ากลุ่มที่เกี่ยวข้อง" },
-  { code: "ง33274", why: "ตรวจพบความขัดแย้งในทะเบียน แต่ยังไม่มีรายการ CF (กรณีปิดได้ด้วยหลักฐาน)", plan: "ลงทะเบียนข้อขัดแย้งใหม่พร้อมหลักฐาน PDF" },
-  { code: "จ31201", why: "ตรวจพบความขัดแย้งในทะเบียน แต่ยังไม่มีรายการ CF (ข้อผิดพลาดในต้นฉบับ)", plan: "ลงทะเบียนข้อขัดแย้งใหม่พร้อมหลักฐาน PDF" },
-  { code: "พ20211", why: "ตรวจพบความขัดแย้งในทะเบียน แต่ยังไม่มีรายการ CF (ข้อผิดพลาดในต้นฉบับ)", plan: "ลงทะเบียนข้อขัดแย้งใหม่พร้อมหลักฐาน PDF" },
+  { code: "ว22120", why: "แถวนำเข้าเก่า (รอตรวจ) จากการอ่าน “ว 221201 / ว 221202” ผิดเป็น ว22120 — ข้อขัดแย้งนี้อยู่ใน CF-84 แล้ว", plan: "ไม่ลงทะเบียน CF ใหม่ (กันซ้ำ) — ตัดสิน CF-84 ก่อน แล้วให้ผู้ดูแลหลักสูตรข้ามแถวเก่าในหน้านำเข้า" },
+  { code: "ง30213", why: "คำอธิบายรายวิชา หน้า 378 กับ 388 สะกดชื่อต่างกัน (หน่วยกิต/ชั่วโมงเท่ากัน 2.0/80)", plan: "ลงทะเบียน CF-88 หมวดรหัสซ้ำ พร้อมหน้า PDF ทั้งสอง" },
+  { code: "ง33274", why: "คำอธิบายรายวิชา หน้า 279 (มีเลขลำดับ 1) กับ 375 (ไม่มีเลขลำดับ) ชื่อต่างกัน (1.0/40)", plan: "ลงทะเบียน CF-89 หมวดรหัสซ้ำ" },
+  { code: "จ31201", why: "คำอธิบายรายวิชา หน้า 470 (ภาษาจีนและวัฒนธรรม1) กับ 471 (…2) ใช้รหัสเดียวกัน (1.0/40)", plan: "ลงทะเบียน CF-90 หมวดรหัสซ้ำ" },
+  { code: "พ20211", why: "คำอธิบายรายวิชา หน้า 223 (ศิลปะป้องกันตัว 1) กับ 224 (…2) ใช้รหัสเดียวกัน (1.0/40)", plan: "ลงทะเบียน CF-91 หมวดรหัสซ้ำ" },
 ];
 
 function useSubjectNames(versionId: string | undefined) {
@@ -37,27 +37,42 @@ function useSubjectNames(versionId: string | undefined) {
 function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [option, setOption] = useState(0);
+  const [option, setOption] = useState(-1); // ไม่เลือกให้ล่วงหน้า — ผู้ดูแลต้องเลือกเอง
   const [note, setNote] = useState("");
   const [skip, setSkip] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState(false);
-  const chosen = g.items.filter((i) => !skip.has(i.conflict.id));
-  const valid = canResolve && chosen.length > 0 && note.trim().length >= NOTE_MIN;
+  const [done, setDone] = useState<Set<string>>(new Set()); // บันทึกสำเร็จแล้วในรอบนี้ — ไม่ส่งซ้ำ
+  const [failed, setFailed] = useState<Map<string, string>>(new Map());
+  const running = useRef(false);
+  const chosen = g.items.filter((i) => !skip.has(i.conflict.id) && !done.has(i.conflict.id));
+  const valid = canResolve && option >= 0 && chosen.length > 0 && note.trim().length >= NOTE_MIN;
   const apply = async () => {
-    const text = `[มติกลุ่ม: ${g.title}] ${g.options[option]?.label ?? ""} — ${note.trim()}`;
-    let done = 0;
+    if (running.current || option < 0) return;
+    running.current = true;
+    const label = g.options[option]?.label ?? "";
+    const ok = new Set(done);
+    const bad = new Map<string, string>();
     try {
       for (const i of chosen) {
-        await rpc("source_conflict_resolve", { p_id: i.conflict.id, p_resolution: text });
-        done++;
+        // ระบุหลักฐานของรายการนั้นลงในมติ เพื่อให้ Audit Log อ่านได้ว่าตัดสินบนค่าใด
+        const evidence = i.evidence.map((e) => `${e.source} หน้า ${e.page}: ${e.text}`).join(" | ");
+        const text = `[มติกลุ่ม: ${g.title}] ${label} — ${note.trim()} (หลักฐาน: ${evidence})`.slice(0, 1900);
+        try {
+          await rpc("source_conflict_resolve", { p_id: i.conflict.id, p_resolution: text });
+          ok.add(i.conflict.id);
+        } catch (e) {
+          bad.set(i.conflict.id, dbErrorMessage(e));
+        }
       }
-      toast.success(`บันทึกมติแล้ว ${done} รายการ`);
-      setNote("");
-    } catch (e) {
-      toast.error(`บันทึกได้ ${done}/${chosen.length} รายการ — ${dbErrorMessage(e)}`);
     } finally {
+      running.current = false;
+      setDone(ok);
+      setFailed(bad);
+      if (bad.size === 0) { setNote(""); setOption(-1); }
       await qc.invalidateQueries({ queryKey: curriculumKey });
     }
+    if (bad.size === 0) toast.success(`บันทึกมติสำเร็จ ${chosen.length} รายการ`);
+    else toast.error(`สำเร็จ ${chosen.length - bad.size} · ล้มเหลว ${bad.size} รายการ — ดูรายละเอียดในการ์ดกลุ่ม`);
   };
   return (
     <section className="rounded-lg border bg-card p-4" aria-label={g.title}>
@@ -102,9 +117,16 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
           </fieldset>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} aria-label={`เหตุผลของกลุ่ม ${g.title}`}
             className="w-full rounded-md border bg-background p-2 text-sm" placeholder={`ระบุเหตุผลและเอกสารอ้างอิง (อย่างน้อย ${NOTE_MIN} ตัวอักษร)`} />
-          <Button size="sm" disabled={!valid} onClick={() => setConfirm(true)}>บันทึกมติให้ {chosen.length} รายการ</Button>
+          {failed.size > 0 && (
+            <Notice tone="warning">
+              บันทึกไม่สำเร็จ {failed.size} รายการ (ที่สำเร็จแล้วไม่ถูกส่งซ้ำ):
+              <ul className="list-disc pl-5">{g.items.filter((i) => failed.has(i.conflict.id)).map((i) => <li key={i.conflict.id}>{i.conflict.conflict_code} {i.title}: {failed.get(i.conflict.id)}</li>)}</ul>
+            </Notice>
+          )}
+          {option < 0 && <p className="text-xs text-muted-foreground">เลือกทางเลือกก่อนจึงจะบันทึกได้</p>}
+          <Button size="sm" disabled={!valid} onClick={() => setConfirm(true)}>{failed.size > 0 ? `ลองใหม่เฉพาะ ${chosen.length} รายการที่ยังค้าง` : `บันทึกมติให้ ${chosen.length} รายการ`}</Button>
           <ConfirmDialog open={confirm} onOpenChange={setConfirm} title="ยืนยันการตัดสินข้อขัดแย้งเป็นกลุ่ม"
-            description={`ปิดข้อขัดแย้ง ${chosen.length} รายการในกลุ่ม “${g.title}” ด้วยมติ: ${g.options[option]?.label ?? ""} — บันทึก Audit Log ทุกรายการ`}
+            description={`ปิดข้อขัดแย้ง ${chosen.length} รายการในกลุ่ม “${g.title}” ด้วยมติ: ${g.options[option]?.label ?? ""} — บันทึกแยกทีละรายการ พร้อมหลักฐานของแต่ละรายการ และมี Audit Log ทุกรายการ`}
             confirmLabel="ยืนยันมติ" onConfirm={apply} />
         </div>
       ) : (
@@ -124,12 +146,18 @@ export function DecisionsPage() {
   const byTier = (t: Tier) => groups.filter((g) => g.tier === t);
   const count = (t: Tier) => byTier(t).reduce((s, g) => s + g.items.length, 0);
   const canResolve = can("curriculum.approve");
+  const docs = useSourceDocuments();
+  const noFile = (docs.data?.length ?? 0) > 0 && docs.data!.every((d) => !d.file_id);
+  const all = q.data ?? [];
+  const resolved = all.filter((c) => c.status === "resolved").length;
   return (
     <div className="space-y-4">
       <PageHeader title="สรุปการตัดสินใจข้อขัดแย้ง" description="จัดกลุ่มตามประเด็นเพื่อตัดสินทีละกลุ่ม พร้อมหลักฐานจาก PDF และผลกระทบ" />
       <CurriculumNav />
       <Notice tone="info">ระบบแค่จัดกลุ่มและเสนอทางเลือก — ไม่ตัดสินแทน ไม่เปลี่ยนสถานะ และไม่แก้ข้อมูลหลักสูตรจนกว่าผู้ดูแลหลักสูตรจะกดยืนยันมติของแต่ละกลุ่ม</Notice>
-      <div className="grid gap-3 sm:grid-cols-3">
+      {noFile && <Notice tone="warning">ยังไม่มีไฟล์ PDF ต้นฉบับอัปโหลดในระบบ ปุ่มเปิด PDF จึงไม่แสดง — ใช้เลขหน้าที่ระบุในหลักฐานเปิดดูจากไฟล์ต้นฉบับของโรงเรียนแทน</Notice>}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <KpiCard label="ตัดสินแล้ว" value={`${resolved}/${all.length}`} />
         <KpiCard label="ปิดได้ด้วยหลักฐาน" value={count("evidence")} />
         <KpiCard label="ข้อผิดพลาดในต้นฉบับ" value={count("source_error")} />
         <KpiCard label="ต้องตัดสิน" value={count("decide")} />
@@ -145,8 +173,8 @@ export function DecisionsPage() {
         ))
       )}
       <div className="space-y-2">
-        <h2 className="text-lg font-semibold">รายวิชาที่ทะเบียนมีเครื่องหมายขัดแย้งแต่ยังไม่มีรายการข้อขัดแย้ง (5 รายวิชา)</h2>
-        <Notice tone="warning">ปิดจากหน้านี้ไม่ได้ ต้องลงทะเบียนรายการข้อขัดแย้งก่อน — การเขียนข้อมูลบน Hosted ต้องขออนุมัติแยกต่างหาก (ยังไม่ดำเนินการ)</Notice>
+        <h2 className="text-lg font-semibold">รายวิชา 5 รายการที่มีแถวนำเข้าติดเครื่องหมายขัดแย้งแต่ยังไม่มี CF</h2>
+        <Notice tone="warning">ปิดจากหน้านี้ไม่ได้ ต้องลงทะเบียนรายการข้อขัดแย้งก่อน (SQL เตรียมไว้แล้ว ตรวจรายการซ้ำก่อนเพิ่ม) — การเขียนข้อมูลบน Hosted ต้องขออนุมัติแยกต่างหาก ยังไม่ดำเนินการ</Notice>
         <ul className="space-y-2">
           {MISSING.map((m) => (
             <li key={m.code} className="rounded-md border p-3 text-sm">

@@ -41,3 +41,25 @@
 - ตัวชี้วัดแกนกลาง (อ้างอิง 1,235 รายการ) **ยังไม่นำเข้า** เพราะต้องมีชุดอ้างอิงทางการที่ยืนยันก่อน
 - ซ้อมย้ายบน stack ที่จำลอง Hosted (21 migration → 24) โดยใช้บัญชี staff เป็นผู้สร้างชุด: รัน 2 ครั้งจำนวนคงที่ · hash ตรงต้นทาง · ไม่มี approved/committed · `auth.users` ไม่ถูกแตะ
 - สร้างไฟล์ด้วยข้อมูลปัจจุบันแล้วตรวจได้: ชุดนำเข้า 6 · แถว 2,832 (ไฟล์ ~4.9 MB — ถ้า SQL Editor รับไม่ไหวให้ใช้ `psql -f` กับ connection string ของ Staging)
+
+## Dry Run บน Hosted (อ่านอย่างเดียว) — 15 พ.ย. 2569
+
+สร้างไฟล์ด้วย `--dry-run` (ไม่เขียนข้อมูลจริง):
+
+```bash
+node scripts/transfer/export-curriculum-staging.mjs --school-code <code> --actor-email <email> --out <dir> --dry-run
+```
+
+- `dryrun-<ts>.sql` — แบบ temp table + `begin; … rollback;` สำหรับ SQL Editor
+- `dryrun-ro-NN-<table>-<k>.sql` — แบบ CTE ล้วน แบ่งชิ้น ≤ ~450KB ส่งผ่าน Management API
+  (`/database/query`, `read_only: true`) ได้ทีละไฟล์ (ไฟล์เดียว 3MB ได้ HTTP 413)
+
+ตรวจ: โรงเรียน/ผู้สร้างชุดมีจริง, ผู้สร้างเป็น `academic_staff` ไม่ใช่ `academic_head`,
+มี `academic_head` อื่นเป็นผู้อนุมัติ, จำนวนแถว, FK, unique key, ไม่ชน id เดิม, และสถานะที่ย้าย
+
+ผลบน Hosted (อ่านอย่างเดียว, 13 ไฟล์, 48 checks):
+ผ่านทุกข้อด้านข้อมูล — source_documents 7, source_conflicts 80 (needs_decision), school_curricula 1,
+curriculum_versions 1 (draft), import_batches 6 (needs_review), import_rows 2,832, curriculum_rules 43 (draft);
+FK orphan 0, unique collision 0, ปลายทางว่าง
+ไม่ผ่าน 2 ข้อตามคาด (blocker): ยังไม่มีบัญชี `academic_staff` และไม่มี `academic_head` อื่นนอกจากผู้สร้าง
+→ ต้องสร้างบัญชีและรัน `private.grant_school_role(...)` ก่อนย้ายจริง

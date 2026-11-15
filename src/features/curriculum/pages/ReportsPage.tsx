@@ -10,11 +10,13 @@ import { useLearningAreas } from "@/features/master-data/api";
 import { requireSupabase } from "@/lib/supabase";
 import { downloadXlsx, type Cell, type Sheet } from "@/lib/xlsx-lite";
 import {
-  AUTHORITY_LABELS, COMPLIANCE_LABELS, CONFLICT_CATEGORY_LABELS, CONFLICT_STATUS_LABELS, curriculumKey, useCompliance, useConflicts, useMappingCounts,
+  AUTHORITY_LABELS, CONFLICT_CATEGORY_LABELS, CONFLICT_STATUS_LABELS, curriculumKey, useCompliance, useConflicts, useMappingCounts,
   useSourceDocuments, useStagedStructure, useStructureSummary, VERSION_STATUS_LABELS, type ComplianceRow,
   usePrograms,
 } from "../api";
 import { programNameByCode } from "../program-labels";
+import { ComplianceChecks } from "../ComplianceChecks";
+import { checkView } from "../compliance-view";
 import { CurriculumNav, formatLocator, Notice, useSelectedVersion, VersionPicker } from "../components";
 
 type Row = { grade: string; program: string; type: string; subjects: number; credits: number; hours: number };
@@ -100,7 +102,7 @@ export function ReportsPage() {
       { name: "ข้อมูลรายงาน", rows: meta },
       { name: "1-2 โครงสร้าง หน่วยกิต ชั่วโมง", rows: [["ชั้น", "แผน", "พื้นฐาน (วิชา)", "พื้นฐาน (หน่วยกิต)", "พื้นฐาน (ชั่วโมงเรียน)", "เพิ่มเติม (วิชา)", "เพิ่มเติม (หน่วยกิต)", "เพิ่มเติม (ชั่วโมงเรียน)", "รวมหน่วยกิต", "รวมชั่วโมงเรียน"], ...structureRows] },
       { name: "4 การกระจายรายวิชา", rows: [["กลุ่มสาระ", "พื้นฐาน", "เพิ่มเติม"], ...dist.map(([k, v]) => [areaName.get(k) ?? k, v.basic, v.additional])] },
-      { name: "5 ผลตรวจตามเกณฑ์", rows: [["รหัส", "เวอร์ชัน", "เกณฑ์", "ขอบเขต", "ผล", "คาดหวัง", "จริง", "แหล่งอ้างอิง", "หมายเหตุ"], ...(compliance.data ?? []).map((r) => [r.rule_code, r.rule_version, r.title_th, r.scope, COMPLIANCE_LABELS[r.status], r.expected, r.actual, r.source, r.detail])] },
+      { name: "5 ผลตรวจตามเกณฑ์", rows: [["รายการตรวจสอบ", "ขอบเขต", "สถานะ", "รายละเอียด", "ที่ควรเป็น", "ที่พบ", "สิ่งที่ต้องดำเนินการ", "รายละเอียดเพิ่มเติม (ข้อมูลเทคนิค)"], ...(compliance.data ?? []).map((r) => { const v = checkView(r, progs.data); return [v.title, v.scope, v.statusLabel, v.detail, v.expected, v.actual, v.action, `${v.tech.code} v${v.tech.version} · ${v.tech.category} · ${v.tech.source}`]; })] },
       { name: "6 ข้อขัดแย้ง", rows: [["รหัส", "หมวด", "ประเด็น", "หน้า", "ค่า A", "ค่า B", "ผู้มีอำนาจ", "สถานะ"], ...(conflicts.data ?? []).map((c) => [c.conflict_code, CONFLICT_CATEGORY_LABELS[c.category], c.description, `${formatLocator(c.locator_a)}${c.locator_b ? ` / ${formatLocator(c.locator_b)}` : ""}`, c.value_a, c.value_b, AUTHORITY_LABELS[c.decision_authority], CONFLICT_STATUS_LABELS[c.status]])] },
       { name: "7 ข้อเสนอแนะ", rows: [["ที่มา", "ข้อเสนอแนะ"], ...recommendations.map((r) => ["สร้างจากผลตรวจ (ร่าง — ต้องพิจารณาโดยฝ่ายวิชาการ)", r])] },
     ];
@@ -156,7 +158,7 @@ export function ReportsPage() {
 
         <ReportSection n="5" title="ผลตรวจตามเกณฑ์ และความครอบคลุมตัวชี้วัด" kind="rule" note="คำนวณจากข้อมูลที่บันทึกแล้วเท่านั้น (ไม่ใช้ข้อมูลร่าง) · เกณฑ์ที่ยังไม่ยืนยัน = ข้อมูลไม่พอ">
           <p className="mb-2 text-sm">ผ่าน {compCount("pass")} · เตือน {compCount("warning")} · ไม่ผ่าน {compCount("fail")} · ข้อมูลไม่พอ {compCount("insufficient_data")} · Mapping ยืนยันแล้ว {mapping.data?.verified ?? 0} / รอตรวจ {mapping.data?.pending ?? 0}</p>
-          <Table head={["รหัส", "เกณฑ์", "ผล", "คาดหวัง", "จริง", "แหล่ง"]} rows={(compliance.data ?? []).slice(0, 60).map((r) => [`${r.rule_code} v${r.rule_version}`, r.title_th, COMPLIANCE_LABELS[r.status], r.expected, r.actual, r.source])} />
+          <ComplianceChecks rows={compliance.data ?? []} programs={progs.data} />
         </ReportSection>
 
         <ReportSection n="6" title="ข้อขัดแย้งของหลักสูตร" kind="fact">

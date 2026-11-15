@@ -680,7 +680,7 @@ export interface ComplianceRow {
   actual: string | null;
   detail: string | null;
 }
-export const COMPLIANCE_LABELS: Record<ComplianceStatus, string> = { pass: "ผ่าน", warning: "เตือน", fail: "ไม่ผ่าน", insufficient_data: "ข้อมูลไม่พอ" };
+export const COMPLIANCE_LABELS: Record<ComplianceStatus, string> = { pass: "ผ่าน", warning: "ต้องตรวจเพิ่มเติม", fail: "ไม่ผ่าน", insufficient_data: "ข้อมูลไม่เพียงพอ" };
 export function useCompliance(versionId: string | undefined) {
   return useQuery({
     queryKey: [...curriculumKey, "compliance", versionId],

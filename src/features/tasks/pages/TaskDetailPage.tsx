@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, FileUp, Pencil, Search, Send, UserMinus } from "lucide-react";
+import { ArrowLeft, Ban, ClipboardCheck, FileUp, History, Pencil, Search, Send, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FormField } from "@/components/ui/form-controls";
@@ -32,6 +32,8 @@ import {
 } from "../api";
 import { AssignmentStatusBadge, dueText, TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskForm } from "./TaskForm";
+import { SubmissionHistory } from "./SubmissionHistory";
+import { reviewAssignment } from "../api";
 
 export function TaskDetailPage() {
   const { taskId } = useParams();
@@ -44,6 +46,7 @@ export function TaskDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState("");
   const [removing, setRemoving] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<{ id: string; name: string; status: string } | null>(null);
 
   const task = q.data?.task;
   const assignments = q.data?.assignments ?? [];
@@ -57,6 +60,8 @@ export function TaskDetailPage() {
 
   // ปุ่มจัดการแสดงตามสิทธิ์ทั่วไป — ฐานข้อมูลตรวจขอบเขตกลุ่มสาระอีกครั้งทุกคำสั่ง
   const editable = can("tasks.manage") && (task.status === "draft" || task.status === "published");
+  // ตรวจรับได้แม้งานปิดรับแล้ว (สิทธิ์จริงตรวจซ้ำที่ RPC ตามขอบเขตงาน)
+  const canReview = can("tasks.manage");
   const active = assignments.filter((a) => a.status !== "cancelled");
   const count = (s: string) => assignments.filter((a) => a.status === s).length;
   const overdue = assignments.filter((a) => isOverdue(task.due_at, a.status, task.status)).length;
@@ -134,6 +139,11 @@ export function TaskDetailPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <AssignmentStatusBadge status={a.status} overdue={isOverdue(task.due_at, a.status, task.status)} />
+                    {a.current_version > 0 && (
+                      <Button size="sm" variant={a.status === "submitted" && canReview ? "default" : "outline"} onClick={() => setReviewing({ id: a.id, name: t ? fullName(t) : "ครู", status: a.status })}>
+                        {a.status === "submitted" && canReview ? <><ClipboardCheck /> ตรวจ</> : <><History /> ประวัติ</>}
+                      </Button>
+                    )}
                     {editable && (a.status === "assigned" || a.status === "revision_requested") && (
                       <Button size="sm" variant="ghost" onClick={() => setRemoving(a.id)} aria-label={`ยกเลิกการมอบหมาย ${t ? fullName(t) : ""}`}>
                         <UserMinus />
@@ -192,6 +202,7 @@ export function TaskDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <ReviewDialog target={reviewing} canReview={canReview} onClose={() => setReviewing(null)} />
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}
@@ -330,5 +341,47 @@ function PublishSection({ task, assignedTeacherIds, onDone }: { task: Task; assi
         {mode === "teachers" && teacherIds.length > 0 && ` (${teacherIds.length} คน)`}
       </Button>
     </DashSection>
+  );
+}
+
+/** ตรวจรับ / ขอแก้ไข — ดูทุกเวอร์ชันที่ส่ง · ขอแก้ไขต้องระบุเหตุผล · ตรวจงานที่ตนเองส่งไม่ได้ (ตรวจที่ RPC) */
+export function ReviewDialog({ target, canReview, onClose }: { target: { id: string; name: string; status: string } | null; canReview: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const act = async (decision: "approve" | "revision") => {
+    if (!target) return;
+    setBusy(true);
+    try {
+      await reviewAssignment(target.id, decision, comment.trim() || null);
+      toast.success(decision === "approve" ? "ตรวจรับแล้ว" : "ส่งกลับให้แก้ไขแล้ว");
+      setComment("");
+      onClose();
+      await qc.invalidateQueries({ queryKey: tasksKey });
+    } catch (e) {
+      toast.error(dbErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const reviewable = canReview && target?.status === "submitted";
+  return (
+    <Dialog open={target !== null} onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent title={reviewable ? `ตรวจงาน · ${target?.name ?? ""}` : `ประวัติการส่ง · ${target?.name ?? ""}`} className="max-w-2xl">
+        {target && <SubmissionHistory assignmentId={target.id} />}
+        {reviewable && (
+          <div className="mt-4 space-y-3 border-t pt-4">
+            <FormField label="ความเห็น (บังคับเมื่อขอแก้ไข)" htmlFor="review-comment">
+              <textarea id="review-comment" rows={3} maxLength={2000} value={comment} onChange={(e) => setComment(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+            </FormField>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="outline" disabled={busy || comment.trim().length < 5} onClick={() => void act("revision")}>ขอแก้ไข</Button>
+              <Button disabled={busy} onClick={() => void act("approve")}><ClipboardCheck /> ตรวจรับ</Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

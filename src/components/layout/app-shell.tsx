@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Brand } from "./brand";
 import { SidebarNav } from "./sidebar-nav";
 import { EnvironmentBanner } from "./environment-banner";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { UserPanel } from "./user-panel";
 
 interface AppShellProps {
@@ -82,6 +83,7 @@ export function AppShell({ portal }: AppShellProps) {
         </Button>
         <p className="truncate font-medium lg:hidden">{portal.name}</p>
         <div className="ml-auto flex min-w-0 items-center gap-3">
+          <NotificationBell />
           <div className="hidden min-w-0 text-right leading-tight sm:block">
             <p className="truncate text-sm font-medium">{access?.display_name || access?.email}</p>
             {primaryRole && <p className="truncate text-xs text-muted-foreground">{ROLE_LABELS[primaryRole]}</p>}

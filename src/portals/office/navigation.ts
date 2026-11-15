@@ -40,7 +40,7 @@ export const officePortal: PortalConfig = {
       items: [
         { path: "tasks", label: "รายการงาน / มอบหมาย", icon: FileText, roles: ACADEMIC_AND_EXEC },
         { path: "documents", label: "เอกสารของครู", icon: FolderLock, roles: ACADEMIC },
-        { path: "reviews", label: "ตรวจรับเอกสาร", icon: ClipboardCheck, plannedPhase: "Phase 1.10", roles: ACADEMIC },
+        { path: "reviews", label: "ตรวจรับเอกสาร", icon: ClipboardCheck, roles: ACADEMIC },
       ],
     },
     {

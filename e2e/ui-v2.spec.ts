@@ -198,25 +198,11 @@ test.describe("Office Dashboard", () => {
     await expect(live.getByText(/^25\d\d$/)).toBeVisible();
     expect(await live.locator("xpath=ancestor::*[@data-demo-zone]").count()).toBe(0);
 
-    // Demo แยกชัดเจน
-    const demo = page.locator("[data-demo-zone]");
-    await expect(demo.getByRole("heading", { name: /ตัวอย่างหน้าจอ \(Demo\)/ })).toBeVisible();
-    await expect(demo.getByRole("heading", { name: "งานที่ต้องดำเนินการ" })).toBeVisible();
-    await expect(demo.getByRole("img", { name: /ร้อยละครูที่ส่งแล้ว/ })).toBeVisible();
-    await expect(demo.getByRole("img", { name: /ต้องติดตาม/ })).toBeVisible();
-
-    const queue = demo.locator("#queue");
-    await expect(queue.locator("tbody tr")).toHaveCount(5);
-    await queue.getByRole("button", { name: "ส่งกลับแก้ไข" }).click();
-    await expect(queue.getByRole("button", { name: "ส่งกลับแก้ไข" })).toHaveAttribute("aria-pressed", "true");
-    await expect(queue.locator("tbody tr")).toHaveCount(1);
-    await queue.getByRole("button", { name: "ทั้งหมด" }).click();
-    await queue.getByRole("searchbox").fill("ครูตัวอย่าง ข");
-    await expect(queue.locator("tbody tr")).toHaveCount(1);
-    await queue.getByRole("searchbox").fill("ไม่มีชื่อนี้");
-    await expect(queue.getByText("ไม่พบรายการที่ตรงกับตัวกรอง")).toBeVisible();
-    // ปุ่มที่ยังไม่มีระบบรองรับต้องปิดไว้
-    for (const b of await demo.locator("button[title^='เปิดใช้งานใน']").all()) await expect(b).toBeDisabled();
+    // งานเอกสาร: ข้อมูลจริงจากฐานข้อมูล (ไม่มี Demo zone แล้ว)
+    await expect(page.locator("[data-demo-zone]")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /ความคืบหน้าการส่งเอกสาร/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /คิวตรวจรับเอกสาร/ })).toBeVisible();
+    await expect(page.getByText("เอกสารรอตรวจ")).toBeVisible();
 
     expect(await keyframeAnimations(page)).toEqual([]);
     expect(await roleSelectors(page)).toEqual([]);
@@ -232,32 +218,15 @@ test.describe("Office Dashboard", () => {
 });
 
 test.describe("Teacher Dashboard", () => {
-  test("ครู: สถานะ, แท็บ, ข้อเสนอแนะ, ฟอร์มส่ง (ยังไม่เปิดใช้), ประวัติ", async ({ page }) => {
+  test("ครู: สถานะงานจากข้อมูลจริง และลิงก์ไปส่งงาน", async ({ page }) => {
     await login(page, "teacher1@snw.test");
     await expect(page).toHaveURL(/\/teacher$/);
     await expect(page.getByRole("heading", { name: /^สวัสดี/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: "ส่งเอกสาร" })).toBeVisible();
-
-    const demo = page.locator("[data-demo-zone]");
-    await expect(demo.getByRole("heading", { name: /ตัวอย่างหน้าจอ \(Demo\)/ })).toBeVisible();
-    await expect(demo.getByRole("heading", { name: "ต้องแก้ไขก่อน" })).toBeVisible();
-    await expect(demo.getByRole("heading", { name: "กำหนดส่งที่ใกล้เข้ามา" })).toBeVisible();
-    await expect(demo.getByRole("heading", { name: "ประวัติการส่ง" })).toBeVisible();
-
-    // คลิกการ์ดสถิติ → เปิดแท็บที่ตรงกัน
-    await demo.getByRole("button", { name: /รอตรวจ/ }).first().click();
-    await expect(page.getByRole("tab", { name: /รอตรวจ/ })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("tabpanel")).toContainText("โครงการสอนรายวิชา");
-    // แท็บใช้ลูกศรได้
-    await page.getByRole("tab", { name: /รอตรวจ/ }).press("ArrowRight");
-    await expect(page.getByRole("tab", { name: /ส่งแล้ว/ })).toBeFocused();
-    await expect(page.getByRole("tab", { name: /ส่งแล้ว/ })).toHaveAttribute("aria-selected", "true");
-
-    // "ส่งฉบับแก้ไข" เลือกงานในฟอร์มให้ แต่ปุ่มส่งยังปิดไว้
-    await demo.locator("#fix-a1").getByRole("button", { name: "ส่งฉบับแก้ไข" }).click();
-    await expect(page.getByLabel("งานที่จะส่ง")).toHaveValue("a1");
-    await expect(demo.getByRole("button", { name: /ส่งเอกสาร \(ยังไม่เปิดใช้งาน\)/ })).toBeDisabled();
-    await expect(page.getByLabel(/หมายเหตุถึงฝ่ายวิชาการ/)).toBeDisabled();
+    await expect(page.locator("[data-demo-zone]")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /งานที่ได้รับมอบหมาย/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "กำหนดส่งที่ใกล้เข้ามา" })).toBeVisible();
+    await page.getByRole("link", { name: "ส่งเอกสาร" }).first().click();
+    await expect(page).toHaveURL(/\/teacher\/assignments$/);
 
     expect(await keyframeAnimations(page)).toEqual([]);
     expect(await roleSelectors(page)).toEqual([]);

@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { CalendarClock, Download, FileText, Inbox, Upload } from "lucide-react";
 import { PageHeader, TableToolbar } from "@/components/shared";
-import { DashSection, KpiCard, LiveBadge, PendingButton } from "@/components/dashboard";
+import { DashSection, KpiCard, LiveBadge } from "@/components/dashboard";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-controls";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { matchesSearch } from "@/features/master-data/use-crud-state";
 import { CATEGORY_LABELS, formatBytes, useTaskTemplates } from "@/features/documents/api";
-import { edgeFunctionStorage } from "@/lib/storage";
+import { edgeFunctionStorage, StorageError } from "@/lib/storage";
 import { toast } from "@/lib/toast";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { formatDateTH } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { EXT_LABELS, isOverdue, useMyAssignments, type MyAssignment } from "../api";
+import { EXT_LABELS, isOverdue, submitAssignment, tasksKey, useMyAssignments, useSubmissions, type MyAssignment } from "../api";
+import { SubmissionHistory } from "./SubmissionHistory";
 import { AssignmentStatusBadge, dueText } from "./TaskStatusBadge";
 
 type Tab = "todo" | "soon" | "done" | "cancelled";
@@ -90,7 +94,8 @@ export function MyAssignmentsPage() {
 }
 
 function AssignmentCard({ a }: { a: MyAssignment }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(a.status === "revision_requested");
+  const [submitting, setSubmitting] = useState(false);
   const overdue = isOverdue(a.task.due_at, a.status, a.task.status);
   const due = dueText(a.task.due_at);
   const cancelled = a.task.status === "cancelled" || a.status === "cancelled";
@@ -114,7 +119,7 @@ function AssignmentCard({ a }: { a: MyAssignment }) {
           <Button size="sm" variant="outline" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
             {expanded ? "ซ่อนรายละเอียด" : "รายละเอียด / แม่แบบ"}
           </Button>
-          {open(a) && <PendingButton phase="Phase 1.9"><Upload className="size-3.5" /> ส่งเอกสาร</PendingButton>}
+          {open(a) && <Button size="sm" onClick={() => setSubmitting(true)}><Upload className="size-3.5" /> {a.status === "revision_requested" ? "ส่งฉบับแก้ไข" : "ส่งเอกสาร"}</Button>}
         </div>
       </div>
       {expanded && (
@@ -122,8 +127,11 @@ function AssignmentCard({ a }: { a: MyAssignment }) {
           {a.task.description && <p className="mb-3 text-sm whitespace-pre-line">{a.task.description}</p>}
           {cancelled && a.task.cancel_reason && <p className="mb-3 text-sm text-destructive">ยกเลิก: {a.task.cancel_reason}</p>}
           <Templates taskId={a.task_id} />
+          <p className="mt-4 mb-2 text-xs font-medium text-muted-foreground">ประวัติการส่ง</p>
+          <SubmissionHistory assignmentId={a.id} />
         </div>
       )}
+      <SubmitDialog a={a} open={submitting} onClose={() => setSubmitting(false)} />
     </li>
   );
 }
@@ -148,5 +156,63 @@ function Templates({ taskId }: { taskId: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** ส่งเอกสาร: อัปโหลดผ่าน Storage เดิม (เวอร์ชันใหม่ของเอกสารเดิมเมื่อส่งฉบับแก้) แล้วผูกกับงาน — ไฟล์ที่ส่งถูกล็อกเป็นหลักฐาน */
+function SubmitDialog({ a, open: isOpen, onClose }: { a: MyAssignment; open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const history = useSubmissions(isOpen ? a.id : undefined);
+  const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState("");
+  const [stage, setStage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const ext = file?.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
+  const extOk = !file || a.task.allowed_exts.includes(ext);
+  const lastComment = history.data?.find((s) => s.review_status === "revision_requested")?.review_comment;
+  const submit = async () => {
+    if (!file) return;
+    setError(null);
+    try {
+      setStage("กำลังอัปโหลด…");
+      const prevDoc = history.data?.[0]?.file?.document_id;
+      const up = await edgeFunctionStorage.upload(file, prevDoc ? { documentId: prevDoc } : { title: a.task.title, category: a.task.category });
+      setStage("กำลังส่งงาน…");
+      const v = await submitAssignment(a.id, up.fileId, note.trim() || null);
+      toast.success(`ส่งงานแล้ว (ครั้งที่ ${v})`);
+      setFile(null);
+      setNote("");
+      onClose();
+      await qc.invalidateQueries({ queryKey: tasksKey });
+    } catch (e) {
+      setError(e instanceof StorageError ? e.message : dbErrorMessage(e));
+    } finally {
+      setStage(null);
+    }
+  };
+  return (
+    <Dialog open={isOpen} onOpenChange={(o) => !o && !stage && onClose()}>
+      <DialogContent title={a.status === "revision_requested" ? "ส่งฉบับแก้ไข" : "ส่งเอกสาร"} description={a.task.title}>
+        <div className="space-y-4">
+          {lastComment && a.status === "revision_requested" && (
+            <p role="note" className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">สิ่งที่ต้องแก้ไข: {lastComment}</p>
+          )}
+          <FormField label={`ไฟล์ (${a.task.allowed_exts.map((e) => EXT_LABELS[e]).join(", ")} ≤ 20 MB)`} htmlFor="submit-file">
+            <input id="submit-file" type="file" accept={a.task.allowed_exts.map((e) => `.${e}`).join(",")} disabled={Boolean(stage)}
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full text-sm" />
+          </FormField>
+          {!extOk && <p role="alert" className="text-sm text-destructive">งานนี้รับเฉพาะไฟล์ {a.task.allowed_exts.map((e) => EXT_LABELS[e]).join(", ")}</p>}
+          <FormField label="หมายเหตุถึงผู้ตรวจ (ไม่บังคับ)" htmlFor="submit-note">
+            <textarea id="submit-note" rows={2} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} disabled={Boolean(stage)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          </FormField>
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose} disabled={Boolean(stage)}>ยกเลิก</Button>
+            <Button onClick={() => void submit()} disabled={!file || !extOk || Boolean(stage) || history.isPending}>{stage ?? "ส่งงาน"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

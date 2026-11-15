@@ -161,3 +161,69 @@ export function useMyAssignments() {
     },
   });
 }
+
+// ---------------------------------------------------------------- ส่งงาน / ตรวจรับ (Phase 1.8–1.10)
+export interface Submission {
+  id: string;
+  assignment_id: string;
+  version: number;
+  note: string | null;
+  is_late: boolean;
+  submitted_at: string;
+  review_status: "pending" | "approved" | "revision_requested";
+  review_comment: string | null;
+  reviewed_at: string | null;
+  file: { id: string; document_id: string; original_name: string; size_bytes: number; sha256: string | null } | null;
+}
+export const REVIEW_LABELS: Record<Submission["review_status"], string> = { pending: "รอตรวจ", approved: "ตรวจรับแล้ว", revision_requested: "ขอแก้ไข" };
+
+/** ประวัติการส่งทุกเวอร์ชัน (ใหม่สุดก่อน) — RLS: เห็นเมื่อเห็นการมอบหมายนั้น */
+export function useSubmissions(assignmentId: string | undefined) {
+  return useQuery({
+    queryKey: [...tasksKey, "submissions", assignmentId],
+    enabled: Boolean(assignmentId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from("assignment_submissions")
+        .select("id, assignment_id, version, note, is_late, submitted_at, review_status, review_comment, reviewed_at, file:files(id, document_id, original_name, size_bytes, sha256)")
+        .eq("assignment_id", assignmentId!)
+        .order("version", { ascending: false });
+      if (error) throw error;
+      return data as unknown as Submission[];
+    },
+  });
+}
+
+export async function submitAssignment(assignmentId: string, fileId: string, note: string | null) {
+  const { data, error } = await requireSupabase().rpc("assignment_submit", { p_assignment_id: assignmentId, p_file_id: fileId, p_note: note });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function reviewAssignment(assignmentId: string, decision: "approve" | "revision", comment: string | null) {
+  const { error } = await requireSupabase().rpc("assignment_review", { p_assignment_id: assignmentId, p_decision: decision, p_comment: comment });
+  if (error) throw error;
+}
+
+export interface ReviewQueueItem {
+  id: string;
+  task_id: string;
+  status: AssignmentStatus;
+  current_version: number;
+  last_submitted_at: string | null;
+  task: { title: string; due_at: string } | null;
+  teacher: { prefix: string; first_name: string; last_name: string; teacher_code: string } | null;
+}
+/** คิวตรวจรับ: งานที่ส่งแล้วรอตรวจ (เก่าที่สุดก่อน) — RLS จำกัดตามสิทธิ์ผู้ดู */
+export function useReviewQueue() {
+  return useQuery({
+    queryKey: [...tasksKey, "review-queue"],
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().from("task_assignments")
+        .select("id, task_id, status, current_version, last_submitted_at, task:tasks(title, due_at), teacher:teachers(prefix, first_name, last_name, teacher_code)")
+        .eq("status", "submitted").order("last_submitted_at", { ascending: true }).limit(50);
+      if (error) throw error;
+      return data as unknown as ReviewQueueItem[];
+    },
+  });
+}

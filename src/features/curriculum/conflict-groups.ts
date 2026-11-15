@@ -13,14 +13,17 @@ export const TIER_LABELS: Record<Tier, string> = {
 };
 export interface GroupOption { label: string }
 export interface EvidenceLine { source: string; page: number; text: string }
+export type Readiness = "ready" | "gap";
 export interface GroupItem {
+  readiness: Readiness;
+  gap?: string;
   conflict: SourceConflict;
   subjectCode: string | null;
   title: string;
   evidence: EvidenceLine[];
   impact: string;
 }
-export interface DecisionGroup { id: string; tier: Tier; title: string; summary: string; options: GroupOption[]; items: GroupItem[] }
+export interface DecisionGroup { readiness: Readiness; id: string; tier: Tier; title: string; summary: string; options: GroupOption[]; items: GroupItem[] }
 
 const SPECIAL: Record<string, { id: string; tier: Tier }> = {
   "CF-08": { id: "close_page", tier: "evidence" },
@@ -50,6 +53,15 @@ const GROUP_META: Record<string, { tier: Tier; title: (k: string, name?: string)
   other: { tier: "decide", title: () => "ข้อขัดแย้งอื่น", summary: "ตัดสินเป็นรายข้อ", options: ["ตัดสินเอง พร้อมระบุเหตุผล"] },
 };
 
+/** รายการที่หลักฐานยังไม่พอจะเสนอค่า — ตรวจจากข้อความ PDF และแถวนำเข้าแล้ว (ไม่ใช่การตัดสิน) */
+const GAPS: Record<string, string> = {
+  "CF-33": "คำอธิบายรายวิชาของ ง30274 ให้ชื่อต่างกัน (หน้า 344 หม้อแปลงไฟฟ้า 2.0(80) / หน้า 411 โครงงานด้านช่างไฟฟ้า 3.0(120)) จึงยังยืนยันชั่วโมงที่ถูกไม่ได้",
+  "CF-34": "คำอธิบายรายวิชาของ ง30275 ให้ชื่อต่างกัน (หน้า 384 งานซ่อมเครื่องใช้ไฟฟ้า 2.0(80) / หน้า 414 โครงงานด้านอิเล็กทรอนิกส์ 3.0(120)) จึงยังยืนยันชั่วโมงที่ถูกไม่ได้",
+};
+const GAP_CODES: Record<string, string> = {
+  "ว32103": "ไม่พบหน้าคำอธิบายรายวิชาของ ว32103 ในไฟล์ มีเพียงหน้าสรุป 103 ที่ระบุ 40 ชั่วโมง/1.0 หน่วยกิต — หลักฐานรองรับน้อยกว่า ว31101/ว32101",
+};
+
 const nameKey = (s: string) => s.replace(/[\s\d\-–.]/g, "");
 const parseItems = (c: SourceConflict) => [...`${c.value_a ?? ""}; ${c.value_b ?? ""}`.matchAll(ITEM)].map((m) => ({ src: m[1] as string, page: Number(m[2]), name: (m[3] as string).trim(), credits: Number(m[4]), hours: Number(m[5]) }));
 
@@ -64,6 +76,16 @@ function parseHeader(c: SourceConflict) {
   return { page: Number(head[1]), section: head[2] as string, headHours, headCredits: Number(head[3]), sum, bad, culprit: bad.length === 1 && fixed === headHours ? bad[0]! : null };
 }
 
+const pageOf = (loc: string | null) => Number(/(?:^|;)pdf:(\d+)/.exec(loc ?? "")?.[1] ?? NaN);
+function locatorEvidence(c: SourceConflict): EvidenceLine[] {
+  const out: EvidenceLine[] = [];
+  for (const [loc, val, tag] of [[c.locator_a, c.value_a, "ค่า A"], [c.locator_b, c.value_b, "ค่า B"]] as const) {
+    const page = pageOf(loc);
+    if (Number.isFinite(page) && val) out.push({ source: `ต้นฉบับ (${tag})`, page, text: val.length > 200 ? `${val.slice(0, 200)}…` : val });
+  }
+  return out;
+}
+
 interface Classified { id: string; key: string; subjectCode: string | null; title: string; evidence: EvidenceLine[]; impact: string }
 
 function classify(c: SourceConflict, nameOf: (code: string) => string | undefined): Classified {
@@ -71,8 +93,12 @@ function classify(c: SourceConflict, nameOf: (code: string) => string | undefine
   const ev: EvidenceLine[] = items.map((i) => ({ source: SOURCE_LABELS[i.src] ?? i.src, page: i.page, text: `${i.name} ${i.credits.toFixed(1)} หน่วยกิต / ${i.hours} ชั่วโมง` }));
   const code = /^[ก-ฮ]\d{5,6}$/.test(c.subject_ref ?? "") ? c.subject_ref : null;
   const sp = SPECIAL[c.conflict_code];
-  if (sp) return { id: sp.id, key: sp.id, subjectCode: code, title: c.subject_ref ?? c.conflict_code, evidence: ev, impact: "" };
   const h = parseHeader(c);
+  if (sp) {
+    const hv: EvidenceLine[] = h ? [{ source: "หัวตารางโครงสร้าง", page: h.page, text: `${h.section} ${h.headCredits.toFixed(1)} หน่วยกิต / ${h.headHours} ชั่วโมง` }, { source: "ผลรวมรายวิชาในตาราง", page: h.page, text: `${h.sum} ชั่วโมง` }] : [];
+    const evs = ev.length ? ev : hv.length ? hv : locatorEvidence(c);
+    return { id: sp.id, key: sp.id, subjectCode: code, title: c.subject_ref ?? c.conflict_code, evidence: evs, impact: h ? `ส่วนต่างหัวตารางกับผลรวม ${h.headHours - h.sum > 0 ? "+" : ""}${h.headHours - h.sum} ชั่วโมง` : "" };
+  }
   if (h) {
     const ev2: EvidenceLine[] = [{ source: "หัวตารางโครงสร้าง", page: h.page, text: `${h.section} ${h.headCredits.toFixed(1)} หน่วยกิต / ${h.headHours} ชั่วโมง` }, { source: "ผลรวมรายวิชาในตาราง", page: h.page, text: `${h.sum} ชั่วโมง` }];
     if (h.culprit) {
@@ -94,7 +120,10 @@ function classify(c: SourceConflict, nameOf: (code: string) => string | undefine
     for (const i of items) vals.set(`${i.credits}|${i.hours}`, (vals.get(`${i.credits}|${i.hours}`) ?? 0) + 1);
     const bad = [...vals.keys()].filter((k) => { const [cr, hr] = k.split("|").map(Number) as [number, number]; return !consistent(cr, hr); });
     const label = (k: string) => { const [cr, hr] = k.split("|").map(Number) as [number, number]; return `${cr.toFixed(1)} หน่วยกิต / ${hr} ชั่วโมง`; };
-    if (vals.size > 1 && bad.length === 1) return { id: "typo_value", key: `typo_value:${code ?? c.conflict_code}`, subjectCode: code, title: `${code ?? ""} ${(code && nameOf(code)) || items[0]?.name || ""}`.trim(), evidence: ev, impact: `ค่าที่ไม่ตรงเกณฑ์: ${label(bad[0]!)}` };
+    // เสนอว่า “พิมพ์ผิด” ได้เมื่อค่าที่ผิดเกณฑ์ต่างจากค่าอื่นเฉพาะชั่วโมง (หน่วยกิตเท่ากัน) — ถ้าหน่วยกิตต่างกันต้องให้ผู้ดูแลตัดสิน
+    const creditsOf = (k: string) => k.split("|")[0];
+    const sameCredit = bad.length === 1 && [...vals.keys()].filter((k) => k !== bad[0]).every((k) => creditsOf(k) === creditsOf(bad[0]!));
+    if (vals.size > 1 && bad.length === 1 && sameCredit) return { id: "typo_value", key: `typo_value:${code ?? c.conflict_code}`, subjectCode: code, title: `${code ?? ""} ${(code && nameOf(code)) || items[0]?.name || ""}`.trim(), evidence: ev, impact: `ค่าที่ไม่ตรงเกณฑ์: ${label(bad[0]!)}` };
     return { id: "values_differ", key: "values_differ", subjectCode: code, title: `${code ?? ""} ${(code && nameOf(code)) || items[0]?.name || ""}`.trim(), evidence: ev, impact: [...vals.keys()].map(label).join(" หรือ ") };
   }
   return { id: "other", key: "other", subjectCode: code, title: c.subject_ref ?? c.conflict_code, evidence: ev, impact: "" };
@@ -109,11 +138,13 @@ export function groupConflicts(conflicts: SourceConflict[], nameOf: (code: strin
     let g = map.get(k.key);
     if (!g) {
       const code = k.key.includes(":") ? k.key.split(":")[1]! : undefined;
-      g = { id: k.key, tier: meta.tier, title: meta.title(code ?? "", code ? nameOf(code) : undefined), summary: meta.summary, options: meta.options.map((label) => ({ label })), items: [] };
+      g = { readiness: "ready", id: k.key, tier: meta.tier, title: meta.title(code ?? "", code ? nameOf(code) : undefined), summary: meta.summary, options: meta.options.map((label) => ({ label })), items: [] };
       map.set(k.key, g);
     }
-    g.items.push({ conflict: c, subjectCode: k.subjectCode, title: k.title, evidence: k.evidence, impact: k.impact });
+    const gap = GAPS[c.conflict_code] ?? (k.subjectCode ? GAP_CODES[k.subjectCode] : undefined);
+    g.items.push({ conflict: c, subjectCode: k.subjectCode, title: k.title, evidence: k.evidence, impact: k.impact, readiness: gap ? "gap" : "ready", gap });
   }
+  for (const g of map.values()) if (g.items.some((i) => i.readiness === "gap")) g.readiness = "gap";
   const order: Tier[] = ["evidence", "source_error", "decide"];
   return [...map.values()].sort((a, b) => order.indexOf(a.tier) - order.indexOf(b.tier) || b.items.length - a.items.length);
 }

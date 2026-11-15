@@ -78,7 +78,10 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
     <section className="rounded-lg border bg-card p-4" aria-label={g.title}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3 className="font-semibold">{g.title}</h3>
-        <Badge variant="outline">{g.items.length} รายการ</Badge>
+        <div className="flex gap-1">
+          <Badge variant={g.readiness === "gap" ? "warning" : "success"}>{g.readiness === "gap" ? "ขาดหลักฐานบางส่วน" : "พร้อมให้ตัดสิน"}</Badge>
+          <Badge variant="outline">{g.items.length} รายการ</Badge>
+        </div>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{g.summary}</p>
       <Button size="sm" variant="ghost" className="mt-2 px-2" onClick={() => setOpen(!open)}>{open ? "ซ่อนหลักฐานรายข้อ" : "ดูหลักฐานและผลกระทบรายข้อ"}</Button>
@@ -91,6 +94,7 @@ function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean })
                   onChange={(e) => setSkip((s) => { const n = new Set(s); if (e.target.checked) n.delete(i.conflict.id); else n.add(i.conflict.id); return n; })} />
                 <span>{i.title}</span>
               </label>
+              {i.gap && <p className="mt-1 pl-6 text-xs text-warning">ขาดหลักฐาน: {i.gap}</p>}
               <ul className="mt-1 space-y-1 pl-6">
                 {i.evidence.map((e, k) => (
                   <li key={k} className="flex flex-wrap items-center gap-1 text-muted-foreground">

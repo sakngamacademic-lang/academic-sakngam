@@ -61,3 +61,32 @@
 6. **ระเบียบวัดผล**: เอกสารระเบียบโรงเรียน (เกณฑ์ตัดเกรด, เวลาเรียน, ร/มส/ผ/มผ) เพื่อสร้าง grading policy ให้หัวหน้าฝ่ายวิชาการยืนยัน
 7. **เอกสารทางการ**: มาตรฐาน/ตัวชี้วัดหลักสูตรแกนกลาง 2551 (ปรับปรุง 2560) สำหรับ Coverage
 8. **Supabase token** ที่มีสิทธิ์อ่าน Edge Functions / Secrets (ถ้าต้องการให้ตรวจ deploy)
+
+
+---
+
+# อัปเดตรอบที่ 2 (15 พ.ย. 2569) — ทำต่อจาก commit `2bb0689`
+
+> Hosted ตรวจซ้ำแบบอ่านอย่างเดียว: 21 migration · 1 user (`academic_head`) · 0 import rows · Auth config ยังไม่แก้ (signup เปิด, site_url=localhost, password min 6)
+
+| # | งาน | สถานะ | หลักฐาน |
+|---|---|---|---|
+| 1 | Security config | ✅ เตรียมแล้ว / ⏸ รอเจ้าของลงมือ | `STAGING-SECURITY-CONFIG.md` + `scripts/staging/check-auth-config.mjs` (อ่านอย่างเดียว; ตอนนี้ ❌ 5 ข้อ ✅ 2 ข้อ) |
+| 2 | Migration 22–24 | ✅ ตรวจ + ซ้อมอัปเกรด / ⏸ ยังไม่ apply | stack จำลอง Hosted: apply ผ่าน, `auth.users` hash เท่าเดิม · `db push --dry-run` ต้องรันโดยเจ้าของ (ต่อ Postgres ตรง) |
+| 3 | Reviewer คนที่สอง | ✅ เตรียมแล้ว / ⏸ รอสร้างบัญชี | migration 24 `private.grant_school_role` (postgres-only, dry run, audit, ไม่สร้างบัญชี, ปฏิเสธบัญชี academic_head) · pgTAP 017 (9) |
+| 4 | Data Transfer | ✅ เครื่องมือ + ซ้อมแล้ว / ⏸ ยังไม่รันบน Hosted | 6 ชุด / 2,832 แถว needs_review·error · รันซ้ำคงที่ · hash ตรง · หยุดเมื่อขัดแย้ง |
+| 5 | R2 | 🟡 สคริปต์ + runbook พร้อม / ⛔ ไม่มี credentials | `verify-storage` 9/9 + `migrate-source-pdfs` SHA256 6/6 บน local; R2 จริงยังไม่ได้ทดสอบ |
+| 6 | Curriculum Review บน Hosted | 🟡 UI ครบแล้ว (ชุดนำเข้า, ตรวจรายแถว, ทะเบียนข้อขัดแย้ง, Source PDF) / ⏸ รอย้ายข้อมูล | เพิ่มชุดผลการเรียนรู้ 1,379 แถว (ตัวชี้วัดแกนกลางยังไม่นำเข้า — รอเอกสารทางการ) |
+| 7 | Reporting | 🟡 หน้ารายงาน PDF/Excel ใช้ข้อมูลจริงจากฐานข้อมูล (ทดสอบบน local ในรอบก่อน) / ⏸ ยังไม่ได้ทดสอบกับข้อมูล Hosted (ยังว่าง) | ไม่มี demo / ไม่สร้างตัวเลขแทนข้อมูลที่ขาด |
+| 8 | Assessment UI | 🟡 หน้าจอคะแนน/เวลาเรียน/ผลการเรียนเสร็จ ทดสอบ RLS + upsert ด้วย pgTAP · หน้าจอทดสอบเฉพาะ empty state (ยังไม่มีกลุ่มเรียนจริง) | เกณฑ์ตัดเกรดถูกปิดไว้จนมีนโยบายที่ยืนยัน (`insufficient_data`) |
+
+ทดสอบรวม: pgTAP **449/449** (17 ไฟล์) · typecheck · build · Deno 13/13 · SigV4 5/5 · ไม่รัน E2E (reset DB)
+
+## สิ่งที่เจ้าของระบบ / ฝ่ายวิชาการต้องดำเนินการ (ตามลำดับ)
+1. Dashboard: ปิด signup, Site URL + Redirect URLs ของ Preview, password min 10 → รัน `check-auth-config.mjs` ให้ผ่านทุกข้อ
+2. `supabase link` + `supabase db push --dry-run` (ต้องเห็น 3 ไฟล์: 20261120000100, 20261121000100, 20261122000100) → อนุมัติ `db push`
+3. Invite บัญชีผู้ตรวจคนที่สอง → `select private.grant_school_role(...)` (dry run แล้วจริง)
+4. อนุมัติรัน `transfer-*.sql` (สร้างด้วย staff เป็นผู้สร้างชุด) → ตรวจ audit `data_transfer`
+5. R2: bucket private + token + `supabase secrets set` + deploy functions → `verify-storage.mjs` → `migrate-source-pdfs.mjs` → รัน `link-r2-*.sql`
+6. ฝ่ายวิชาการ: ตัดสินข้อขัดแย้ง 80 ข้อ / รายวิชา 52 รายการ → อนุมัติชุดแผน → ชุดรายวิชา (Two-person) → ตรวจซ้ำชุดจัดรายวิชา/กิจกรรม/ผลการเรียนรู้
+7. ส่งเอกสารระเบียบวัดผล + ตัวชี้วัดแกนกลางฉบับทางการ

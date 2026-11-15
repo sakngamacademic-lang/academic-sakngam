@@ -1,9 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/shared";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { KpiCard } from "@/components/dashboard";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { requireSupabase } from "@/lib/supabase";
@@ -14,13 +13,7 @@ import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion } 
 import { groupConflicts, TIER_LABELS, type DecisionGroup, type Tier } from "../conflict-groups";
 
 const NOTE_MIN = 10;
-const MISSING = [
-  { code: "ว22120", why: "แถวนำเข้าเก่า (รอตรวจ) จากการอ่าน “ว 221201 / ว 221202” ผิดเป็น ว22120 — ข้อขัดแย้งนี้อยู่ใน CF-84 แล้ว", plan: "ไม่ลงทะเบียน CF ใหม่ (กันซ้ำ) — ตัดสิน CF-84 ก่อน แล้วให้ผู้ดูแลหลักสูตรข้ามแถวเก่าในหน้านำเข้า" },
-  { code: "ง30213", why: "คำอธิบายรายวิชา หน้า 378 กับ 388 สะกดชื่อต่างกัน (หน่วยกิต/ชั่วโมงเท่ากัน 2.0/80)", plan: "ลงทะเบียน CF-88 หมวดรหัสซ้ำ พร้อมหน้า PDF ทั้งสอง" },
-  { code: "ง33274", why: "คำอธิบายรายวิชา หน้า 279 (มีเลขลำดับ 1) กับ 375 (ไม่มีเลขลำดับ) ชื่อต่างกัน (1.0/40)", plan: "ลงทะเบียน CF-89 หมวดรหัสซ้ำ" },
-  { code: "จ31201", why: "คำอธิบายรายวิชา หน้า 470 (ภาษาจีนและวัฒนธรรม1) กับ 471 (…2) ใช้รหัสเดียวกัน (1.0/40)", plan: "ลงทะเบียน CF-90 หมวดรหัสซ้ำ" },
-  { code: "พ20211", why: "คำอธิบายรายวิชา หน้า 223 (ศิลปะป้องกันตัว 1) กับ 224 (…2) ใช้รหัสเดียวกัน (1.0/40)", plan: "ลงทะเบียน CF-91 หมวดรหัสซ้ำ" },
-];
+
 
 function useSubjectNames(versionId: string | undefined) {
   return useQuery({
@@ -34,175 +27,208 @@ function useSubjectNames(versionId: string | undefined) {
   });
 }
 
-function GroupCard({ g, canResolve }: { g: DecisionGroup; canResolve: boolean }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [option, setOption] = useState(-1); // ไม่เลือกให้ล่วงหน้า — ผู้ดูแลต้องเลือกเอง
-  const [note, setNote] = useState("");
-  const [skip, setSkip] = useState<Set<string>>(new Set());
-  const [confirm, setConfirm] = useState(false);
-  const [ack, setAck] = useState(false); // รับทราบว่าหลักฐานยังไม่ครบ (เฉพาะกลุ่มที่ขาดหลักฐาน)
-  const gaps = [...new Set(g.items.map((i) => i.gap).filter((x): x is string => !!x))];
-  const [done, setDone] = useState<Set<string>>(new Set()); // บันทึกสำเร็จแล้วในรอบนี้ — ไม่ส่งซ้ำ
-  const [failed, setFailed] = useState<Map<string, string>>(new Map());
-  const running = useRef(false);
-  const chosen = g.items.filter((i) => !skip.has(i.conflict.id) && !done.has(i.conflict.id));
-  const valid = canResolve && (g.readiness !== "gap" || ack) && option >= 0 && chosen.length > 0 && note.trim().length >= NOTE_MIN;
-  const apply = async () => {
-    if (running.current || option < 0) return;
-    running.current = true;
-    const label = g.options[option]?.label ?? "";
-    const ok = new Set(done);
-    const bad = new Map<string, string>();
-    try {
-      for (const i of chosen) {
-        // ระบุหลักฐานของรายการนั้นลงในมติ เพื่อให้ Audit Log อ่านได้ว่าตัดสินบนค่าใด
-        const evidence = i.evidence.map((e) => `${e.source} หน้า ${e.page}: ${e.text}`).join(" | ");
-        const text = `[มติกลุ่ม: ${g.title}] ${label} — ${note.trim()}${g.readiness === "gap" ? " [ผู้ดูแลรับทราบว่าหลักฐานยังไม่ครบ]" : ""} (หลักฐาน: ${evidence})`.slice(0, 1900);
-        try {
-          await rpc("source_conflict_resolve", { p_id: i.conflict.id, p_resolution: text });
-          ok.add(i.conflict.id);
-        } catch (e) {
-          bad.set(i.conflict.id, dbErrorMessage(e));
-        }
-      }
-    } finally {
-      running.current = false;
-      setDone(ok);
-      setFailed(bad);
-      if (bad.size === 0) { setNote(""); setOption(-1); setAck(false); }
-      await qc.invalidateQueries({ queryKey: curriculumKey });
-    }
-    if (bad.size === 0) toast.success(`บันทึกมติสำเร็จ ${chosen.length} รายการ`);
-    else toast.error(`สำเร็จ ${chosen.length - bad.size} · ล้มเหลว ${bad.size} รายการ — ดูรายละเอียดในการ์ดกลุ่ม`);
-  };
+type Item = DecisionGroup["items"][number];
+const SAVE_NOTE = `ระบุเหตุผลร่วมของชุดนี้ (อย่างน้อย ${NOTE_MIN} ตัวอักษร) — ระบบแนบทางเลือกและหลักฐานของแต่ละรายการให้เอง`;
+
+function AiBox({ item }: { item: Item }) {
+  const ai = item.plain.ai;
   return (
-    <section className="rounded-lg border bg-card p-4" aria-label={g.title}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="font-semibold">{g.title}</h3>
-        <div className="flex gap-1">
-          <Badge variant={g.readiness === "gap" ? "warning" : "success"}>{g.readiness === "gap" ? "ขาดหลักฐานบางส่วน" : "พร้อมให้ตัดสิน"}</Badge>
-          <Badge variant="outline">{g.items.length} รายการ</Badge>
-        </div>
+    <div className={`rounded-md border p-2 text-sm ${ai.pick === null ? "border-warning/40 bg-warning/10" : "bg-muted/40"}`}>
+      <div className="font-medium">
+        {ai.pick === null ? "AI: ยังตัดสินไม่ได้" : `AI แนะนำ: ทางเลือกที่ ${ai.pick + 1}`} <span className="text-xs font-normal text-muted-foreground">(เป็นคำแนะนำ ไม่ใช่มติ)</span>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">{g.summary}</p>
-      {g.readiness === "gap" && (
-        <Notice tone="warning">
-          หลักฐานยังไม่ครบ — ระบบไม่เสนอให้ปิดกลุ่มนี้ ผู้ดูแลต้องตรวจและรับผิดชอบการตัดสินเอง:
-          <ul className="list-disc pl-5">{gaps.map((x) => <li key={x}>{x}</li>)}</ul>
-        </Notice>
+      <p className="mt-0.5">{ai.reason.replace(/^ยังตัดสินไม่ได้ — /, "")}</p>
+      {ai.pages.length > 0 && (
+        <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+          อ้างอิง PDF หน้า {ai.pages.join(", ")}
+          {ai.pages.slice(0, 4).map((pg) => <SourcePdfLink key={pg} docId={item.conflict.doc_a_id} locator={`pdf:${pg}`} />)}
+        </p>
       )}
-      <Button size="sm" variant="ghost" className="mt-2 px-2" onClick={() => setOpen(!open)}>{open ? "ซ่อนหลักฐานรายข้อ" : "ดูหลักฐานและผลกระทบรายข้อ"}</Button>
-      {open && (
-        <ul className="mt-2 space-y-3">
-          {g.items.map((i) => (
-            <li key={i.conflict.id} className="rounded-md border p-3 text-sm">
-              <label className="flex items-start gap-2 font-medium">
-                <input type="checkbox" className="mt-1" checked={!skip.has(i.conflict.id)} disabled={!canResolve}
-                  onChange={(e) => setSkip((s) => { const n = new Set(s); if (e.target.checked) n.delete(i.conflict.id); else n.add(i.conflict.id); return n; })} />
-                <span>{i.title}</span>
-              </label>
-              {i.gap && <p className="mt-1 pl-6 text-xs text-warning">ขาดหลักฐาน: {i.gap}</p>}
-              <ul className="mt-1 space-y-1 pl-6">
-                {i.evidence.map((e, k) => (
-                  <li key={k} className="flex flex-wrap items-center gap-1 text-muted-foreground">
-                    <span>{e.source} หน้า {e.page}: {e.text}</span>
-                    <SourcePdfLink docId={i.conflict.doc_a_id} locator={`pdf:${e.page}`} />
-                  </li>
-                ))}
-                {i.impact && <li className="text-foreground">ผลกระทบ: {i.impact}</li>}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      )}
-      {canResolve ? (
-        <div className="mt-3 space-y-2 border-t pt-3">
-          <fieldset className="space-y-1">
-            <legend className="text-sm font-medium">ทางเลือกของผู้ดูแลหลักสูตร (ระบบไม่เลือกให้)</legend>
-            {g.options.map((o, k) => (
-              <label key={k} className="flex items-start gap-2 text-sm">
-                <input type="radio" name={`opt-${g.id}`} className="mt-1" checked={option === k} onChange={() => setOption(k)} />
-                <span>{o.label}</span>
-              </label>
-            ))}
-          </fieldset>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} aria-label={`เหตุผลของกลุ่ม ${g.title}`}
-            className="w-full rounded-md border bg-background p-2 text-sm" placeholder={`ระบุเหตุผลและเอกสารอ้างอิง (อย่างน้อย ${NOTE_MIN} ตัวอักษร)`} />
-          {g.readiness === "gap" && (
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" checked={ack} onChange={(e) => setAck(e.target.checked)} />
-              <span>รับทราบว่าหลักฐานของกลุ่มนี้ยังไม่ครบ และขอตัดสินด้วยดุลยพินิจของผู้ดูแลหลักสูตร</span>
-            </label>
-          )}
-          {failed.size > 0 && (
-            <Notice tone="warning">
-              บันทึกไม่สำเร็จ {failed.size} รายการ (ที่สำเร็จแล้วไม่ถูกส่งซ้ำ):
-              <ul className="list-disc pl-5">{g.items.filter((i) => failed.has(i.conflict.id)).map((i) => <li key={i.conflict.id}>{i.conflict.conflict_code} {i.title}: {failed.get(i.conflict.id)}</li>)}</ul>
-            </Notice>
-          )}
-          {option < 0 && <p className="text-xs text-muted-foreground">เลือกทางเลือกก่อนจึงจะบันทึกได้</p>}
-          <Button size="sm" disabled={!valid} onClick={() => setConfirm(true)}>{failed.size > 0 ? `ลองใหม่เฉพาะ ${chosen.length} รายการที่ยังค้าง` : `บันทึกมติให้ ${chosen.length} รายการ`}</Button>
-          <ConfirmDialog open={confirm} onOpenChange={setConfirm} title="ยืนยันการตัดสินข้อขัดแย้งเป็นกลุ่ม"
-            description={`ปิดข้อขัดแย้ง ${chosen.length} รายการในกลุ่ม “${g.title}” ด้วยมติ: ${g.options[option]?.label ?? ""} — บันทึกแยกทีละรายการ พร้อมหลักฐานของแต่ละรายการ และมี Audit Log ทุกรายการ`}
-            confirmLabel="ยืนยันมติ" onConfirm={apply} />
-        </div>
-      ) : (
-        <p className="mt-3 text-xs text-muted-foreground">การตัดสินทำได้เฉพาะผู้ดูแลหลักสูตร</p>
-      )}
-    </section>
+    </div>
   );
 }
 
-/** สรุปการตัดสินใจข้อขัดแย้งเป็นกลุ่ม — จัดกลุ่มตามประเด็น แสดงหลักฐาน PDF และผลกระทบ · ระบบไม่ตัดสินแทน */
+interface CardProps {
+  item: Item; choice: number; onChoose: (n: number) => void; canResolve: boolean; batch: boolean; included: boolean;
+  onToggle: (v: boolean) => void; onSolo?: (item: Item, choice: number, note: string) => Promise<void>; failure?: string;
+}
+function ItemCard({ item, choice, onChoose, canResolve, batch, included, onToggle, onSolo, failure }: CardProps) {
+  const [open, setOpen] = useState(false);
+  const c = item.conflict;
+  return (
+    <li className="rounded-lg border bg-card p-3 text-sm" aria-label={item.title}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="font-semibold">{item.title}</div>
+        {batch && choice >= 0 && (
+          <label className="flex shrink-0 items-center gap-1 text-xs"><input type="checkbox" checked={included} onChange={(e) => onToggle(e.target.checked)} />รวมในชุดที่จะบันทึก</label>
+        )}
+      </div>
+      <p className="mt-1"><span className="font-medium">ขัดแย้งตรงไหน: </span>{item.plain.problem}</p>
+      <fieldset className="mt-2 space-y-1">
+        <legend className="text-xs font-medium text-muted-foreground">ทางเลือก — ระบบไม่ได้เลือกให้ กดเลือกเอง</legend>
+        {item.plain.options.map((o, k) => (
+          <label key={k} className={`flex items-start gap-2 rounded-md border p-2 ${choice === k ? "border-primary bg-primary/5" : ""}`}>
+            <input type="radio" name={`opt-${c.id}`} className="mt-1" disabled={!canResolve} checked={choice === k} onChange={() => onChoose(k)} />
+            <span><span className="font-medium">ทางเลือกที่ {k + 1}: </span>{o.label}{o.detail && <span className="block text-xs text-muted-foreground">{o.detail}</span>}</span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="mt-2"><AiBox item={item} /></div>
+      {item.gap && <p className="mt-1 text-xs text-warning">ขาดหลักฐาน: {item.gap}</p>}
+      {failure && <p className="mt-1 text-xs text-destructive">บันทึกไม่สำเร็จ: {failure}</p>}
+      <Button size="sm" variant="ghost" className="mt-1 px-2" onClick={() => setOpen(!open)}>{open ? "ซ่อนค่าที่พบในเอกสาร" : "ดูค่าที่พบในเอกสาร (ค่า A / ค่า B)"}</Button>
+      {open && (
+        <div className="space-y-1 rounded-md bg-muted/40 p-2 text-xs">
+          <p><span className="font-medium">ค่า A: </span>{c.value_a ?? "—"}</p>
+          <p><span className="font-medium">ค่า B: </span>{c.value_b ?? "—"}</p>
+          <ul className="mt-1 space-y-0.5">
+            {item.evidence.map((e, k) => <li key={k} className="flex flex-wrap items-center gap-1">{e.source} หน้า {e.page}: {e.text}<SourcePdfLink docId={c.doc_a_id} locator={`pdf:${e.page}`} /></li>)}
+          </ul>
+        </div>
+      )}
+      {onSolo && canResolve && <SoloSave item={item} choice={choice} onSave={onSolo} />}
+    </li>
+  );
+}
+
+function SoloSave({ item, choice, onSave }: { item: Item; choice: number; onSave: (item: Item, choice: number, note: string) => Promise<void> }) {
+  const [note, setNote] = useState("");
+  const [ack, setAck] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const valid = choice >= 0 && ack && note.trim().length >= NOTE_MIN;
+  return (
+    <div className="mt-2 space-y-2 border-t pt-2">
+      <p className="text-xs text-warning">หลักฐานรายการนี้ยังไม่ครบ จึงไม่รวมในการบันทึกเป็นชุด ต้องตัดสินและให้เหตุผลทีละรายการ</p>
+      <label className="flex items-start gap-2 text-xs"><input type="checkbox" className="mt-0.5" checked={ack} onChange={(e) => setAck(e.target.checked)} />รับทราบว่าหลักฐานไม่ครบ และขอตัดสินด้วยดุลยพินิจของผู้ดูแลหลักสูตร</label>
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} aria-label={`เหตุผลของ ${item.title}`} className="w-full rounded-md border bg-background p-2 text-sm" placeholder={`เหตุผล (อย่างน้อย ${NOTE_MIN} ตัวอักษร)`} />
+      <Button size="sm" disabled={!valid} onClick={() => setConfirm(true)}>บันทึกมติรายการนี้</Button>
+      <ConfirmDialog open={confirm} onOpenChange={setConfirm} title="ยืนยันมติรายการนี้"
+        description={`${item.title} — ทางเลือกที่ ${choice + 1}: ${item.plain.options[choice]?.label ?? ""}`} confirmLabel="ยืนยันมติ" onConfirm={() => onSave(item, choice, note)} />
+    </div>
+  );
+}
+
+const resolutionText = (i: Item, k: number, note: string, gap: boolean) => {
+  const ev = i.evidence.map((e) => `${e.source} หน้า ${e.page}: ${e.text}`).join(" | ");
+  return `[มติผู้ดูแล] ทางเลือกที่ ${k + 1}: ${i.plain.options[k]?.label ?? ""} — ${note.trim()}${gap ? " [รับทราบว่าหลักฐานไม่ครบ]" : ""} (หลักฐาน: ${ev})`.slice(0, 1900);
+};
+
+/** สรุปการตัดสินข้อขัดแย้ง — อธิบายเป็นภาษาไทย ทางเลือกพร้อมตัวเลขจริง คำแนะนำ AI (ไม่ใช่มติ) · บันทึกเป็นชุดได้เฉพาะรายการที่ผู้ดูแลเลือกเอง */
 export function DecisionsPage() {
+  const qc = useQueryClient();
   const q = useConflicts();
   const { can } = useAuth();
   const sel = useSelectedVersion();
   const names = useSubjectNames(sel.selected?.id);
-  const groups = useMemo(() => groupConflicts(q.data ?? [], (c) => names.data?.get(c)), [q.data, names.data]);
-  const byTier = (t: Tier) => groups.filter((g) => g.tier === t);
-  const count = (t: Tier) => byTier(t).reduce((s, g) => s + g.items.length, 0);
-  const canResolve = can("curriculum.approve");
   const docs = useSourceDocuments();
-  const noFile = (docs.data?.length ?? 0) > 0 && docs.data!.every((d) => !d.file_id);
+  const canResolve = can("curriculum.approve");
+  const [choice, setChoice] = useState<Record<string, number>>({});
+  const [off, setOff] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [filter, setFilter] = useState<"all" | "ai" | "undecided" | "gap">("all");
+  const [failed, setFailed] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const groups = useMemo(() => groupConflicts(q.data ?? [], (c) => names.data?.get(c)), [q.data, names.data]);
+  const items = groups.flatMap((g) => g.items);
   const all = q.data ?? [];
   const resolved = all.filter((c) => c.status === "resolved").length;
+  const noFile = (docs.data?.length ?? 0) > 0 && docs.data!.every((d) => !d.file_id);
+  const nAi = items.filter((i) => i.plain.ai.pick !== null && i.readiness === "ready").length;
+  const nGap = items.filter((i) => i.readiness === "gap").length;
+  const nUnd = items.filter((i) => i.plain.ai.pick === null && i.readiness === "ready").length;
+  const show = (i: Item) => filter === "all" || (filter === "ai" && i.plain.ai.pick !== null && i.readiness === "ready") || (filter === "undecided" && i.plain.ai.pick === null && i.readiness === "ready") || (filter === "gap" && i.readiness === "gap");
+  const batch = items.filter((i) => i.readiness === "ready" && (choice[i.conflict.id] ?? -1) >= 0 && !off.has(i.conflict.id));
+  const valid = canResolve && batch.length > 0 && note.trim().length >= NOTE_MIN;
+
+  const save = async (list: { item: Item; k: number }[], text: (i: Item, k: number) => string) => {
+    if (busy) return 0;
+    setBusy(true);
+    const bad: Record<string, string> = {};
+    let ok = 0;
+    try {
+      for (const { item, k } of list) {
+        try { await rpc("source_conflict_resolve", { p_id: item.conflict.id, p_resolution: text(item, k) }); ok++; }
+        catch (e) { bad[item.conflict.id] = dbErrorMessage(e); }
+      }
+    } finally {
+      setBusy(false);
+      setFailed(bad);
+      await qc.invalidateQueries({ queryKey: curriculumKey });
+    }
+    const nBad = Object.keys(bad).length;
+    if (nBad === 0) toast.success(`บันทึกมติสำเร็จ ${ok} รายการ`); else toast.error(`สำเร็จ ${ok} · ล้มเหลว ${nBad} รายการ — ดูข้อความใต้รายการ`);
+    return nBad;
+  };
+  const saveBatch = async () => { const bad = await save(batch.map((item) => ({ item, k: choice[item.conflict.id]! })), (i, k) => resolutionText(i, k, note, false)); if (bad === 0) setNote(""); };
+  const pickAi = (g: DecisionGroup) => setChoice((c) => { const n = { ...c }; for (const i of g.items) if (i.readiness === "ready" && i.plain.ai.pick !== null) n[i.conflict.id] = i.plain.ai.pick; return n; });
+
+  const filters: [typeof filter, string][] = [["all", `ทั้งหมด (${items.length})`], ["ai", `AI แนะนำแล้ว (${nAi})`], ["undecided", `AI ยังตัดสินไม่ได้ (${nUnd})`], ["gap", `หลักฐานไม่ครบ (${nGap})`]];
   return (
-    <div className="space-y-4">
-      <PageHeader title="สรุปการตัดสินใจข้อขัดแย้ง" description="จัดกลุ่มตามประเด็นเพื่อตัดสินทีละกลุ่ม พร้อมหลักฐานจาก PDF และผลกระทบ" />
+    <div className="space-y-4 pb-28">
+      <PageHeader title="สรุปการตัดสินข้อขัดแย้ง" description="อ่านว่าเอกสารขัดกันตรงไหน เลือกทางเลือกด้วยตัวเอง แล้วบันทึกเป็นชุดด้วยเหตุผลเดียว" />
       <CurriculumNav />
-      <Notice tone="info">ระบบแค่จัดกลุ่มและเสนอทางเลือก — ไม่ตัดสินแทน ไม่เปลี่ยนสถานะ และไม่แก้ข้อมูลหลักสูตรจนกว่าผู้ดูแลหลักสูตรจะกดยืนยันมติของแต่ละกลุ่ม</Notice>
-      {noFile && <Notice tone="warning">ยังไม่มีไฟล์ PDF ต้นฉบับอัปโหลดในระบบ ปุ่มเปิด PDF จึงไม่แสดง — ใช้เลขหน้าที่ระบุในหลักฐานเปิดดูจากไฟล์ต้นฉบับของโรงเรียนแทน</Notice>}
+      <Notice tone="info">ระบบอธิบายและแนะนำเท่านั้น ไม่เลือกคำตอบหรือบันทึกมติแทนคุณ — มติจะบันทึกเมื่อคุณเลือกทางเลือก ใส่เหตุผล และกดยืนยันเอง</Notice>
+      {noFile && <Notice tone="warning">ยังไม่มีไฟล์ PDF ต้นฉบับในระบบ ปุ่มเปิด PDF จึงไม่แสดง — ใช้เลขหน้าที่ระบุเปิดดูจากไฟล์ต้นฉบับของโรงเรียน</Notice>}
+      <Notice tone="warning">
+        หลังปิดข้อขัดแย้ง: ระบบเปลี่ยนแค่สถานะของรายการ และทำให้แถวนำเข้าของรหัสวิชานั้นเปลี่ยนจาก “ขัดแย้ง” เป็น “เตือน” เพื่อให้ผู้ดูแลอนุมัติแถวได้ — ทางเลือกที่คุณเลือก <b>ยังไม่ถูกเขียนลงทะเบียนรายวิชาโดยอัตโนมัติ</b> (ทะเบียนจะใช้ค่าตามแถวนำเข้าเดิม) และวิชาที่มีหลายข้อขัดแย้งจะเปลี่ยนเป็น “เตือน” ตั้งแต่ปิดข้อแรก
+      </Notice>
       <div className="grid gap-3 sm:grid-cols-4">
         <KpiCard label="ตัดสินแล้ว" value={`${resolved}/${all.length}`} />
-        <KpiCard label="ปิดได้ด้วยหลักฐาน" value={count("evidence")} />
-        <KpiCard label="ข้อผิดพลาดในต้นฉบับ" value={count("source_error")} />
-        <KpiCard label="ต้องตัดสิน" value={count("decide")} />
+        <KpiCard label="รอตัดสิน" value={items.length} />
+        <KpiCard label="AI แนะนำแล้ว" value={nAi} />
+        <KpiCard label="หลักฐานไม่ครบ" value={nGap} />
+      </div>
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="กรองรายการ">
+        {filters.map(([k, l]) => <Button key={k} size="sm" variant={filter === k ? "default" : "outline"} onClick={() => setFilter(k)}>{l}</Button>)}
       </div>
       {q.isLoading ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : groups.length === 0 ? (
         <EmptyState title="ไม่มีข้อขัดแย้งที่ค้างตัดสิน" />
-      ) : (
-        (["evidence", "source_error", "decide"] as Tier[]).map((t) => byTier(t).length > 0 && (
+      ) : (["evidence", "source_error", "decide"] as Tier[]).map((t) => {
+        const gs = groups.filter((g) => g.tier === t && g.items.some(show));
+        return gs.length > 0 && (
           <div key={t} className="space-y-3">
-            <h2 className="text-lg font-semibold">{TIER_LABELS[t]} <span className="text-sm font-normal text-muted-foreground">({count(t)} รายการ)</span></h2>
-            {byTier(t).map((g) => <GroupCard key={g.id} g={g} canResolve={canResolve} />)}
+            <h2 className="text-lg font-semibold">{TIER_LABELS[t]}</h2>
+            {gs.map((g) => (
+              <section key={g.id} className="space-y-2" aria-label={g.title}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="font-medium">{g.title} <span className="text-xs font-normal text-muted-foreground">({g.items.filter(show).length} รายการ)</span></h3>
+                  {canResolve && g.readiness === "ready" && g.items.some((i) => i.plain.ai.pick !== null) && (
+                    <Button size="sm" variant="outline" onClick={() => pickAi(g)}>เลือกตามคำแนะนำของ AI ทั้งกลุ่ม (ผมกดเอง)</Button>
+                  )}
+                </div>
+                <ul className="space-y-2">
+                  {g.items.filter(show).map((i) => (
+                    <ItemCard key={i.conflict.id} item={i} choice={choice[i.conflict.id] ?? -1} canResolve={canResolve}
+                      batch={i.readiness === "ready"} included={!off.has(i.conflict.id)} failure={failed[i.conflict.id]}
+                      onChoose={(n) => { setChoice((c) => ({ ...c, [i.conflict.id]: n })); setOff((o) => { const x = new Set(o); x.delete(i.conflict.id); return x; }); }}
+                      onToggle={(v) => setOff((o) => { const x = new Set(o); if (v) x.delete(i.conflict.id); else x.add(i.conflict.id); return x; })}
+                      onSolo={i.readiness === "gap" ? async (it, k, n) => { await save([{ item: it, k }], (a, b) => resolutionText(a, b, n, true)); } : undefined} />
+                  ))}
+                </ul>
+              </section>
+            ))}
           </div>
-        ))
-      )}
+        );
+      })}
       <div className="space-y-2">
-        <h2 className="text-lg font-semibold">รายวิชา 5 รายการที่มีแถวนำเข้าติดเครื่องหมายขัดแย้งแต่ยังไม่มี CF</h2>
-        <Notice tone="warning">ปิดจากหน้านี้ไม่ได้ ต้องลงทะเบียนรายการข้อขัดแย้งก่อน (SQL เตรียมไว้แล้ว ตรวจรายการซ้ำก่อนเพิ่ม) — การเขียนข้อมูลบน Hosted ต้องขออนุมัติแยกต่างหาก ยังไม่ดำเนินการ</Notice>
-        <ul className="space-y-2">
-          {MISSING.map((m) => (
-            <li key={m.code} className="rounded-md border p-3 text-sm">
-              <div className="font-medium">{m.code} {names.data?.get(m.code) ?? ""}</div>
-              <div className="text-muted-foreground">{m.why}</div>
-              <div>แผนแก้ไขที่ปลอดภัย: {m.plan}</div>
-            </li>
-          ))}
-        </ul>
+        <h2 className="text-lg font-semibold">รายวิชาที่ยังไม่มีข้อขัดแย้งรองรับ</h2>
+        <Notice tone="warning">ว22120 (แถวนำเข้าเก่าจากการอ่าน “ว 221201 / ว 221202” ผิด) ไม่มีข้อขัดแย้งตามรหัสนี้ — ปิดข้อขัดแย้งเรื่องรหัสวิชาวิทยาศาสตร์พลังสิบก่อน แล้วให้ผู้ดูแลข้ามแถวเก่าในหน้านำเข้า</Notice>
       </div>
+      {canResolve && (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-card p-3 shadow-lg">
+          <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label htmlFor="batch-note" className="text-sm font-medium">เลือกไว้ {batch.length} รายการ <span className="font-normal text-muted-foreground">(ไม่รวมรายการที่หลักฐานไม่ครบ)</span></label>
+              <textarea id="batch-note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="mt-1 w-full rounded-md border bg-background p-2 text-sm" placeholder={SAVE_NOTE} />
+            </div>
+            <Button disabled={!valid || busy} onClick={() => setConfirm(true)}>บันทึกมติ {batch.length} รายการ</Button>
+          </div>
+          <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={`ยืนยันมติ ${batch.length} รายการ`}
+            description={batch.slice(0, 12).map((i) => `${i.title} → ทางเลือกที่ ${(choice[i.conflict.id] ?? 0) + 1}`).join(" · ") + (batch.length > 12 ? ` · และอีก ${batch.length - 12} รายการ` : "")}
+            confirmLabel="ยืนยันมติทั้งหมดที่เลือก" onConfirm={saveBatch} />
+        </div>
+      )}
     </div>
   );
 }

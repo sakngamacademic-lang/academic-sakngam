@@ -1,4 +1,5 @@
 import type { SourceConflict } from "./api";
+import { buildPlain, type PlainView } from "./conflict-plain";
 import { consistent, HOURS_PER_CREDIT, ITEM, SOURCE_LABELS } from "./conflict-insight";
 
 /**
@@ -22,6 +23,7 @@ export interface GroupItem {
   title: string;
   evidence: EvidenceLine[];
   impact: string;
+  plain: PlainView;
 }
 export interface DecisionGroup { readiness: Readiness; id: string; tier: Tier; title: string; summary: string; options: GroupOption[]; items: GroupItem[] }
 
@@ -62,6 +64,7 @@ const GAP_CODES: Record<string, string> = {
   "ว32103": "ไม่พบหน้าคำอธิบายรายวิชาของ ว32103 ในไฟล์ มีเพียงหน้าสรุป 103 ที่ระบุ 40 ชั่วโมง/1.0 หน่วยกิต — หลักฐานรองรับน้อยกว่า ว31101/ว32101",
 };
 
+const hdrOf = (h: ReturnType<typeof parseHeader>) => (h ? { page: h.page, section: h.section, headHours: h.headHours, headCredits: h.headCredits, sum: h.sum, bad: h.bad } : null);
 const nameKey = (s: string) => s.replace(/[\s\d\-–.]/g, "");
 const parseItems = (c: SourceConflict) => [...`${c.value_a ?? ""}; ${c.value_b ?? ""}`.matchAll(ITEM)].map((m) => ({ src: m[1] as string, page: Number(m[2]), name: (m[3] as string).trim(), credits: Number(m[4]), hours: Number(m[5]) }));
 
@@ -86,7 +89,7 @@ function locatorEvidence(c: SourceConflict): EvidenceLine[] {
   return out;
 }
 
-interface Classified { id: string; key: string; subjectCode: string | null; title: string; evidence: EvidenceLine[]; impact: string }
+interface Classified { kindKey?: string; id: string; key: string; subjectCode: string | null; title: string; evidence: EvidenceLine[]; impact: string }
 
 function classify(c: SourceConflict, nameOf: (code: string) => string | undefined): Classified {
   const items = parseItems(c);
@@ -142,7 +145,8 @@ export function groupConflicts(conflicts: SourceConflict[], nameOf: (code: strin
       map.set(k.key, g);
     }
     const gap = GAPS[c.conflict_code] ?? (k.subjectCode ? GAP_CODES[k.subjectCode] : undefined);
-    g.items.push({ conflict: c, subjectCode: k.subjectCode, title: k.title, evidence: k.evidence, impact: k.impact, readiness: gap ? "gap" : "ready", gap });
+    const plain = buildPlain(c, k.id, parseItems(c), hdrOf(parseHeader(c)), k.subjectCode, gap);
+    g.items.push({ plain, conflict: c, subjectCode: k.subjectCode, title: k.title, evidence: k.evidence, impact: k.impact, readiness: gap ? "gap" : "ready", gap });
   }
   for (const g of map.values()) if (g.items.some((i) => i.readiness === "gap")) g.readiness = "gap";
   const order: Tier[] = ["evidence", "source_error", "decide"];

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, Copy, DatabaseZap, Download, Sparkles, Undo2 } from "lucide-react";
 import { ConfirmDialog, PageHeader } from "@/components/shared";
@@ -12,7 +13,7 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { requireSupabase } from "@/lib/supabase";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { curriculumKey, rpc, useBatches } from "../api";
+import { curriculumKey, rpc, useBatchReports, useBatches } from "../api";
 import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion, VersionPicker } from "../components";
 import { downloadCsv } from "../export";
 
@@ -58,8 +59,15 @@ export function RegistryPage() {
   const [baseId, setBaseId] = useState("");
   const batches = useBatches();
   const [srcPick, setSrcPick] = useState("");
+  const [withWarnings, setWithWarnings] = useState(false);
+  const reports = useBatchReports();
   const withEvidence = sel.versions.filter((x) => batches.data?.some((b) => b.curriculum_version_id === x.id));
   const srcId = srcPick || (withEvidence.some((x) => x.id === v?.id) ? v?.id : withEvidence[0]?.id) || v?.id || "";
+  const ev = (kind: string) => {
+    const rs = (reports.data ?? []).filter((r) => r.kind === kind && batches.data?.find((b) => b.id === r.batch_id)?.curriculum_version_id === srcId);
+    const sum = (k: "total" | "pass" | "warning" | "conflict" | "error" | "approved") => rs.reduce((a, r) => a + Number(r[k] ?? 0), 0);
+    return { total: sum("total"), pass: sum("pass"), warning: sum("warning"), conflict: sum("conflict"), error: sum("error"), approved: sum("approved") };
+  };
   const canEdit = can("curriculum.manage") && v?.status === "draft";
   const refresh = () => qc.invalidateQueries({ queryKey: curriculumKey });
   const areaName = useMemo(() => new Map(areas.data?.map((a) => [a.id, a.name_th])), [areas.data]);
@@ -94,6 +102,10 @@ export function RegistryPage() {
             {withEvidence.map((x) => <option key={x.id} value={x.id}>หลักฐานจาก: {x.version_label}</option>)}
           </Select>
         )}
+        {canEdit && (
+          <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={withWarnings} onChange={(e) => setWithWarnings(e.target.checked)} />
+            รวมรายวิชาที่มีคำเตือน (ตรวจเทียบ PDF แล้ว)</label>
+        )}
         {canEdit && <Button size="sm" onClick={() => setConfirmBuild(true)}><DatabaseZap /> สร้างทะเบียนจากหลักฐานนำเข้า</Button>}
         {can("curriculum.manage") && v && <Button size="sm" variant="outline" onClick={() => { const l = window.prompt("ชื่อฉบับใหม่ (เช่น พุทธศักราช 2570)"); if (l?.trim()) void act("curriculum_version_clone", { p_source_id: v.id, p_version_label: l.trim() }, () => "คัดลอกเป็นฉบับร่างใหม่แล้ว — เปิดฉบับใหม่แล้วแก้เฉพาะรายการที่เปลี่ยน"); }}><Copy /> คัดลอกเป็นปีถัดไป</Button>}
       </div>
@@ -105,6 +117,32 @@ export function RegistryPage() {
         <KpiCard label="IS / ทวิศึกษา" value={`${active.filter((s) => s.subject_category === "is").length} / ${active.filter((s) => s.subject_category === "dual_study").length}`} loading={reg.isPending} />
         <KpiCard label="ยกเลิกแล้ว" value={subjects.length - active.length} tone="alert" loading={reg.isPending} />
       </section>
+      {reg.data && v && (() => {
+        const sj = ev("subjects"), of = ev("subject_offerings"), builtOff = reg.data.offerings.filter((o) => o.is_active).length;
+        const items: { ok: boolean; label: string; detail: string; link?: { to: string; text: string } }[] = [
+          { ok: v.status === "draft", label: "ฉบับเป็นแบบร่าง (แก้ไขได้)", detail: v.status === "draft" ? "พร้อม" : "ต้องคัดลอกเป็นฉบับใหม่ หรือให้หัวหน้าส่งกลับเป็นแบบร่าง" },
+          { ok: active.length > 0 && reg.data.programs.length > 0, label: "มีแผนการเรียนและรายวิชาในทะเบียน", detail: `${reg.data.programs.length} แผน · ${active.length} รายวิชา` },
+          { ok: sj.warning === 0, label: "รายวิชาที่มีคำเตือน (ยังไม่อยู่ในทะเบียน)", detail: sj.warning ? `${sj.warning} วิชา — ตรวจเทียบ PDF แล้วเลือก “รวมรายวิชาที่มีคำเตือน” ตอนสร้างทะเบียน` : "ไม่มี" },
+          { ok: sj.conflict === 0, label: "รายวิชาที่ผูกกับข้อขัดแย้งระหว่างเอกสาร", detail: sj.conflict ? `${sj.conflict} วิชา — ฝ่ายวิชาการต้องตัดสินที่หน้าข้อขัดแย้งก่อน (ระบบไม่ตัดสินแทน) แล้วสร้างทะเบียนซ้ำ` : "ไม่มี", link: sj.conflict ? { to: "/office/curriculum/conflicts", text: "ไปหน้าข้อขัดแย้ง" } : undefined },
+          { ok: sj.error === 0, label: "รายวิชาที่ข้อมูลผิดพลาด", detail: sj.error ? `${sj.error} วิชา — แก้หรือข้ามที่หน้า “ตรวจหลักสูตร (หน้าเดียว)”` : "ไม่มี", link: sj.error ? { to: "/office/curriculum/workbench", text: "ไปหน้าตรวจ" } : undefined },
+          { ok: of.total === 0 || builtOff >= of.total, label: "การจัดวิชาตามแผน/ชั้น/ภาคเรียน", detail: `เข้าทะเบียน ${builtOff} จาก ${of.total} รายการ${builtOff < of.total ? " — ส่วนที่เหลือรอรายวิชาข้างต้นเข้าทะเบียนก่อน" : ""}` },
+          { ok: (reg.data.proposals.length ?? 0) === 0, label: "ข้อเสนอจัดหมวดวิชา (ทวิศึกษา) ที่รอตัดสิน", detail: reg.data.proposals.length ? `${reg.data.proposals.length} รายการ — ดูแท็บข้อเสนอ` : "ไม่มี" },
+        ];
+        const ready = items[0]!.ok && items[1]!.ok && items[6]!.ok;
+        return (
+          <section aria-label="ความพร้อมใช้งานของทะเบียน" className="mb-4 rounded-2xl border p-4" data-testid="registry-readiness">
+            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">ความพร้อมใช้งานของทะเบียน <Badge variant={ready ? "success" : "warning"}>{ready ? "พร้อมส่งหัวหน้าอนุมัติฉบับ" : "ยังมีรายการค้าง"}</Badge></h2>
+            <ul className="space-y-1 text-sm">
+              {items.map((i) => (
+                <li key={i.label} className="flex flex-wrap items-start gap-2"><span aria-hidden="true">{i.ok ? "✔" : "•"}</span>
+                  <span className="font-medium">{i.label}</span><span className="text-muted-foreground">{i.detail}</span>
+                  {i.link && <Link to={i.link.to} className="underline">{i.link.text}</Link>}</li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">รายการที่ยังไม่เข้าทะเบียนยังคงเป็นหลักฐานนำเข้าตามเดิม (ไม่ถูกลบหรือแก้) และไม่ขัดขวางการใช้ทะเบียนส่วนที่ตรวจแล้ว</p>
+          </section>
+        );
+      })()}
       {reg.data && subjects.length === 0 && <Notice tone="warning">ทะเบียนฉบับนี้ยังว่าง — กด “สร้างทะเบียนจากหลักฐานนำเข้า” (ระบบเรียงลำดับแผน → รายวิชา → การจัดวิชา → กิจกรรมให้ และข้ามแถวผิดพลาด/ข้อขัดแย้ง)</Notice>}
 
       <div className="mb-3 flex flex-wrap gap-1" role="tablist">
@@ -217,7 +255,7 @@ export function RegistryPage() {
 
       <ConfirmDialog open={confirmBuild} onOpenChange={setConfirmBuild} title="สร้างทะเบียนจากหลักฐานนำเข้า?"
         description="ระบบสร้างแผน รายวิชา การจัดวิชา และกิจกรรมตามลำดับ dependency จากแถวที่ผ่านการตรวจ (ไม่มี error/ข้อขัดแย้ง/คำเตือน) พร้อมเก็บหน้า PDF — หลักฐานนำเข้า 2,832 แถวไม่ถูกแก้หรือเปลี่ยนสถานะ · ฉบับยังเป็นแบบร่างจนกว่าหัวหน้าฝ่ายวิชาการ (คนละคนกับผู้จัดทำ) อนุมัติ"
-        confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id, ...(srcId && srcId !== v!.id ? { p_source_version_id: srcId } : {}) }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
+        confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id, p_include_warnings: withWarnings, ...(srcId && srcId !== v!.id ? { p_source_version_id: srcId } : {}) }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
     </>
   );
 }

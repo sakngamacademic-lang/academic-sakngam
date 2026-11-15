@@ -29,6 +29,15 @@ import {
 import { CurriculumNav, EmptyState, Notice, Pager, SourcePdfLink } from "../components";
 
 const SEVERITY = { error: "destructive", warning: "warning", info: "info" } as const;
+const SEVERITY_LABELS = { error: "ผิดพลาด", warning: "คำเตือน", info: "ข้อสังเกต" } as const;
+/** คำอธิบายภาษาไทยแทนรหัสตรวจสอบ (ผู้ใช้ไม่ต้องรู้จักรหัส) */
+const ERROR_LABELS: Record<string, string> = {
+  V32: "ยังไม่มีแผนการเรียนในฉบับ",
+  V33: "ยังไม่มีรายวิชาในฉบับ",
+  V45: "ยังไม่มีรายวิชาในฉบับ (ผลการเรียนรู้)",
+  V40: "ข้อมูลกิจกรรมไม่ครบ (ต้นฉบับไม่ระบุชั่วโมงหรือชื่อ)",
+  V13: "ไม่พบกลุ่มสาระของโรงเรียน",
+};
 
 /** ตรวจรายแถว: Raw | Normalized | Issues | ตำแหน่งต้นฉบับ · อนุมัติ/ข้าม/แก้ ผ่าน RPC จริง */
 export function ReviewPage() {
@@ -124,7 +133,8 @@ function ErrorSummaryPanel({ batchId }: { batchId: string }) {
       <ul className="space-y-1 text-sm" data-testid="error-summary">
         {errors.map((r) => (
           <li key={`${r.code}-${r.field}-${r.status}`} className="flex flex-wrap items-center gap-2">
-            <Badge variant="destructive">{r.code}</Badge>
+            <Badge variant="destructive">ผิดพลาด</Badge>
+            <span className="font-medium">{ERROR_LABELS[r.code] ?? "ข้อมูลไม่ผ่านการตรวจ"}</span>
             <span className="tabular-nums">{Number(r.rows)} แถว</span>
             <span className="text-muted-foreground">{r.field ? `ช่อง ${r.field} · ` : ""}{CAUSE_LABELS[r.cause]}</span>
           </li>
@@ -216,7 +226,7 @@ function RowCard({ row, kind, editable, onDone, sourceDocId }: { row: ImportRow;
       {row.issues?.length > 0 && (
         <ul className="mb-2 space-y-1" aria-label="ปัญหาที่ตรวจพบ">
           {row.issues.map((i, k) => (
-            <li key={k} className="flex items-start gap-2 text-xs"><Badge variant={SEVERITY[i.severity]}>{i.code}</Badge><span>{i.message_th}{i.field && <span className="text-muted-foreground"> ({i.field})</span>}</span></li>
+            <li key={k} className="flex items-start gap-2 text-xs"><Badge variant={SEVERITY[i.severity]}>{SEVERITY_LABELS[i.severity]}</Badge><span>{i.message_th}{i.field && <span className="text-muted-foreground"> ({i.field})</span>}</span></li>
           ))}
         </ul>
       )}

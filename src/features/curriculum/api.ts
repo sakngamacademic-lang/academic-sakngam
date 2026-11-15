@@ -751,3 +751,38 @@ export function useMappingCounts(versionId: string | undefined) {
     },
   });
 }
+
+// ---------------------------------------------------------------- หน้าตรวจหลักสูตรรวม (Unified Review)
+export type RowClass = "pass" | "warning" | "conflict" | "error" | "approved" | "skipped" | "committed";
+export interface BatchReport {
+  batch_id: string; kind: string; status: string; created_by: string;
+  total: number; pass: number; warning: number; conflict: number; error: number; approved: number; skipped: number; committed: number;
+}
+export interface ClassifiedRow {
+  id: string; row_no: number; source_page: number | null; status: string; cls: RowClass;
+  issues: { code: string; severity: "error" | "warning" | "info"; message_th: string; field?: string }[];
+  normalized: Record<string, unknown>; decision_note: string | null; total_count: number;
+}
+export function useBatchReports() {
+  return useQuery({
+    queryKey: [...curriculumKey, "batch-report"],
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc("curriculum_import_batch_report", { p_batch_id: null });
+      if (error) throw error;
+      return ((data ?? []) as Record<string, unknown>[]).map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "string" && /^\d+$/.test(v) && !["batch_id", "created_by"].includes(k) ? Number(v) : v]))) as unknown as BatchReport[];
+    },
+  });
+}
+export function useClassifiedRows(batchId: string | undefined, cls: RowClass | "", page: number) {
+  return useQuery({
+    queryKey: [...curriculumKey, "classified", batchId, cls, page],
+    enabled: !!batchId,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc("curriculum_import_batch_rows", { p_batch_id: batchId!, p_class: cls || null, p_limit: PAGE_SIZE, p_offset: page * PAGE_SIZE });
+      if (error) throw error;
+      const rows = (data ?? []) as ClassifiedRow[];
+      return { rows, total: Number(rows[0]?.total_count ?? 0) };
+    },
+  });
+}

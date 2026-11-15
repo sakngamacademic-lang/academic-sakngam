@@ -16,6 +16,7 @@ const Subjects = page(() => import("./pages/SubjectsPage"), "SubjectsPage");
 const Structure = page(() => import("./pages/StructurePage"), "StructurePage");
 const Indicators = page(() => import("./pages/IndicatorsPage"), "IndicatorsPage");
 const Imports = page(() => import("./pages/ImportsPage"), "ImportsPage");
+const Unified = page(() => import("./pages/UnifiedReviewPage"), "UnifiedReviewPage");
 const Review = page(() => import("./pages/ReviewPage"), "ReviewPage");
 const Conflicts = page(() => import("./pages/ConflictsPage"), "ConflictsPage");
 const Reports = page(() => import("./pages/ReportsPage"), "ReportsPage");
@@ -28,6 +29,7 @@ export const curriculumMenuPages = {
   "curriculum/structure": wrap(<Structure />),
   "curriculum/indicators": wrap(<Indicators />),
   "curriculum/imports": wrap(<Imports />),
+  "curriculum/workbench": wrap(<Unified />),
 };
 
 /** หน้าย่อยที่เปิดจากแถบเมนูหลักสูตร */

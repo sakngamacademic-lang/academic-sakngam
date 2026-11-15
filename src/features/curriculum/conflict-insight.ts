@@ -9,12 +9,12 @@ export interface ConflictInsight {
   options: string[];
 }
 
-const HOURS_PER_CREDIT = 40;
-const consistent = (credits: number, hours: number) => Math.abs(hours - HOURS_PER_CREDIT * credits) < 1e-9;
+export const HOURS_PER_CREDIT = 40;
+export const consistent = (credits: number, hours: number) => Math.abs(hours - HOURS_PER_CREDIT * credits) < 1e-9;
 const fmt = (c: number, h: number) => `${c.toFixed(1)} หน่วยกิต / ${h} ชั่วโมง`;
-const SOURCE_LABELS: Record<string, string> = { G: "ตารางโครงสร้าง", A: "สรุปโครงสร้างกลุ่มสาระ", D: "คำอธิบายรายวิชา" };
+export const SOURCE_LABELS: Record<string, string> = { G: "ตารางโครงสร้าง", A: "สรุปโครงสร้างกลุ่มสาระ", D: "คำอธิบายรายวิชา" };
 
-const ITEM = /([GAD]) หน้า (\d+): (.+?) (\d+(?:\.\d+)?)\((\d+)\)/g;
+export const ITEM = /([GAD]) หน้า (\d+): (.+?) (\d+(?:\.\d+)?)\((\d+)\)/g;
 
 export function conflictInsight(c: { category: string; value_a: string | null; value_b: string | null }): ConflictInsight {
   const a = c.value_a ?? "";

@@ -17,6 +17,7 @@ const TABS = [
   { to: "/office/curriculum/structure", label: "โครงสร้าง" },
   { to: "/office/curriculum/indicators", label: "ตัวชี้วัด & Mapping" },
   { to: "/office/curriculum/imports", label: "แหล่งข้อมูล & นำเข้า" },
+  { to: "/office/curriculum/decisions", label: "สรุปตัดสินข้อขัดแย้ง" },
   { to: "/office/curriculum/conflicts", label: "ข้อขัดแย้ง" },
   { to: "/office/curriculum/reports", label: "รายงาน" },
   { to: "/office/curriculum/registry", label: "ทะเบียนรายวิชากลาง" },

@@ -20,6 +20,7 @@ const Unified = page(() => import("./pages/UnifiedReviewPage"), "UnifiedReviewPa
 const Registry = page(() => import("./pages/RegistryPage"), "RegistryPage");
 const Review = page(() => import("./pages/ReviewPage"), "ReviewPage");
 const Conflicts = page(() => import("./pages/ConflictsPage"), "ConflictsPage");
+const Decisions = page(() => import("./pages/DecisionsPage"), "DecisionsPage");
 const Reports = page(() => import("./pages/ReportsPage"), "ReportsPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
@@ -41,5 +42,6 @@ export const curriculumSubRoutes: RouteObject[] = [
   { path: "curriculum/subjects", element: wrap(<Subjects />) },
   { path: "curriculum/review", element: wrap(<Review />) },
   { path: "curriculum/conflicts", element: wrap(<Conflicts />) },
+  { path: "curriculum/decisions", element: wrap(<Decisions />) },
   { path: "curriculum/reports", element: wrap(<Reports />) },
 ];

@@ -25,6 +25,7 @@ import {
 } from "../api";
 import { CurriculumNav, formatLocator, Notice, Pager, SourcePdfLink } from "../components";
 import { downloadCsv } from "../export";
+import { conflictInsight } from "../conflict-insight";
 
 const STATUS_VARIANT = { open: "outline", needs_decision: "warning", resolved: "success" } as const;
 type SortKey = "code" | "category" | "updated";
@@ -115,6 +116,19 @@ export function ConflictsPage() {
   );
 }
 
+function InsightBlock({ conflict }: { conflict: SourceConflict }) {
+  const ins = conflictInsight(conflict);
+  if (!ins.observations.length && ins.kind === "other") return null;
+  return (
+    <div className="rounded-xl border bg-muted/30 p-3 text-sm" data-testid="conflict-insight">
+      <p className="mb-1 text-xs font-medium text-muted-foreground">ข้อสังเกตจากหลักฐาน (คำนวณจากข้อความ A/B — ไม่ใช่การตัดสิน ไม่แก้ข้อมูล)</p>
+      <ul className="list-disc space-y-1 pl-5">{ins.observations.map((o, i) => <li key={i}>{o}</li>)}</ul>
+      <p className="mt-2 text-xs font-medium text-muted-foreground">ทางเลือกของผู้ดูแลหลักสูตร</p>
+      <ol className="list-decimal space-y-0.5 pl-5">{ins.options.map((o, i) => <li key={i}>{o}</li>)}</ol>
+    </div>
+  );
+}
+
 function ConflictDrawer({ conflict: c, onClose, canTriage, canResolve, docCode }: {
   conflict: SourceConflict | null; onClose: () => void; canTriage: boolean; canResolve: boolean; docCode: Map<string, string>;
 }) {
@@ -159,6 +173,7 @@ function ConflictDrawer({ conflict: c, onClose, canTriage, canResolve, docCode }
               <Row label="ความแตกต่าง">{c.difference}</Row>
               <Row label="ผลกระทบ">{c.impact_note}</Row>
               <Row label="ข้อเสนอแนะ (ผลวิเคราะห์ — ไม่ใช่การตัดสิน)">{c.recommendation}</Row>
+              <InsightBlock conflict={c} />
               <Row label="ผู้มีอำนาจตัดสินใจ">{AUTHORITY_LABELS[c.decision_authority]}</Row>
               <Row label="ผลการตัดสิน">{c.resolution}</Row>
             </dl>

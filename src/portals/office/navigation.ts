@@ -67,6 +67,7 @@ export const officePortal: PortalConfig = {
         { path: "curriculum/structure", label: "โครงสร้างรายวิชา", icon: ListChecks },
         { path: "curriculum/indicators", label: "มาตรฐาน & ตัวชี้วัด", icon: Target },
         { path: "curriculum/imports", label: "นำเข้า & ตรวจสอบ", icon: FileSpreadsheet },
+        { path: "curriculum/registry", label: "ทะเบียนรายวิชากลาง", icon: BookOpen },
         { path: "curriculum/workbench", label: "ตรวจหลักสูตร (หน้าเดียว)", icon: ClipboardCheck },
       ],
     },

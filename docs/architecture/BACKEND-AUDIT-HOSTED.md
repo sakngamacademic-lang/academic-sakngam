@@ -53,3 +53,10 @@
 - trigger `import_rows_block_unsafe_approve`: แถว error/conflict อนุมัติไม่ได้ทุกเส้นทาง · อนุมัติชุดเป็นหัวหน้า ≠ ผู้สร้างเหมือนเดิม แต่ไม่ต้องตัดสินแถว error/conflict (ไม่ถูกบันทึก)
 - IS1/IS2: ใช้ `subject_category='is'` เดิม (ไม่ต้องสังกัดกลุ่มสาระ) — ไม่แก้ validator
 - pgTAP `021` (14) ผ่าน · `011`, `018`, `020` ไม่ regress
+
+## Master Curriculum Registry — migration `20261126000100` (ยังไม่ apply บน Hosted)
+- Schema Mapping: ใช้ `subjects` (ทะเบียนรายวิชา) / `subject_offerings` (การจัดวิชา แผน×ชั้น×ภาคเรียน) / `study_programs` / `curriculum_versions` เดิม
+  เพิ่มเฉพาะ: หมวด `dual_study`/`specific`, คอลัมน์ `is_active` `change_note` `carried_from_id`, ตาราง `curriculum_match_proposals` (ข้อเสนอ AI/กฎ + ความมั่นใจ + หลักฐาน)
+- ฟังก์ชัน: `curriculum_registry_build` (สร้างทะเบียนจากหลักฐานตามลำดับ dependency; ไม่แก้ `import_rows`), `curriculum_registry_propose`, `curriculum_proposals_decide`,
+  `curriculum_subject_set_active` (ยกเลิก/คืนพร้อมเหตุผล), `curriculum_version_clone` (แก้ให้รองรับ IS/ทวิศึกษา/สืบทอด), `curriculum_compare_versions`
+- หน้า `/office/curriculum/registry` · pgTAP `022` (18) ผ่าน · ประวัติเปลี่ยนแปลง = `audit_logs` เดิม

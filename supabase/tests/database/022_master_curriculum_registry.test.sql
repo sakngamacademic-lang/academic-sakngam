@@ -1,7 +1,7 @@
 -- pgTAP: Master Curriculum Registry — build จากหลักฐาน, ข้อเสนอทวิศึกษา, ประวัติ, คัดลอกปีใหม่, เปรียบเทียบ · ⚠️ fixture (rollback)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(20);
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values ('aaaaaaaa-0000-4000-a000-000000000003', 'staff@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}');
 insert into public.user_roles (user_id, school_id, role) values ('aaaaaaaa-0000-4000-a000-000000000003', 'aaaaaaaa-0000-4000-a000-000000000000', 'academic_staff');
@@ -48,5 +48,10 @@ select is((select carried_from_id is not null and subject_category = 'dual_study
 select lives_ok($$select public.curriculum_subject_set_active((select s.id from public.subjects s join t_new on s.curriculum_version_id = t_new.id where s.code = 'ท31101'), false, 'ยกเลิกรายวิชาในปีถัดไปตามมติ')$$, 'ยกเลิกรายวิชาในฉบับใหม่ (เก็บประวัติ)');
 select is((select count(*)::int from public.subjects s join t_new on s.curriculum_version_id = t_new.id where s.code = 'ท31101' and not s.is_active and s.change_note is not null), 1, 'ยกเลิกแล้วยังอยู่ในทะเบียนพร้อมเหตุผล');
 select is((select string_agg(code || ':' || change_kind, ',' order by code) from public.curriculum_compare_versions('dddddddd-2222-4000-a000-000000000001', (select id from t_new)) where change_kind <> 'same'), 'ท31101:cancelled', 'เปรียบเทียบปี: วิชาที่ยกเลิกแสดงเป็น cancelled');
+reset role;
+insert into public.curriculum_versions (id, school_id, school_curriculum_id, version_label) values ('dddddddd-2222-4000-a000-000000000002', 'aaaaaaaa-0000-4000-a000-000000000000', 'dddddddd-1111-4000-a000-000000000001', 'TEST-B');
+select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000003');
+select is((public.curriculum_registry_build('dddddddd-2222-4000-a000-000000000002', false, 'dddddddd-2222-4000-a000-000000000001') #>> '{subject_offerings,created}')::int, 2, 'สร้างทะเบียนฉบับใหม่จากหลักฐานของฉบับอื่น (dependency ตรวจกับฉบับปลายทาง)');
+select is((select count(*)::int from public.subjects where curriculum_version_id = 'dddddddd-2222-4000-a000-000000000002'), 2, 'ได้รายวิชาในฉบับปลายทาง หลักฐานเดิมไม่ถูกย้าย');
 select * from finish();
 rollback;

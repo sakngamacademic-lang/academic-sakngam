@@ -12,7 +12,7 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { requireSupabase } from "@/lib/supabase";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { curriculumKey, rpc } from "../api";
+import { curriculumKey, rpc, useBatches } from "../api";
 import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion, VersionPicker } from "../components";
 import { downloadCsv } from "../export";
 
@@ -56,6 +56,10 @@ export function RegistryPage() {
   const [cat, setCat] = useState("");
   const [confirmBuild, setConfirmBuild] = useState(false);
   const [baseId, setBaseId] = useState("");
+  const batches = useBatches();
+  const [srcPick, setSrcPick] = useState("");
+  const withEvidence = sel.versions.filter((x) => batches.data?.some((b) => b.curriculum_version_id === x.id));
+  const srcId = srcPick || (withEvidence.some((x) => x.id === v?.id) ? v?.id : withEvidence[0]?.id) || v?.id || "";
   const canEdit = can("curriculum.manage") && v?.status === "draft";
   const refresh = () => qc.invalidateQueries({ queryKey: curriculumKey });
   const areaName = useMemo(() => new Map(areas.data?.map((a) => [a.id, a.name_th])), [areas.data]);
@@ -85,6 +89,11 @@ export function RegistryPage() {
       <CurriculumNav />
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <VersionPicker value={v?.id ?? ""} onChange={sel.select} versions={sel.versions} />
+        {canEdit && withEvidence.length > 0 && (
+          <Select value={srcId} onChange={(e) => setSrcPick(e.target.value)} aria-label="ฉบับที่เป็นแหล่งหลักฐานนำเข้า" className="sm:w-64">
+            {withEvidence.map((x) => <option key={x.id} value={x.id}>หลักฐานจาก: {x.version_label}</option>)}
+          </Select>
+        )}
         {canEdit && <Button size="sm" onClick={() => setConfirmBuild(true)}><DatabaseZap /> สร้างทะเบียนจากหลักฐานนำเข้า</Button>}
         {can("curriculum.manage") && v && <Button size="sm" variant="outline" onClick={() => { const l = window.prompt("ชื่อฉบับใหม่ (เช่น พุทธศักราช 2570)"); if (l?.trim()) void act("curriculum_version_clone", { p_source_id: v.id, p_version_label: l.trim() }, () => "คัดลอกเป็นฉบับร่างใหม่แล้ว — เปิดฉบับใหม่แล้วแก้เฉพาะรายการที่เปลี่ยน"); }}><Copy /> คัดลอกเป็นปีถัดไป</Button>}
       </div>
@@ -208,7 +217,7 @@ export function RegistryPage() {
 
       <ConfirmDialog open={confirmBuild} onOpenChange={setConfirmBuild} title="สร้างทะเบียนจากหลักฐานนำเข้า?"
         description="ระบบสร้างแผน รายวิชา การจัดวิชา และกิจกรรมตามลำดับ dependency จากแถวที่ผ่านการตรวจ (ไม่มี error/ข้อขัดแย้ง/คำเตือน) พร้อมเก็บหน้า PDF — หลักฐานนำเข้า 2,832 แถวไม่ถูกแก้หรือเปลี่ยนสถานะ · ฉบับยังเป็นแบบร่างจนกว่าหัวหน้าฝ่ายวิชาการ (คนละคนกับผู้จัดทำ) อนุมัติ"
-        confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
+        confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id, ...(srcId && srcId !== v!.id ? { p_source_version_id: srcId } : {}) }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
     </>
   );
 }

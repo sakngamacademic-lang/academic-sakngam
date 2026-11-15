@@ -42,14 +42,26 @@
 
 ## 1b. Migration ใหม่ที่ยังไม่อยู่บน Hosted (15 พ.ย. 2569) — รออนุมัติ apply
 
-Hosted มี 21 ไฟล์ (ล่าสุด `20261119000100`) · repo มี 23 ไฟล์
+Hosted มี 21 ไฟล์ (ล่าสุด `20261119000100`) · repo มี 24 ไฟล์
 
 | # | ไฟล์ | เนื้อหา | ผลกระทบต่อข้อมูลเดิม |
 |---|---|---|---|
 | 22 | `20261120000100_assignment_submissions` | ส่งงาน/ตรวจรับ/ขอแก้ไข/ประวัติเวอร์ชัน + `notifications` | แทน event check ของ `assignment_events` (เพิ่มค่าใหม่) · สร้างตารางใหม่ |
 | 23 | `20261121000100_assessment_foundation` | นักเรียน ลงทะเบียน คะแนน เวลาเรียน ผลการเรียน + เกณฑ์วัดผล (ต้องยืนยัน) | สร้างใหม่เท่านั้น |
+| 24 | `20261122000100_grant_school_role` | ฟังก์ชัน postgres-only ให้ academic_staff/executive/teacher แก่บัญชีที่มีอยู่ (ผู้ตรวจคนที่สอง) | สร้างฟังก์ชันเท่านั้น ไม่รันเอง |
 
-ตรวจแล้ว: dry run ใน transaction (rollback) + apply บน local + pgTAP ทั้งชุด 438/438
+ตรวจแล้ว: dry run ใน transaction (rollback) + apply บน local + pgTAP ทั้งชุด
+**ซ้อมอัปเกรด (stack แยกที่จำลอง Hosted: 21 migration + โรงเรียน + head + staff)**: apply 22–24 ผ่าน · `auth.users` hash ก่อน/หลังเท่ากัน · profiles/roles/schools ไม่เปลี่ยน · ย้ายข้อมูลหลักสูตรด้วยบัญชี staff เป็นผู้สร้างชุด (5 ชุด needs_review) รัน 2 ครั้งจำนวนคงที่ · hash ตรงต้นทาง · ไม่มี approved/committed
+
+### ขั้นตอนที่ต้องได้รับอนุมัติ (ทำโดยเจ้าของโปรเจกต์ — `db push` ต้องต่อ Postgres ตรง)
+```bash
+git pull origin claude/stoic-feynman-y7af1p
+supabase link --project-ref ifwercnzbnkpadikqigj
+supabase db push --dry-run     # ต้องแสดง 3 ไฟล์: 20261120000100, 20261121000100, 20261122000100
+supabase db push               # หลังอนุมัติ (ห้ามใส่ --include-seed)
+```
+ผู้ตรวจคนที่สอง: สร้างบัญชีด้วย *Invite user* ใน Dashboard แล้วรันใน SQL Editor
+`select private.grant_school_role('<อีเมล>', '1062040443', 'academic_staff', '<เหตุผล>');` (dry run) แล้วใส่ `false` เป็นอาร์กิวเมนต์สุดท้ายเมื่อผลถูกต้อง
 
 ## 2. ขั้นตอน (ทำเมื่อได้รับอนุมัติแต่ละขั้น)
 

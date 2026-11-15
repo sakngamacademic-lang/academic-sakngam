@@ -64,3 +64,23 @@ npm run storage:dev
 - `s3rver` เก็บไฟล์แทน R2 · **s3rver ไม่ตรวจลายเซ็น SigV4** จึงมี proxy (`scripts/s3-private-proxy.mjs`) ตรวจลายเซ็น/expiry/private bucket ด้วย `scripts/sigv4-verify.mjs` ซึ่งผ่าน test vector ทางการของ AWS (`npm run test:sigv4`)
 - Edge Functions รันด้วย Deno (`supabase/functions/_dev/serve.ts`) เพราะ image ของ Supabase Edge Runtime ดาวน์โหลดไม่ได้ในสภาพแวดล้อมนี้ — โค้ด handler ชุดเดียวกับที่ deploy
 - ข้อจำกัด: การตรวจของ R2 จริง (CORS, response-content-disposition, ลายเซ็น) ต้องยืนยันอีกครั้งบน staging
+
+## 6. ติดตั้ง R2 + Edge Functions บน Staging (ผู้ดูแลทำ — AI ไม่มี credentials และไม่สร้าง secret ปลอม)
+
+สถานะ 15 พ.ย. 2569: ยังไม่มี R2 bucket/credentials · ตรวจ Edge Functions บน Hosted ไม่ได้ (token อ่านไม่ได้) · โค้ด + สคริปต์ตรวจพร้อม
+
+1. **Cloudflare**: สร้าง bucket `sakngam-academic-documents` (private — ไม่เปิด r2.dev / custom domain) · API token สิทธิ์ Object Read & Write เฉพาะ bucket · CORS ตามข้อ 3 ด้านบน (AllowedOrigins = โดเมน Vercel Preview)
+2. **Supabase secrets** (เครื่องของผู้ดูแล ไม่ใช่แชต/Git/Vercel):
+   ```bash
+   supabase secrets set --project-ref ifwercnzbnkpadikqigj STORAGE_PROVIDER=r2 R2_ACCOUNT_ID=… R2_ACCESS_KEY_ID=… R2_SECRET_ACCESS_KEY=… R2_BUCKET=sakngam-academic-documents STORAGE_CRON_SECRET=… ALLOWED_ORIGINS=https://<ชื่อ>.vercel.app
+   ```
+3. **Deploy functions** (Staging เท่านั้น): `supabase functions deploy storage-upload-url storage-confirm-upload storage-download-url storage-delete storage-cleanup curriculum-import-parse --project-ref ifwercnzbnkpadikqigj`
+4. **ตรวจ** (ใช้บัญชีเจ้าหน้าที่วิชาการบน Staging; ใช้ anon key เท่านั้น):
+   ```bash
+   SUPABASE_URL=https://ifwercnzbnkpadikqigj.supabase.co SUPABASE_ANON_KEY=… APP_EMAIL=… APP_PASSWORD=… node scripts/r2/verify-storage.mjs
+   ```
+   ต้องผ่านทุกข้อ: SHA256 ตรง · presigned ≤ 5 นาที · ดาวน์โหลดตรง · Content-Type/attachment · private (ไม่มีลายเซ็น = 403) · ลายเซ็นแก้แล้วใช้ไม่ได้ · อัปโหลดซ้ำเป็นไฟล์ใหม่
+5. **ย้าย PDF ต้นฉบับ 6 ไฟล์** (หลังย้ายข้อมูลหลักสูตรแล้ว): `node scripts/r2/migrate-source-pdfs.mjs --dir <โฟลเดอร์ PDF> --manifest <SHA256SUMS> --out transfer-out` → ตรวจ SHA256 ทุกไฟล์ (ก่อนอัปโหลด / ที่เซิร์ฟเวอร์ / ดาวน์โหลดกลับ) → รัน `link-r2-*.sql` ใน SQL Editor (ผูกเฉพาะไฟล์ที่ sha256 ตรง)
+6. ตั้งเวลา `storage-cleanup` ทุก 15 นาที ตามข้อ 3.5
+
+ทดสอบสคริปต์บน local (s3rver + SigV4 proxy) แล้ว: verify 9/9 ผ่าน · migrate ตรวจ SHA256 6/6 ผ่าน (ใช้ไฟล์เดิม ไม่อัปโหลดซ้ำ)

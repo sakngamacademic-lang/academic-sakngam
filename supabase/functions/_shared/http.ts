@@ -1,10 +1,24 @@
 /** HTTP helpers ร่วมของ Edge Functions: CORS, JSON, ข้อผิดพลาดภาษาไทย */
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173").split(",").map((s) => s.trim());
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173").split(",").map((s) => s.trim()).filter(Boolean);
+
+/**
+ * ตรวจ origin กับรายการที่อนุญาต — รองรับ * หนึ่งส่วนในชื่อโดเมนสำหรับ Vercel Preview ที่เปลี่ยนตาม deployment
+ * เช่น https://academic-sakngam-*.vercel.app (* = ตัวอักษร/ตัวเลข/ขีด เท่านั้น ไม่ข้ามจุด และต้องเป็น https)
+ */
+export function originAllowed(origin: string, allowed: string[] = ALLOWED_ORIGINS): boolean {
+  if (!origin) return false;
+  return allowed.some((a) => {
+    if (!a.includes("*")) return a === origin;
+    if (!a.startsWith("https://")) return false;
+    const re = new RegExp("^" + a.split("*").map((x) => x.replace(/[.+?^${}()|[\]\\/-]/g, "\\$&")).join("[a-z0-9-]+") + "$");
+    return re.test(origin);
+  });
+}
 
 export function corsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]!,
+    "Access-Control-Allow-Origin": originAllowed(origin) ? origin : ALLOWED_ORIGINS[0]!,
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",

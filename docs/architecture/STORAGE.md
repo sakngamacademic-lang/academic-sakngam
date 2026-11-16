@@ -67,13 +67,14 @@ npm run storage:dev
 
 ## 6. ติดตั้ง R2 + Edge Functions บน Staging (ผู้ดูแลทำ — AI ไม่มี credentials และไม่สร้าง secret ปลอม)
 
-สถานะ 15 พ.ย. 2569: ยังไม่มี R2 bucket/credentials · ตรวจ Edge Functions บน Hosted ไม่ได้ (token อ่านไม่ได้) · โค้ด + สคริปต์ตรวจพร้อม
+สถานะ 16 พ.ย. 2569 (ตรวจจริง): เรียก `POST /functions/v1/storage-upload-url`, `storage-confirm-upload`, `curriculum-import-parse` บน Staging ได้ `404 {"code":"NOT_FOUND","message":"Requested function was not found"}` — **ยังไม่ได้ deploy Edge Functions** · preflight `OPTIONS` ก็ได้ 404 จึงทำให้ browser แจ้ง “ไม่สามารถเชื่อมต่อระบบจัดเก็บไฟล์ได้” · token ของเซสชัน AI ไม่มีสิทธิ์ `edge_functions_read` / `edge_functions_secrets_read` จึงตรวจรายชื่อ secret และ log ไม่ได้ · ยังไม่ได้ยืนยัน R2 bucket
 
 1. **Cloudflare**: สร้าง bucket `sakngam-academic-documents` (private — ไม่เปิด r2.dev / custom domain) · API token สิทธิ์ Object Read & Write เฉพาะ bucket · CORS ตามข้อ 3 ด้านบน (AllowedOrigins = โดเมน Vercel Preview)
 2. **Supabase secrets** (เครื่องของผู้ดูแล ไม่ใช่แชต/Git/Vercel):
    ```bash
-   supabase secrets set --project-ref ifwercnzbnkpadikqigj STORAGE_PROVIDER=r2 R2_ACCOUNT_ID=… R2_ACCESS_KEY_ID=… R2_SECRET_ACCESS_KEY=… R2_BUCKET=sakngam-academic-documents STORAGE_CRON_SECRET=… ALLOWED_ORIGINS=https://<ชื่อ>.vercel.app
+   supabase secrets set --project-ref ifwercnzbnkpadikqigj STORAGE_PROVIDER=r2 R2_ACCOUNT_ID=… R2_ACCESS_KEY_ID=… R2_SECRET_ACCESS_KEY=… R2_BUCKET=sakngam-academic-documents STORAGE_CRON_SECRET=… ALLOWED_ORIGINS=https://<โดเมน-preview-คงที่>.vercel.app,https://<ชื่อโปรเจกต์>-*-<ทีม>.vercel.app
    ```
+   - `ALLOWED_ORIGINS` คั่นด้วยจุลภาค รองรับ `*` หนึ่งส่วนในชื่อโดเมน (เฉพาะ https · ตัวอักษร/ตัวเลข/ขีด · ไม่ข้ามจุด) สำหรับ URL ของ Vercel Preview ที่เปลี่ยนตาม deployment
 3. **Deploy functions** (Staging เท่านั้น): `supabase functions deploy storage-upload-url storage-confirm-upload storage-download-url storage-delete storage-cleanup curriculum-import-parse --project-ref ifwercnzbnkpadikqigj`
 4. **ตรวจ** (ใช้บัญชีเจ้าหน้าที่วิชาการบน Staging; ใช้ anon key เท่านั้น):
    ```bash

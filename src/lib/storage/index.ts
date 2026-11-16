@@ -51,7 +51,7 @@ export async function callFunction<T>(name: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     });
   } catch {
-    throw new StorageError("ไม่สามารถเชื่อมต่อระบบจัดเก็บไฟล์ได้");
+    throw new StorageError("ไม่สามารถเชื่อมต่อระบบจัดเก็บไฟล์ได้ — ฟังก์ชันจัดเก็บไฟล์บนเซิร์ฟเวอร์อาจยังไม่ได้ติดตั้ง หรือโดเมนนี้ยังไม่ได้รับอนุญาต กรุณาแจ้งผู้ดูแลระบบ");
   }
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new StorageError(json.error ?? "คำขอไม่สำเร็จ");

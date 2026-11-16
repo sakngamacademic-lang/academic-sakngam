@@ -75,7 +75,7 @@ export function ImportsPage() {
           columns={[
             { key: "code", header: "รหัส", cell: (d) => <code className="text-xs">{d.register_code}</code>, className: "w-28" },
             { key: "title", header: "เอกสาร", cell: (d) => <span><span className="font-medium">{d.title}</span><span className="block text-xs text-muted-foreground">{DOC_TYPE_LABELS[d.doc_type]}{d.page_count ? ` · ${d.page_count} หน้า` : ""}{d.declared_curriculum_ref ? ` · ระบุ ${d.declared_curriculum_ref}` : ""}</span></span> },
-            { key: "rel", header: "ความน่าเชื่อถือ", cell: (d) => <Badge variant={d.reliability === "A" ? "success" : d.reliability === "D" ? "destructive" : "secondary"}>{d.reliability}</Badge> },
+            { key: "rel", header: "ความน่าเชื่อถือ", cell: (d) => d.reliability ? <Badge variant={d.reliability === "A" ? "success" : d.reliability === "D" ? "destructive" : "secondary"}>{d.reliability}</Badge> : <Badge variant="outline">รอตรวจสอบ</Badge> },
             { key: "content", header: "เนื้อหา", cell: (d) => (d.content_status === "has_content" ? (d.file_id ? "มีไฟล์" : "ยังไม่แนบไฟล์") : <Badge variant="warning">{d.content_status}</Badge>) },
           ]}
         />
@@ -122,32 +122,42 @@ export function ImportsPage() {
   );
 }
 
+const LAST_DOC_TYPE = "curriculum.lastDocType";
+const readLastType = () => { try { return localStorage.getItem(LAST_DOC_TYPE) ?? "other"; } catch { return "other"; } };
+const titleFromFile = (name: string) => name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim().slice(0, 300);
+
+/** ลงทะเบียนเอกสารต้นทางแบบง่าย: เลือกไฟล์ → อัปโหลด · รหัส SRC-NN สร้างที่ฐานข้อมูล · ช่องอื่นไม่บังคับ (ว่าง = รอตรวจสอบ) */
 function SourceDialog({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: () => Promise<unknown> }) {
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [docType, setDocType] = useState(readLastType);
+  const reset = () => { setFile(null); setTitle(""); };
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="ลงทะเบียนเอกสารต้นทาง" description="ไฟล์เก็บใน storage แบบ private · ระบบคำนวณ SHA-256 ให้ · ไม่มีการเปิดเป็น public" className="max-w-2xl">
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !busy) { reset(); onClose(); } }}>
+      <DialogContent title="ลงทะเบียนเอกสารต้นทาง" description="เลือกไฟล์แล้วกดอัปโหลด — ระบบตั้งรหัสทะเบียนให้อัตโนมัติ เก็บไฟล์แบบ private และคำนวณ SHA-256 ให้" className="max-w-2xl">
         <form className="space-y-4" onSubmit={async (e) => {
           e.preventDefault();
+          if (!file) return;
           const f = new FormData(e.currentTarget);
           const v = (k: string) => ((f.get(k) as string) ?? "").trim() || null;
-          const file = f.get("file") as File | null;
+          const num = (k: string) => (v(k) && Number.isFinite(Number(v(k))) ? Number(v(k)) : null);
           setBusy(true);
           try {
-            let fileId: string | null = null;
-            let sha: string | null = null;
-            if (file && file.size > 0) {
-              const r = await edgeFunctionStorage.upload(file, { curriculumSource: true });
-              fileId = r.fileId;
-              sha = r.sha256;
-            }
+            const r = await edgeFunctionStorage.upload(file, { curriculumSource: true });
             await insertRow("source_documents", {
-              register_code: v("code"), title: v("title"), doc_type: v("type"), reliability: v("reliability"), content_status: v("content") ?? "has_content",
-              page_count: v("pages") ? Number(v("pages")) : null, page_offset: v("offset") ? Number(v("offset")) : null,
-              declared_curriculum_ref: v("declared"), notes: v("notes"), file_id: fileId, sha256: sha,
+              // ไม่ส่งรหัส = ให้ฐานข้อมูลออกเลข SRC-NN ถัดไป (ไม่ซ้ำ)
+              ...(v("code") ? { register_code: v("code") } : {}),
+              title: title.trim() || titleFromFile(file.name), doc_type: docType,
+              reliability: v("reliability"),
+              content_status: v("content") ?? "has_content",
+              page_count: num("pages"), page_offset: num("offset"), issued_year_be: num("year"),
+              declared_curriculum_ref: v("declared"), notes: v("notes"), file_id: r.fileId, sha256: r.sha256,
             });
-            toast.success("ลงทะเบียนเอกสารแล้ว");
+            try { localStorage.setItem(LAST_DOC_TYPE, docType); } catch { /* ไม่จำเป็น */ }
+            toast.success("อัปโหลดและลงทะเบียนเอกสารแล้ว (รอตรวจสอบรายละเอียด)");
             await onDone();
+            reset();
             onClose();
           } catch (err) {
             toast.error(err instanceof StorageError ? err.message : dbErrorMessage(err));
@@ -155,23 +165,34 @@ function SourceDialog({ open, onClose, onDone }: { open: boolean; onClose: () =>
             setBusy(false);
           }
         }}>
+          <FormField label="ไฟล์ (PDF / Excel ≤ 100 MB)" htmlFor="s-file">
+            <input id="s-file" name="file" type="file" accept=".pdf,.xlsx,.xls" required className="block w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
+              onChange={(e) => { const x = e.target.files?.[0] ?? null; setFile(x); if (x) setTitle(titleFromFile(x.name)); }} />
+          </FormField>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="รหัสทะเบียน" htmlFor="s-code" hint="เช่น SRC-01, SRC-03-SC"><Input id="s-code" name="code" required pattern="SRC-[0-9]{2}(-[A-Z0-9]{1,8})?" /></FormField>
-            <FormField label="ประเภท" htmlFor="s-type"><Select id="s-type" name="type">{Object.entries(DOC_TYPE_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></FormField>
+            <FormField label="ชื่อเอกสาร" htmlFor="s-title" hint="ใช้ชื่อไฟล์ให้อัตโนมัติ แก้ไขได้"><Input id="s-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={300} /></FormField>
+            <FormField label="ประเภท" htmlFor="s-type" hint="จำค่าที่เลือกครั้งล่าสุด"><Select id="s-type" value={docType} onChange={(e) => setDocType(e.target.value)}>{Object.entries(DOC_TYPE_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select></FormField>
           </div>
-          <FormField label="ชื่อเอกสาร" htmlFor="s-title"><Input id="s-title" name="title" required /></FormField>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <FormField label="ความน่าเชื่อถือ" htmlFor="s-rel"><Select id="s-rel" name="reliability"><option value="A">A — ประกาศ/เล่มที่อนุมัติ</option><option value="B">B — ทางการประกอบ</option><option value="C">C — ไฟล์ทำงาน</option><option value="D">D — ไม่ทราบ/ว่าง</option></Select></FormField>
-            <FormField label="จำนวนหน้า PDF" htmlFor="s-pages"><Input id="s-pages" name="pages" inputMode="numeric" /></FormField>
-            <FormField label="หน้า PDF − หน้าเล่ม" htmlFor="s-offset"><Input id="s-offset" name="offset" inputMode="numeric" /></FormField>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="ฉบับที่เอกสารระบุเอง" htmlFor="s-decl"><Input id="s-decl" name="declared" /></FormField>
-            <FormField label="สถานะเนื้อหา" htmlFor="s-content"><Select id="s-content" name="content"><option value="has_content">มีเนื้อหา</option><option value="empty">ว่าง</option><option value="variant">ต่างฉบับ</option></Select></FormField>
-          </div>
-          <FormField label="ไฟล์ (PDF / .xlsx ≤ 100 MB)" htmlFor="s-file"><input id="s-file" name="file" type="file" accept=".pdf,.xlsx,.xls" className="block w-full rounded-md border border-input bg-background px-2 py-2 text-sm" /></FormField>
-          <FormField label="หมายเหตุ" htmlFor="s-notes"><Input id="s-notes" name="notes" /></FormField>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button><Button type="submit" disabled={busy}>{busy ? "กำลังอัปโหลด…" : "บันทึก"}</Button></div>
+          <details className="rounded-md border p-3">
+            <summary className="cursor-pointer text-sm font-medium">รายละเอียดเพิ่มเติม (ไม่บังคับ — เว้นว่างได้ ระบบแสดง “รอตรวจสอบ”)</summary>
+            <div className="mt-3 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="รหัสทะเบียน" htmlFor="s-code" hint="เว้นว่าง = ระบบสร้าง SRC-NN ให้"><Input id="s-code" name="code" placeholder="สร้างอัตโนมัติ" pattern="[Ss][Rr][Cc]-[0-9]{2,4}(-[A-Za-z0-9]{1,8})?" /></FormField>
+                <FormField label="ความน่าเชื่อถือ" htmlFor="s-rel" hint="ผู้ตรวจเป็นผู้กำหนด"><Select id="s-rel" name="reliability" defaultValue=""><option value="">รอตรวจสอบ</option><option value="A">A — ประกาศ/เล่มที่อนุมัติ</option><option value="B">B — ทางการประกอบ</option><option value="C">C — ไฟล์ทำงาน</option><option value="D">D — ไม่ทราบ/ว่าง</option></Select></FormField>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField label="จำนวนหน้า PDF" htmlFor="s-pages"><Input id="s-pages" name="pages" inputMode="numeric" placeholder="รอตรวจสอบ" /></FormField>
+                <FormField label="หน้า PDF − หน้าเล่ม" htmlFor="s-offset"><Input id="s-offset" name="offset" inputMode="numeric" placeholder="รอตรวจสอบ" /></FormField>
+                <FormField label="ปีเอกสาร (พ.ศ.)" htmlFor="s-year"><Input id="s-year" name="year" inputMode="numeric" placeholder="รอตรวจสอบ" /></FormField>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label="ฉบับที่เอกสารระบุเอง" htmlFor="s-decl"><Input id="s-decl" name="declared" /></FormField>
+                <FormField label="สถานะเนื้อหา" htmlFor="s-content"><Select id="s-content" name="content" defaultValue="has_content"><option value="has_content">มีเนื้อหา</option><option value="empty">ว่าง</option><option value="variant">ต่างฉบับ</option></Select></FormField>
+              </div>
+              <FormField label="หมายเหตุ" htmlFor="s-notes"><Input id="s-notes" name="notes" /></FormField>
+            </div>
+          </details>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => { reset(); onClose(); }}>ยกเลิก</Button><Button type="submit" disabled={busy || !file}>{busy ? "กำลังอัปโหลด…" : "อัปโหลด"}</Button></div>
         </form>
       </DialogContent>
     </Dialog>

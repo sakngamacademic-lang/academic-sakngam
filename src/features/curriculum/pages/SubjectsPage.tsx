@@ -92,7 +92,7 @@ function SubjectDetailDialog({ id, onClose, areaName, gradeName }: { id: string 
               <div><dt className="text-muted-foreground">แหล่งข้อมูล</dt><dd className="flex flex-wrap items-center gap-1"><SourceRef code={s.source?.register_code} locator={s.source_locator} /> <SourcePdfLink docId={s.source_document_id} locator={s.source_locator} /></dd></div>
             </dl>
             <p className="text-xs text-muted-foreground">
-              สถานะการตรวจ: {s.import_row_id ? "นำเข้าผ่านการตรวจรายแถวและอนุมัติแล้ว" : "บันทึกด้วยมือ"} · ความน่าเชื่อถือของแหล่ง: {s.source?.reliability ?? "–"}
+              สถานะการตรวจ: {s.import_row_id ? "นำเข้าผ่านการตรวจรายแถวและอนุมัติแล้ว" : "บันทึกด้วยมือ"} · ความน่าเชื่อถือของแหล่ง: {s.source?.reliability ?? "รอตรวจสอบ"}
               {s.source?.status !== "reviewed" && " (แหล่งยังไม่ผ่านการทบทวน)"}
             </p>
             <section>

@@ -134,7 +134,8 @@ export interface SourceDocument {
   register_code: string;
   title: string;
   doc_type: string;
-  reliability: string;
+  /** null = รอตรวจสอบ (ยังไม่ประเมิน) */
+  reliability: string | null;
   content_status: string;
   status: string;
   page_count: number | null;

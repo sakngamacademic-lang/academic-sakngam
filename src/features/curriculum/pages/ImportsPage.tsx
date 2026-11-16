@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileUp, Plus, ScanText } from "lucide-react";
+import { Download, ExternalLink, FileUp, Loader2, Plus, ScanText } from "lucide-react";
 import { DataTable, PageHeader } from "@/components/shared";
 import { DashSection, LiveBadge } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ import {
   type ImportBatch,
   type SourceDocument,
 } from "../api";
+import { fileErrorMessage, isPdfName, parsePdfPage, pdfPageUrl } from "../source-file";
 import { CurriculumNav, EmptyState, formatLocator, Notice } from "../components";
 
 /** แหล่งข้อมูล (Source Register) · ข้อขัดแย้ง · ชุดนำเข้า */
@@ -77,6 +78,7 @@ export function ImportsPage() {
             { key: "title", header: "เอกสาร", cell: (d) => <span><span className="font-medium">{d.title}</span><span className="block text-xs text-muted-foreground">{DOC_TYPE_LABELS[d.doc_type]}{d.page_count ? ` · ${d.page_count} หน้า` : ""}{d.declared_curriculum_ref ? ` · ระบุ ${d.declared_curriculum_ref}` : ""}</span></span> },
             { key: "rel", header: "ความน่าเชื่อถือ", cell: (d) => d.reliability ? <Badge variant={d.reliability === "A" ? "success" : d.reliability === "D" ? "destructive" : "secondary"}>{d.reliability}</Badge> : <Badge variant="outline">รอตรวจสอบ</Badge> },
             { key: "content", header: "เนื้อหา", cell: (d) => (d.content_status === "has_content" ? (d.file_id ? "มีไฟล์" : "ยังไม่แนบไฟล์") : <Badge variant="warning">{d.content_status}</Badge>) },
+            { key: "file", header: "ไฟล์", cell: (d) => (d.file_id ? <SourceFileActions doc={d} /> : <span className="text-xs text-muted-foreground">—</span>), className: "w-[19rem]" },
           ]}
         />
       </DashSection>
@@ -284,5 +286,71 @@ function BatchDialog({ open, onClose, onDone, sources, versions }: {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * ปุ่มเปิด/ดาวน์โหลดไฟล์ต้นทาง — ขอ presigned URL (5 นาที) จาก storage-download-url ทุกครั้ง
+ * (ฐานข้อมูลตรวจสิทธิ์ + บันทึก log; bucket ยังเป็น private) · เปิด PDF แบบ inline ตรงหน้าที่ระบุได้
+ */
+function SourceFileActions({ doc }: { doc: SourceDocument }) {
+  const [page, setPage] = useState("");
+  const [busy, setBusy] = useState<"open" | "download" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileId = doc.file_id!;
+
+  const open = async () => {
+    setError(null);
+    const p = parsePdfPage(page, doc.page_count);
+    if ("error" in p) return setError(p.error);
+    // เปิดแท็บก่อน await เพื่อไม่ให้เบราว์เซอร์บล็อก pop-up แล้วค่อยใส่ URL
+    const w = window.open("", "_blank");
+    setBusy("open");
+    try {
+      if (!w) throw new Error("popup blocked");
+      w.opener = null;
+      w.document.title = `${doc.register_code} — กำลังเปิดเอกสาร…`;
+      const r = await callFunction<{ url: string; fileName: string }>("storage-download-url", { fileId, inline: true });
+      if (!isPdfName(r.fileName)) {
+        w.close();
+        setError("ไฟล์นี้ไม่ใช่ PDF — ใช้ปุ่มดาวน์โหลด");
+        return;
+      }
+      w.location.replace(pdfPageUrl(r.url, p.page));
+    } catch (e) {
+      w?.close();
+      setError(fileErrorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const download = async () => {
+    setError(null);
+    setBusy("download");
+    try {
+      await edgeFunctionStorage.download(fileId);
+    } catch (e) {
+      setError(fileErrorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-1">
+        <Input aria-label={`เลขหน้าที่จะเปิด ${doc.register_code}`} inputMode="numeric" placeholder="หน้า" value={page}
+          onChange={(e) => setPage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void open()}
+          className="h-8 w-16 px-2 text-xs" title={doc.page_count ? `1–${doc.page_count}` : "เว้นว่าง = หน้าแรก"} />
+        <Button size="sm" variant="outline" className="h-8" disabled={busy !== null} onClick={open} aria-label={`เปิด PDF ${doc.register_code}`}>
+          {busy === "open" ? <Loader2 className="animate-spin" /> : <ExternalLink />} เปิด PDF
+        </Button>
+        <Button size="sm" variant="ghost" className="h-8" disabled={busy !== null} onClick={download} aria-label={`ดาวน์โหลด ${doc.register_code}`}>
+          {busy === "download" ? <Loader2 className="animate-spin" /> : <Download />} ดาวน์โหลด
+        </Button>
+      </div>
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }

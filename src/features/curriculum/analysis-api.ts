@@ -1,0 +1,184 @@
+/**
+ * ระบบวิเคราะห์เอกสารหลักสูตรอัตโนมัติ (C4) — อ่านผลจากตาราง document_analyses / document_analysis_items (RLS)
+ * การเขียนทุกอย่างผ่าน RPC/Edge Function ที่ฐานข้อมูลตรวจสิทธิ์ academic_head · การอ่านเอกสารแยกจากการอนุมัติ
+ */
+import { useQuery } from "@tanstack/react-query";
+import { requireSupabase } from "@/lib/supabase";
+import { callFunction } from "@/lib/storage";
+import { callRpc } from "@/features/master-data/api";
+import { curriculumKey } from "./api";
+
+export type DocClass = "core_curriculum" | "school_curriculum" | "learning_area_curriculum" | "standards_indicators" | "announcement_time" | "unknown";
+export type ItemStatus = "extracted" | "insufficient" | "duplicate" | "accepted" | "rejected" | "committed";
+export type Verdict = "pass" | "fail" | "insufficient_data" | "conflict_pending";
+
+export const DOC_CLASS_LABELS: Record<DocClass, string> = {
+  core_curriculum: "หลักสูตรแกนกลาง",
+  school_curriculum: "หลักสูตรสถานศึกษา",
+  learning_area_curriculum: "หลักสูตรกลุ่มสาระ",
+  standards_indicators: "เอกสารมาตรฐานและตัวชี้วัด",
+  announcement_time: "ประกาศ / การบริหารเวลาเรียน",
+  unknown: "ยังจำแนกไม่ได้ (ข้อมูลไม่พอ)",
+};
+export const ITEM_TYPE_LABELS: Record<string, string> = {
+  curriculum_year: "ปีหลักสูตร", revision: "ฉบับปรับปรุง", learning_area: "กลุ่มสาระ", grade_level: "ระดับชั้น", standard: "มาตรฐานการเรียนรู้",
+  indicator: "ตัวชี้วัด", subject: "รายวิชา", time_structure: "โครงสร้างเวลาเรียน", study_program: "แผนการเรียน", unreadable: "หน้าที่อ่านไม่ได้",
+};
+export const ITEM_STATUS_LABELS: Record<ItemStatus, string> = {
+  extracted: "รอตรวจ", insufficient: "ข้อมูลไม่พอ", duplicate: "ซ้ำ", accepted: "ยอมรับแล้ว", rejected: "ปฏิเสธ", committed: "บันทึกเข้าฐานแล้ว",
+};
+export const JOB_STATUS_LABELS: Record<string, string> = { queued: "รอคิว", running: "กำลังวิเคราะห์", done: "เสร็จ", failed: "ล้มเหลว" };
+export const AI_STATUS_LABELS: Record<string, string> = {
+  not_requested: "ไม่ได้ใช้ AI (ไม่ได้อนุญาต)", not_configured: "AI ยังไม่เปิดใช้", used: "ใช้ AI ช่วยจำแนก", not_needed: "ไม่ต้องใช้ AI (rule-based มั่นใจ)", failed: "เรียก AI ไม่สำเร็จ",
+};
+export const VERDICT_LABELS: Record<Verdict, string> = { pass: "ผ่าน", fail: "ไม่ผ่าน", insufficient_data: "ข้อมูลไม่พอ", conflict_pending: "รอตรวจข้อขัดแย้ง" };
+export const VERDICT_ORDER: Verdict[] = ["fail", "conflict_pending", "insufficient_data", "pass"];
+/** บันทึกเข้ากรอบแกนกลางได้เฉพาะเอกสารประเภทนี้ */
+export const FRAMEWORK_CLASSES: DocClass[] = ["core_curriculum", "standards_indicators"];
+
+export interface Flag { code: string; message_th: string; existing?: string }
+export interface DocumentAnalysis {
+  id: string;
+  source_document_id: string;
+  status: "queued" | "running" | "done" | "failed";
+  doc_class: DocClass | null;
+  class_confidence: number | null;
+  class_evidence: { class: DocClass; phrase: string; locator: string }[];
+  meta: Record<string, unknown>;
+  engine: string | null;
+  ai_status: string;
+  ai_note: string | null;
+  page_count: number | null;
+  item_counts: Record<string, number>;
+  error: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+export interface AnalysisItem {
+  id: string;
+  seq: number;
+  item_type: string;
+  item_key: string;
+  extracted: Record<string, unknown>;
+  edited: Record<string, unknown> | null;
+  locator: string | null;
+  excerpt: string | null;
+  confidence: number | null;
+  proposed_by: "parser" | "ai";
+  flags: Flag[];
+  status: ItemStatus;
+  decision_note: string | null;
+}
+export interface ReviewRow {
+  rule_code: string;
+  rule_version: number;
+  title_th: string;
+  category: string;
+  source: string;
+  scope: string;
+  raw_status: "pass" | "warning" | "fail" | "insufficient_data";
+  verdict: Verdict;
+  reason: string;
+  expected: string | null;
+  actual: string | null;
+  open_conflicts: string[];
+}
+
+export function useAnalyses() {
+  return useQuery({
+    queryKey: [...curriculumKey, "analyses"],
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().from("document_analyses")
+        .select("id, source_document_id, status, doc_class, class_confidence, class_evidence, meta, engine, ai_status, ai_note, page_count, item_counts, error, created_at, finished_at")
+        .order("created_at", { ascending: false }).limit(200);
+      if (error) throw error;
+      return data as DocumentAnalysis[];
+    },
+    // ติดตามงานเบื้องหลังโดยไม่บล็อกหน้าเว็บ
+    refetchInterval: (q) => ((q.state.data as DocumentAnalysis[] | undefined)?.some((a) => a.status === "queued" || a.status === "running") ? 3000 : false),
+  });
+}
+
+export function useAnalysisItems(analysisId: string | undefined, type: string, status: string) {
+  return useQuery({
+    queryKey: [...curriculumKey, "analysis-items", analysisId, type, status],
+    enabled: Boolean(analysisId),
+    queryFn: async () => {
+      let q = requireSupabase().from("document_analysis_items")
+        .select("id, seq, item_type, item_key, extracted, edited, locator, excerpt, confidence, proposed_by, flags, status, decision_note")
+        .eq("analysis_id", analysisId!).order("seq").limit(1000);
+      if (type) q = q.eq("item_type", type);
+      if (status) q = q.eq("status", status);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as AnalysisItem[];
+    },
+  });
+}
+
+export function useAiCapability() {
+  return useQuery({
+    queryKey: [...curriculumKey, "ai-capability"],
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: () => callFunction<{ ai: { enabled: boolean; reason: string | null; model: string | null } }>("curriculum-document-analyze", { probe: true }),
+  });
+}
+
+export function useComplianceReview(versionId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "compliance-review", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async () => (await callRpc<ReviewRow[]>("curriculum_compliance_review", { p_version_id: versionId })) ?? [],
+  });
+}
+
+export interface FrameworkVersionRow { id: string; version_label: string; status: "draft" | "published"; is_complete: boolean; framework: { code: string; name_th: string } | null; indicators: { count: number }[] }
+export function useFrameworkVersionsWithCounts() {
+  return useQuery({
+    queryKey: [...curriculumKey, "framework-versions-counts"],
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().from("framework_versions")
+        .select("id, version_label, status, is_complete, framework:curriculum_frameworks(code, name_th), indicators(count)").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as FrameworkVersionRow[];
+    },
+  });
+}
+
+export const startAnalysis = (sourceDocumentId: string, allowAi: boolean) =>
+  callFunction<{ analysisId: string }>("curriculum-document-analyze", { sourceDocumentId, allowAi });
+
+export const decideItems = (ids: string[], decision: "accept" | "reject" | "reset", opts: { edited?: Record<string, unknown>; locator?: string; note?: string } = {}) =>
+  callRpc<number>("document_analysis_item_decide", { p_item_ids: ids, p_decision: decision, p_edited: opts.edited ?? null, p_locator: opts.locator ?? null, p_note: opts.note ?? null });
+
+export const commitFramework = (analysisId: string, f: { code: string; name: string; label: string; year: number | null }) =>
+  callRpc<Record<string, number | string>>("document_analysis_commit_framework", {
+    p_analysis_id: analysisId, p_framework_code: f.code, p_framework_name: f.name, p_version_label: f.label, p_published_year_be: f.year,
+  });
+
+export const confirmFramework = (id: string, complete: boolean) => callRpc("framework_version_confirm", { p_framework_version_id: id, p_is_complete: complete });
+
+/** ค่าที่ใช้ (ค่าที่ผู้ดูแลแก้ > ค่าที่อ่านได้) */
+export const effectiveValue = (i: AnalysisItem) => i.edited ?? i.extracted;
+
+/** ปีที่ตรวจพบต่างจากปีหลักสูตรเป้าหมาย → แจ้งว่าเป็นเอกสารปีอื่น (ไม่สร้าง/คัดลอกหลักสูตรอัตโนมัติ) */
+export function otherYears(a: DocumentAnalysis, targetYear: number): number[] {
+  const ys = (a.meta.curriculum_years as number[] | undefined) ?? [];
+  return ys.filter((y) => y > targetYear);
+}
+
+/** แสดงค่าที่อ่านได้เป็นข้อความสั้น */
+export function describeValue(type: string, v: Record<string, unknown>): string {
+  const s = (k: string) => (v[k] == null || v[k] === "" ? "ข้อมูลไม่พอ" : String(v[k]));
+  switch (type) {
+    case "standard": return `${s("code")} · ${s("area_name")} — ${s("statement")}`;
+    case "indicator": return `${s("full_code")} — ${s("statement")}`;
+    case "subject": return `${s("code")} ${v.name_th ?? ""} · ${s("credits")} หน่วยกิต · ${s("hours")} ชม.${v.grades ? ` · ม.${v.grades}` : ""}`;
+    case "curriculum_year": return `พ.ศ. ${s("year_be")}`;
+    case "revision": return `ฉบับปรับปรุง พ.ศ. ${s("revision_year_be")}`;
+    case "time_structure": return `${s("label")}: ${((v.numbers as { value: number; paren: number | null }[] | undefined) ?? []).map((n) => (n.paren != null ? `${n.value} (${n.paren})` : n.value)).join(" · ")}`;
+    case "unreadable": return s("reason");
+    default: return s("name_th") !== "ข้อมูลไม่พอ" ? s("name_th") : s("code");
+  }
+}

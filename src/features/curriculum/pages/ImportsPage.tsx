@@ -13,6 +13,7 @@ import { useLearningAreas } from "@/features/master-data/api";
 import { callFunction, edgeFunctionStorage, StorageError } from "@/lib/storage";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
+import { requireSupabase } from "@/lib/supabase";
 import {
   allVersions,
   BATCH_KIND_LABELS,
@@ -28,6 +29,7 @@ import {
   type ImportBatch,
   type SourceDocument,
 } from "../api";
+import { startAnalysis } from "../analysis-api";
 import { fileErrorMessage, isPdfName, parsePdfPage, pdfPageUrl } from "../source-file";
 import { CurriculumNav, EmptyState, formatLocator, Notice } from "../components";
 
@@ -129,6 +131,17 @@ const readLastType = () => { try { return localStorage.getItem(LAST_DOC_TYPE) ??
 const titleFromFile = (name: string) => name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim().slice(0, 300);
 
 /** ลงทะเบียนเอกสารต้นทางแบบง่าย: เลือกไฟล์ → อัปโหลด · รหัส SRC-NN สร้างที่ฐานข้อมูล · ช่องอื่นไม่บังคับ (ว่าง = รอตรวจสอบ) */
+async function autoAnalyze(fileId: string) {
+  try {
+    const { data } = await requireSupabase().from("source_documents").select("id, register_code").eq("file_id", fileId).maybeSingle();
+    if (!data) return;
+    await startAnalysis(data.id, false);
+    toast.success(`เริ่มวิเคราะห์ ${data.register_code} อัตโนมัติ — ดูผลที่เมนู “วิเคราะห์เอกสาร (อัตโนมัติ)”`);
+  } catch (e) {
+    toast.error(`ยังวิเคราะห์อัตโนมัติไม่ได้: ${e instanceof Error ? e.message : "ไม่ทราบสาเหตุ"} — สั่งวิเคราะห์ใหม่ได้ที่หน้าวิเคราะห์เอกสาร`);
+  }
+}
+
 function SourceDialog({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: () => Promise<unknown> }) {
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -158,6 +171,8 @@ function SourceDialog({ open, onClose, onDone }: { open: boolean; onClose: () =>
             });
             try { localStorage.setItem(LAST_DOC_TYPE, docType); } catch { /* ไม่จำเป็น */ }
             toast.success("อัปโหลดและลงทะเบียนเอกสารแล้ว (รอตรวจสอบรายละเอียด)");
+            // วิเคราะห์อัตโนมัติหลังอัปโหลด (เบื้องหลัง · ไม่ใช้ AI จนกว่าผู้ดูแลอนุญาตในหน้าวิเคราะห์) — ล้มเหลวก็ไม่กระทบการลงทะเบียน
+            if (/\.(pdf|xlsx)$/i.test(file.name)) void autoAnalyze(r.fileId);
             await onDone();
             reset();
             onClose();

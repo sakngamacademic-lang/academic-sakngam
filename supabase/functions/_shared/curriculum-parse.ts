@@ -144,3 +144,28 @@ export async function parsePdf(bytes: Uint8Array, mapping: { pages?: string } | 
   });
   return { rows, pageCount: totalPages };
 }
+
+/** ข้อความรายหน้าของ PDF (ไม่ OCR) — ใช้กับระบบวิเคราะห์เอกสาร */
+export async function pdfPages(bytes: Uint8Array): Promise<string[]> {
+  const pdf = await getDocumentProxy(bytes);
+  const { text } = await extractText(pdf, { mergePages: false });
+  return (text as string[]).map((t) => t ?? "");
+}
+
+/** ทุกเซลล์ที่มีค่าในทุกชีต พร้อมพิกัด (จำกัด 200,000 เซลล์) — ใช้กับระบบวิเคราะห์เอกสาร */
+export async function xlsxCells(bytes: Uint8Array): Promise<{ sheet: string; address: string; row: number; col: number; text: string }[]> {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(bytes as unknown as ArrayBuffer);
+  const out: { sheet: string; address: string; row: number; col: number; text: string }[] = [];
+  for (const ws of wb.worksheets) {
+    ws.eachRow({ includeEmpty: false }, (row, r) => {
+      row.eachCell({ includeEmpty: false }, (cell, c) => {
+        if (out.length >= 200000) return;
+        if (cell.isMerged && cell.master.address !== cell.address) return; // ใช้ค่าที่เซลล์หลักของเซลล์ผสาน
+        const text = cellText(cell.value);
+        if (text) out.push({ sheet: ws.name, address: cell.address, row: r, col: c, text });
+      });
+    });
+  }
+  return out;
+}

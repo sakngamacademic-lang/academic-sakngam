@@ -65,6 +65,10 @@ export function dbErrorMessage(error: unknown): string {
       return "คุณไม่มีสิทธิ์ดำเนินการนี้";
     case "P0001":
       return e.message ?? "ข้อมูลไม่ถูกต้อง";
+    case "57014":
+      return "ประมวลผลนานเกินเวลาที่เซิร์ฟเวอร์กำหนด (timeout) — ลองใหม่อีกครั้ง หากยังเกิดซ้ำให้แจ้งผู้ดูแลระบบ";
+    case "PGRST202":
+      return "ไม่พบฟังก์ชันนี้บนเซิร์ฟเวอร์ — อาจยังไม่ได้ติดตั้ง migration ที่เกี่ยวข้อง กรุณาแจ้งผู้ดูแลระบบ";
   }
   if (error instanceof Error && error.message) return error.message;
   return "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";

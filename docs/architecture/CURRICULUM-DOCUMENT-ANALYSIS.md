@@ -49,3 +49,18 @@ CF ที่เกี่ยวข้องกับเกณฑ์ชั่ว�
 supabase functions deploy curriculum-document-analyze --project-ref <staging-ref>
 ```
 Migration: รัน `20261201000100_document_analysis.sql` ใน SQL Editor แล้วบันทึกประวัติ
+
+## C4.1 — แก้ CPU limit / งานค้าง / หน้าเปรียบเทียบ (migration `20261201000200`)
+สาเหตุที่พบบน Staging (16 พ.ย. 2569) — **สองเรื่องแยกกัน**
+1. **Edge Function เกิน CPU** (SRC-02 PDF 1.7 MB ค้าง `running`): `unpdf.extractText` แปลงทุกหน้าพร้อมกัน (`Promise.all`) ในคำขอเดียว + regex แถวเวลาเรียน `(?:[ก-๙]+\s?){1,6}` backtrack ทวีคูณ (บรรทัดไทยไม่มีวรรค 80 ตัวอักษร ≈ 14 วินาที) · worker ถูกหยุดก่อนเข้า `catch` จึงไม่เคยบันทึก failed
+2. **หน้าเปรียบเทียบ error**: `curriculum_compliance_review` หา CF ที่เกี่ยวข้องรายเกณฑ์ด้วย join ผ่าน RLS ซ้ำ ๆ → ~35 วินาทีกับข้อมูลขนาด Staging เกิน statement timeout (ไม่เกี่ยวกับข้อ 1)
+
+การแก้
+- อ่าน PDF **ทีละหน้า** (`pdfPageRange`) รอบละ ≤ 25 หน้า / ≤ 700 ms (ปรับได้ด้วย Secret `ANALYZE_CHUNK_MAX_PAGES`, `ANALYZE_CHUNK_BUDGET_MS`) อ่านอย่างน้อย 1 หน้าต่อรอบ ไม่ข้ามหน้า
+- เก็บข้อความรายหน้าใน `document_analysis_pages` + `pages_done`/`phase`/`heartbeat_at` → รอบสุดท้าย (`analyze`) วิเคราะห์จากข้อความครบทุกหน้า
+- แต่ละรอบส่งต่อรอบถัดไป 1 ครั้งด้วย service_role · `document_analysis_claim` ตรวจลำดับรอบ (กันทำซ้อน) และเพดาน 400 รอบ (กันวนไม่สิ้นสุด → failed พร้อมเหตุผล)
+- งานไม่มีความเคลื่อนไหว 10 นาที → `document_analysis_reap_stale` (เรียกอัตโนมัติเมื่อเปิดหน้า) เปลี่ยนเป็น failed พร้อมหน้าที่ค้าง
+- ผู้ดูแลกด “ทำต่อ” → `document_analysis_retry` ใช้งานเดิม (ไม่สร้างงานใหม่) อ่านต่อจากหน้าที่บันทึกไว้ สูงสุด 5 ครั้ง · ระหว่างมีงานค้าง “วิเคราะห์ใหม่” จะถูกปฏิเสธ
+- regex แถวเวลาเรียนเปลี่ยนเป็นตัวแยก token แบบเส้นตรง (`timeStructureLine`)
+- `curriculum_compliance_review` อ่านรหัสวิชาของฉบับครั้งเดียวแล้วจับคู่ CF ในหน่วยความจำ (ผลเท่าเดิม · ~0.5 วินาที)
+- หน้าเว็บ: แสดงความคืบหน้า “อ่านแล้ว X/Y หน้า”, สถานะ “ค้าง”, ปุ่ม “ทำต่อ”; ข้อความ error 57014 (timeout) / PGRST202 (ไม่พบฟังก์ชัน) เป็นภาษาไทย

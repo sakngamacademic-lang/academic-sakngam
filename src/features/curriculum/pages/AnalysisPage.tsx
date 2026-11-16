@@ -15,7 +15,7 @@ import { toast } from "@/lib/toast";
 import { allVersions, curriculumKey, useCurricula, useSourceDocuments, type SourceDocument } from "../api";
 import {
   AI_STATUS_LABELS, commitFramework, confirmFramework, decideItems, describeValue, DOC_CLASS_LABELS, effectiveValue, FRAMEWORK_CLASSES,
-  ITEM_STATUS_LABELS, ITEM_TYPE_LABELS, JOB_STATUS_LABELS, otherYears, startAnalysis, useAiCapability, useAnalyses, useAnalysisItems,
+  ITEM_STATUS_LABELS, ITEM_TYPE_LABELS, isActive, isStale, JOB_STATUS_LABELS, otherYears, progressText, reapStale, resumeAnalysis, startAnalysis, useAiCapability, useAnalyses, useAnalysisItems,
   useComplianceReview, useFrameworkVersionsWithCounts, VERDICT_LABELS, VERDICT_ORDER,
   type AnalysisItem, type DocumentAnalysis, type ItemStatus, type ReviewRow, type Verdict,
 } from "../analysis-api";
@@ -43,6 +43,13 @@ export function AnalysisPage() {
   const [busyDoc, setBusyDoc] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: curriculumKey });
+  // งานที่ค้าง (เช่น Edge Function ถูกหยุดเพราะเกิน CPU) → แสดงเป็น failed พร้อมเหตุผล เมื่อเปิดหน้านี้
+  const hasStale = analyses.data?.some((a) => isStale(a)) ?? false;
+  useEffect(() => {
+    if (!hasStale) return;
+    reapStale().then((n) => { if (n > 0) void refresh(); }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStale]);
 
   const latestByDoc = useMemo(() => {
     const m = new Map<string, DocumentAnalysis>();
@@ -53,6 +60,20 @@ export function AnalysisPage() {
   const current = analyses.data?.find((a) => a.id === selected) ?? null;
   const currentDoc = sources.data?.find((d) => d.id === current?.source_document_id);
   const aiEnabled = ai.data?.ai.enabled === true;
+
+  const resume = async (a: DocumentAnalysis) => {
+    setBusyDoc(a.source_document_id);
+    try {
+      await resumeAnalysis(a.id);
+      toast.success("สั่งทำต่อจากหน้าที่ค้างแล้ว — ทำงานเบื้องหลัง");
+      setSelected(a.id);
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusyDoc(null);
+      await refresh();
+    }
+  };
 
   const run = async (d: SourceDocument) => {
     setBusyDoc(d.id);
@@ -102,12 +123,18 @@ export function AnalysisPage() {
                   {a ? (
                     <span className="flex flex-wrap items-center gap-1">
                       <Badge variant={a.status === "failed" ? "destructive" : a.status === "done" ? "success" : "outline"}>
-                        {(a.status === "queued" || a.status === "running") && <Loader2 className="size-3 animate-spin" />} {JOB_STATUS_LABELS[a.status]}
+                        {isActive(a) && <Loader2 className="size-3 animate-spin" />} {isStale(a) ? "ค้าง" : JOB_STATUS_LABELS[a.status]}
                       </Badge>
+                      {isActive(a) && <span className="text-xs text-muted-foreground">{progressText(a)}</span>}
                       {a.doc_class && <Badge variant="secondary">{DOC_CLASS_LABELS[a.doc_class]}{a.class_confidence ? ` · มั่นใจ ${Math.round(a.class_confidence * 100)}%` : ""}</Badge>}
                     </span>
                   ) : <span className="text-xs text-muted-foreground">ยังไม่วิเคราะห์</span>}
                   {a && <Button size="sm" variant="ghost" onClick={() => setSelected(a.id)}><FileSearch /> ดูผล</Button>}
+                  {canManage && a && (a.status === "failed" || isStale(a)) && !Object.keys(a.item_counts).length && (
+                      <Button size="sm" variant="outline" disabled={busyDoc !== null} onClick={() => resume(a)} title="ประมวลผลต่อจากหน้าที่ค้าง (ไม่สร้างงานใหม่)">
+                        {busyDoc === d.id ? <Loader2 className="animate-spin" /> : <RotateCcw />} ทำต่อ
+                      </Button>
+                  )}
                   {canManage && (
                     <Button size="sm" variant="outline" disabled={busyDoc !== null || a?.status === "queued" || a?.status === "running"} onClick={() => run(d)}>
                       {busyDoc === d.id ? <Loader2 className="animate-spin" /> : <ScanText />} {a ? "วิเคราะห์ใหม่" : "วิเคราะห์"}
@@ -163,8 +190,9 @@ function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis;
 
   return (
     <DashSection id="analysis" className="mt-4" title={`ผลวิเคราะห์ ${doc?.register_code ?? ""}`} meta={`${JOB_STATUS_LABELS[a.status]} · ${new Date(a.created_at).toLocaleString("th-TH")}`}>
-      {a.status === "failed" && <p role="alert" className="text-sm text-destructive">วิเคราะห์ไม่สำเร็จ: {a.error}</p>}
-      {(a.status === "queued" || a.status === "running") && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> กำลังวิเคราะห์เบื้องหลัง — หน้านี้อัปเดตเองเมื่อเสร็จ</p>}
+      {a.status === "failed" && <p role="alert" className="text-sm text-destructive">วิเคราะห์ไม่สำเร็จ: {a.error} {a.attempts > 0 && `(สั่งทำต่อแล้ว ${a.attempts}/5 ครั้ง)`}</p>}
+      {isActive(a) && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> กำลังวิเคราะห์เบื้องหลังเป็นรอบ ๆ ({progressText(a)} · รอบที่ {a.chunk_count}) — หน้านี้อัปเดตเอง ใช้งานหน้าอื่นได้</p>}
+      {isStale(a) && <p role="alert" className="text-sm text-destructive">งานนี้ไม่มีความเคลื่อนไหวเกิน 10 นาที ({progressText(a)}) — กด “ทำต่อ” ที่รายการเอกสารเพื่อประมวลผลต่อจากหน้าที่ค้าง</p>}
       {a.status === "done" && (
         <>
           <div className="grid gap-3 text-sm md:grid-cols-2">

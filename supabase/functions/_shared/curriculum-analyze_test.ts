@@ -114,3 +114,17 @@ Deno.test("PDF จริงหลายหน้า (สร้างในเท
   assertEquals(r.items.filter((i) => i.item_type === "unreadable").map((i) => i.locator), ["pdf:2"]);
   assertEquals(r.doc_class, "unknown");
 });
+
+Deno.test("CPU regression: บรรทัดไทยไม่มีวรรคยาว + ตัวเลข ไม่ทำให้ regex backtrack ทวีคูณ", () => {
+  const lines = ["ก".repeat(80), "ก".repeat(5000), "ภาษาไทย".repeat(300)].map((s) => `${s} 1 2 3 4 5 6 7 8 9 10 11 12 13 x`);
+  const t0 = performance.now();
+  analyzePdfPages([`โครงสร้างเวลาเรียน ชั่วโมง\n${lines.join("\n")}`]);
+  assert(performance.now() - t0 < 200, `ใช้เวลา ${performance.now() - t0} ms`);
+});
+
+Deno.test("timeStructureLine: ตัวเลขในวงเล็บ · ป้ายชื่อมีตัวเลขไม่นับ", async () => {
+  const { timeStructureLine } = await import("./curriculum-analyze.ts");
+  assertEquals(timeStructureLine("ภาษาไทย 120 (3) 120 (3)"), { label: "ภาษาไทย", numbers: [{ value: 120, paren: 3 }, { value: 120, paren: 3 }] });
+  assertEquals(timeStructureLine("ม.1 120 120"), null);
+  assertEquals(timeStructureLine("ภาษาไทย 120"), null);
+});

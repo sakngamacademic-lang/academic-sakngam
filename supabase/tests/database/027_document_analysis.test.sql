@@ -32,7 +32,7 @@ select throws_ok($$select * from public.document_analysis_request('eeeeeeee-0000
 create temp table t_req as select * from public.document_analysis_request('eeeeeeee-0000-4000-a000-000000000001', false);
 grant select on t_req to authenticated, service_role;
 select is((select object_key from t_req), 'test/core.pdf', 'คืน object_key ให้ Edge Function (bucket ยัง private)');
-select throws_ok($$select * from public.document_analysis_request('eeeeeeee-0000-4000-a000-000000000001')$$, 'P0001', 'เอกสารนี้กำลังวิเคราะห์อยู่', 'วิเคราะห์ซ้ำซ้อนพร้อมกันไม่ได้');
+select throws_ok($$select * from public.document_analysis_request('eeeeeeee-0000-4000-a000-000000000001')$$, 'P0001', 'เอกสารนี้มีงานวิเคราะห์ที่ยังไม่เสร็จ — กด “ทำต่อ” ที่งานเดิมแทนการสร้างงานใหม่', 'วิเคราะห์ซ้ำซ้อนพร้อมกันไม่ได้');
 select throws_ok($$select public.document_analysis_store((select analysis_id from t_req), '{"items":[]}')$$, '42501', null, 'ผู้ใช้เขียนผลวิเคราะห์เองไม่ได้ (service_role เท่านั้น)');
 select throws_ok($$insert into public.document_analysis_items (school_id, analysis_id, seq, item_type, item_key, locator) values ('aaaaaaaa-0000-4000-a000-000000000000', (select analysis_id from t_req), 1, 'standard', 'x', 'pdf:1')$$, '42501', null, 'เขียนตารางผลวิเคราะห์ตรงไม่ได้');
 

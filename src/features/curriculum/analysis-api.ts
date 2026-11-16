@@ -53,6 +53,12 @@ export interface DocumentAnalysis {
   error: string | null;
   created_at: string;
   finished_at: string | null;
+  pages_done: number;
+  chunk_count: number;
+  attempts: number;
+  heartbeat_at: string | null;
+  started_at: string | null;
+  phase: "extract" | "analyze";
 }
 export interface AnalysisItem {
   id: string;
@@ -89,13 +95,13 @@ export function useAnalyses() {
     queryKey: [...curriculumKey, "analyses"],
     queryFn: async () => {
       const { data, error } = await requireSupabase().from("document_analyses")
-        .select("id, source_document_id, status, doc_class, class_confidence, class_evidence, meta, engine, ai_status, ai_note, page_count, item_counts, error, created_at, finished_at")
+        .select("id, source_document_id, status, doc_class, class_confidence, class_evidence, meta, engine, ai_status, ai_note, page_count, item_counts, error, created_at, finished_at, pages_done, chunk_count, attempts, heartbeat_at, started_at, phase")
         .order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data as DocumentAnalysis[];
     },
     // ติดตามงานเบื้องหลังโดยไม่บล็อกหน้าเว็บ
-    refetchInterval: (q) => ((q.state.data as DocumentAnalysis[] | undefined)?.some((a) => a.status === "queued" || a.status === "running") ? 3000 : false),
+    refetchInterval: (q) => ((q.state.data as DocumentAnalysis[] | undefined)?.some(isActive) ? 3000 : false),
   });
 }
 
@@ -145,6 +151,18 @@ export function useFrameworkVersionsWithCounts() {
     },
   });
 }
+
+/** งานค้าง: ยังไม่เสร็จและไม่มีความเคลื่อนไหว 10 นาที (ตรงกับ private.document_analysis_is_stale) */
+export const STALE_MS = 10 * 60_000;
+export const isStale = (a: DocumentAnalysis, now = Date.now()) =>
+  (a.status === "queued" || a.status === "running") && now - new Date(a.heartbeat_at ?? a.started_at ?? a.created_at).getTime() > STALE_MS;
+export const isActive = (a: DocumentAnalysis) => (a.status === "queued" || a.status === "running") && !isStale(a);
+/** ทำต่องานเดิมที่ล้มเหลว/ค้าง (ไม่สร้างงานใหม่ · อ่านต่อจากหน้าที่บันทึกไว้) */
+export const resumeAnalysis = (analysisId: string) => callFunction<{ analysisId: string }>("curriculum-document-analyze", { analysisId, resume: true });
+/** ปิดงานค้างเป็น failed พร้อมเหตุผล (เปลี่ยนเฉพาะงานที่ค้างจริง) */
+export const reapStale = () => callRpc<number>("document_analysis_reap_stale", {});
+export const progressText = (a: DocumentAnalysis) =>
+  a.phase === "analyze" ? `อ่านครบ ${a.pages_done} หน้า กำลังวิเคราะห์` : a.page_count ? `อ่านแล้ว ${a.pages_done}/${a.page_count} หน้า` : a.pages_done ? `อ่านแล้ว ${a.pages_done} หน้า` : "เริ่มอ่านไฟล์";
 
 export const startAnalysis = (sourceDocumentId: string, allowAi: boolean) =>
   callFunction<{ analysisId: string }>("curriculum-document-analyze", { sourceDocumentId, allowAi });

@@ -169,3 +169,37 @@ export async function xlsxCells(bytes: Uint8Array): Promise<{ sheet: string; add
   }
   return out;
 }
+
+/** เปิด PDF ครั้งเดียวต่อรอบ (pdf.js โหลดเฉพาะโครงสร้าง ยังไม่อ่านทุกหน้า) */
+export async function openPdf(bytes: Uint8Array) {
+  const pdf = await getDocumentProxy(bytes);
+  return { numPages: pdf.numPages as number, pdf };
+}
+
+/**
+ * อ่านข้อความทีละหน้าแบบเรียงลำดับ (ไม่ Promise.all ทุกหน้าพร้อมกันแบบ unpdf.extractText ซึ่งใช้ CPU/หน่วยความจำเกินกำหนดของ Edge Function)
+ * หยุดเมื่อครบ maxPages หรือใช้เวลาเกิน budgetMs (อ่านอย่างน้อย 1 หน้าเสมอ) — คืนเฉพาะหน้าที่อ่านจริง ต่อเนื่องจาก fromPage ไม่ข้ามหน้า
+ * การรวมข้อความเหมือน unpdf.getPageText (str + "\n" เมื่อ hasEOL)
+ */
+export async function pdfPageRange(
+  pdf: { numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }>; cleanup?(): unknown }> },
+  fromPage: number,
+  opts: { maxPages: number; budgetMs: number; now?: () => number },
+): Promise<string[]> {
+  const now = opts.now ?? (() => performance.now());
+  const start = now();
+  const texts: string[] = [];
+  for (let p = fromPage; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    texts.push(
+      (content.items as { str?: string; hasEOL?: boolean }[])
+        .filter((it) => it.str != null)
+        .map((it) => it.str + (it.hasEOL ? "\n" : ""))
+        .join(""),
+    );
+    page.cleanup?.();
+    if (texts.length >= opts.maxPages || now() - start >= opts.budgetMs) break;
+  }
+  return texts;
+}

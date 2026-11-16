@@ -116,6 +116,33 @@ function continuation(lines: string[], i: number, max = 4): { text: string; used
   return { text: out.join(" "), used: j - i - 1 };
 }
 
+const NUM = /^\d{1,4}(?:\.\d)?$/;
+const PAREN = /^\((\d{1,4}(?:\.\d)?)\)$/;
+/** แยก “ป้ายชื่อ + ตัวเลขท้ายบรรทัด” แบบเส้นตรง (ไม่มี backtracking) — ตัวเลข ≥ 2 ค่า ป้ายชื่อเป็นข้อความไทย ไม่มีตัวเลข */
+export function timeStructureLine(line: string): { label: string; numbers: { value: number; paren: number | null }[] } | null {
+  if (line.length > 400 || !/\d/.test(line)) return null;
+  const tokens = line.trim().split(/\s+/);
+  const numbers: { value: number; paren: number | null }[] = [];
+  let k = tokens.length - 1;
+  for (; k >= 0; k--) {
+    const tok = tokens[k]!;
+    const p = PAREN.exec(tok);
+    if (p) {
+      const prev = tokens[k - 1];
+      if (!prev || !NUM.test(prev)) break;
+      numbers.unshift({ value: Number(prev), paren: Number(p[1]) });
+      k--;
+      continue;
+    }
+    if (!NUM.test(tok)) break;
+    numbers.unshift({ value: Number(tok), paren: null });
+  }
+  if (numbers.length < 2 || numbers.length > 13 || k < 0) return null;
+  const label = tokens.slice(0, k + 1).join(" ");
+  if (/\d/.test(label) || !/[ก-๙]/.test(label) || label.length > 120) return null;
+  return { label, numbers };
+}
+
 const garbled = (t: string) => t.length > 0 && [...t].filter((c) => /[-�]/.test(c)).length / t.length > 0.01;
 
 export function analyzePdfPages(pages: string[]): AnalysisResult {
@@ -162,6 +189,7 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
     }
 
     const lines = text.split("\n");
+    const timeContext = /เวลาเรียน|ชั่วโมง/.test(text);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
       const areaM = /กลุ่มสาระการเรียนรู้\s*([ก-๙ ]{2,40}?)(?:\s{2,}|$)/.exec(line);
@@ -213,13 +241,12 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
         continue;
       }
       // โครงสร้างเวลาเรียน: ชื่อกลุ่มสาระ/รายการ ตามด้วยตัวเลข ≥ 2 ค่า (ไม่ทราบว่าแต่ละคอลัมน์คือชั้นใดจนกว่าคนเทียบหัวตาราง)
-      const t = /^\s*((?:กลุ่มสาระการเรียนรู้)?(?:[ก-๙]+\s?){1,6}?|รวมเวลาเรียน[^\d]*|กิจกรรมพัฒนาผู้เรียน)\s+((?:\d{1,4}(?:\.\d)?(?:\s*\(\d+(?:\.\d)?\))?\s+){1,12}\d{1,4}(?:\.\d)?(?:\s*\(\d+(?:\.\d)?\))?)\s*$/.exec(line);
-      if (t && /เวลาเรียน|ชั่วโมง/.test(text)) {
-        const label = clean(t[1]!);
-        if (LEARNING_AREAS.some((n) => label.replace(/\s/g, "").includes(n.replace(/\s/g, ""))) || /รวม|กิจกรรม/.test(label)) {
-          const numbers = [...t[2]!.matchAll(/(\d{1,4}(?:\.\d)?)(?:\s*\((\d+(?:\.\d)?)\))?/g)].map((x) => ({ value: Number(x[1]), paren: x[2] ? Number(x[2]) : null }));
-          items.push({ item_type: "time_structure", item_key: `${label} @${loc}`, locator: loc, excerpt: clean(line).slice(0, 600),
-            extracted: { label, numbers, raw: clean(line) }, confidence: 0.4,
+      // ใช้ตัวแยก token แบบเส้นตรง — regex เดิมแบบ (?:[ก-๙]+\s?){1,6} backtrack ทวีคูณกับบรรทัดไทยไม่มีวรรค (CPU เกินกำหนดของ Edge Function)
+      const t = timeStructureLine(line);
+      if (t && timeContext) {
+        if (LEARNING_AREAS.some((n) => t.label.replace(/\s/g, "").includes(n.replace(/\s/g, ""))) || /รวม|กิจกรรม/.test(t.label)) {
+          items.push({ item_type: "time_structure", item_key: `${t.label} @${loc}`, locator: loc, excerpt: clean(line).slice(0, 600),
+            extracted: { label: t.label, numbers: t.numbers, raw: clean(line) }, confidence: 0.4,
             flags: [{ code: "COLUMNS_UNMAPPED", message_th: "ยังไม่ทราบว่าแต่ละตัวเลขเป็นชั้น/ภาคเรียนใด — เทียบหัวตารางในต้นฉบับก่อนยอมรับ" }] });
         }
       }

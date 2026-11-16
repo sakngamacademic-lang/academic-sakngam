@@ -15,6 +15,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { curriculumKey, rpc, useBatchReports, useBatches } from "../api";
 import { isProgramNameConfirmed, programName, programNameByCode } from "../program-labels";
+import { OutcomesAllowlist } from "../AllowlistApprove";
 import { CurriculumNav, EmptyState, Notice, SourcePdfLink, useSelectedVersion, VersionPicker } from "../components";
 import { downloadCsv } from "../export";
 
@@ -110,6 +111,7 @@ export function RegistryPage() {
         )}
         {canEdit && <Button size="sm" onClick={() => setConfirmBuild(true)}><DatabaseZap /> สร้างทะเบียนจากหลักฐานนำเข้า</Button>}
         {canEdit && <Button size="sm" variant="outline" onClick={() => setConfirmOutcomes(true)}>สร้างผลการเรียนรู้เข้าทะเบียน</Button>}
+        {canEdit && v && <OutcomesAllowlist versionId={v.id} sourceVersionId={srcId || v.id} onDone={() => void refresh()} />}
         {can("curriculum.manage") && v && <Button size="sm" variant="outline" onClick={() => { const l = window.prompt("ชื่อฉบับใหม่ (เช่น พุทธศักราช 2570)"); if (l?.trim()) void act("curriculum_version_clone", { p_source_id: v.id, p_version_label: l.trim() }, () => "คัดลอกเป็นฉบับร่างใหม่แล้ว — เปิดฉบับใหม่แล้วแก้เฉพาะรายการที่เปลี่ยน"); }}><Copy /> คัดลอกเป็นปีถัดไป</Button>}
       </div>
       {v && v.status !== "draft" && <Notice>ฉบับนี้ไม่ใช่แบบร่าง — แก้ไขไม่ได้ (ต้องคัดลอกเป็นฉบับใหม่) การจัดการทะเบียน (ร่าง) แยกจากการประกาศใช้อย่างเป็นทางการ — ส่งตรวจ/อนุมัติ/ใช้งานฉบับเป็นขั้นตอนแยกที่หน้า “ฉบับหลักสูตร” โดยผู้ดูแลหลักสูตร</Notice>}

@@ -149,3 +149,48 @@ export function AllowlistApprove({ batchId, onDone }: { batchId: string; onDone:
     </>
   );
 }
+
+/**
+ * นำเข้าผลการเรียนรู้ที่ติดคำเตือน (เช่น คำอธิบายหลายหน้า) ตามรายการรหัสแถวที่ผู้ดูแลตรวจหน้า PDF แล้ว
+ * ฝั่งเซิร์ฟเวอร์ตรวจทั้งหมด: สิทธิ์ academic_head, error/CF เปิด, หน้า PDF ต้องตรงกับรายวิชา, กันรหัสซ้ำ, บันทึก Audit
+ */
+export function OutcomesAllowlist({ versionId, sourceVersionId, onDone }: { versionId: string; sourceVersionId: string; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [note, setNote] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const ids = useMemo(() => [...new Set((text.match(UUID) ?? []).map((x) => x.toLowerCase()))], [text]);
+  const valid = ids.length > 0 && ids.length <= MAX_ROWS && note.trim().length >= NOTE_MIN;
+  const apply = async () => {
+    try {
+      const r = await rpc<Record<string, number>>("curriculum_registry_build_outcomes_allowlist", { p_version_id: versionId, p_source_version_id: sourceVersionId, p_row_ids: ids, p_note: note.trim() });
+      toast.success(`นำเข้าผลการเรียนรู้ ${r.built} แถว · ข้าม: ไม่พบแถว ${r.not_found} · ติดเงื่อนไข ${r.skipped_blocked} · ไม่พบรายวิชา ${r.skipped_no_subject} · คนละหน้ากับรายวิชา ${r.skipped_page_mismatch} · มีแล้ว ${r.skipped_existing} · รหัสซ้ำ ${r.skipped_duplicate}`);
+      setText(""); setNote(""); setOpen(false);
+    } catch (e) { toast.error(dbErrorMessage(e)); }
+    await qc.invalidateQueries({ queryKey: curriculumKey });
+    onDone();
+  };
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}><ListChecks /> นำเข้าผลการเรียนรู้ตามรายการ…</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent title="นำเข้าผลการเรียนรู้ตามรายการรหัสแถว">
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">ใช้กับแถวที่ติดคำเตือน (เช่น คำอธิบายหลายหน้า) ซึ่งผู้ดูแลตรวจหน้า PDF แล้วเท่านั้น — เซิร์ฟเวอร์ปฏิเสธแถวที่มีข้อผิดพลาด/ข้อขัดแย้ง แถวที่มาจากคนละหน้ากับรายวิชา และรหัสซ้ำ</p>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} aria-label="รายการรหัสแถวผลการเรียนรู้" className="w-full rounded-md border bg-background p-2 font-mono text-xs" placeholder="วางรหัสแถว (สูงสุด 500)" />
+            <p>พบรหัสแถว {ids.length} รายการ{ids.length > MAX_ROWS ? " — เกินกำหนด" : ""}</p>
+            <label htmlFor="outc-note" className="block font-medium">เหตุผล (อย่างน้อย {NOTE_MIN} ตัวอักษร — บันทึกใน Audit Log)</label>
+            <textarea id="outc-note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="w-full rounded-md border bg-background p-2" />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setOpen(false)}>ปิด</Button>
+              <Button disabled={!valid} onClick={() => setConfirm(true)}>นำเข้า {ids.length} แถว</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog open={confirm} onOpenChange={setConfirm} title={`ยืนยันนำเข้าผลการเรียนรู้ ${ids.length} แถว?`}
+        description="ผู้ดูแลยืนยันว่าตรวจหน้า PDF แล้ว — ระบบตรวจซ้ำทุกแถวก่อนบันทึก และรายงานแถวที่ถูกข้ามพร้อมเหตุผล" confirmLabel="ยืนยันนำเข้า" onConfirm={apply} />
+    </>
+  );
+}

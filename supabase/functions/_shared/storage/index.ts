@@ -15,10 +15,25 @@ function need(env: (k: string) => string | undefined, k: string) {
   return v;
 }
 
+/**
+ * R2 endpoint จาก R2_ACCOUNT_ID — รับทั้ง Account ID เปล่า ๆ และค่าที่วางมาเป็น URL เต็ม
+ * (เช่น https://<id>.r2.cloudflarestorage.com/...) ซึ่งเดิมทำให้ได้ https://https://... → host "https"
+ */
+export function r2Endpoint(raw: string) {
+  const id = raw.trim().toLowerCase()
+    .replace(/^[a-z]+:\/\//, "")
+    .replace(/[/?#].*$/, "")
+    .replace(/\.r2\.cloudflarestorage\.com$/, ""); // jurisdiction (.eu/.fedramp) คงไว้
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*(\.(eu|fedramp))?$/.test(id)) {
+    throw new Error("invalid storage secret R2_ACCOUNT_ID (ต้องเป็น Cloudflare Account ID)");
+  }
+  return `https://${id}.r2.cloudflarestorage.com`;
+}
+
 export function createStorageProvider(env: (k: string) => string | undefined = (k) => Deno.env.get(k)): StorageProvider {
   const kind = env("STORAGE_PROVIDER") ?? "r2";
   if (kind === "r2") {
-    const endpoint = `https://${need(env, "R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`;
+    const endpoint = r2Endpoint(need(env, "R2_ACCOUNT_ID"));
     return new S3CompatibleProvider({
       name: "r2",
       endpoint,

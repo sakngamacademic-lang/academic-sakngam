@@ -43,8 +43,11 @@ begin
     n := r.normalized;
     if exists (select 1 from public.subject_learning_outcomes x where x.import_row_id = r.id and x.curriculum_version_id = cv.id) then v_existing := v_existing + 1; continue; end if;
     v_issues := private.curriculum_validate(b.id, r.id, n, r);
-    -- ฉบับต่างกัน: dependency (รหัสวิชา) ตรวจกับทะเบียนปลายทางด้านล่างแทน
-    v_issues := coalesce((select jsonb_agg(e) from jsonb_array_elements(v_issues) e where e ->> 'code' not in ('V11', 'V32', 'V33', 'V45')), '[]'::jsonb);
+    -- ฉบับต่างกัน: ละเว้นเฉพาะ dependency ของรหัสวิชาระหว่างฉบับ
+    -- คง V45 ของชนิดผลการเรียนรู้/รหัส/ข้อความที่ผิด และข้อผิดพลาด V50 ไว้
+    v_issues := coalesce((select jsonb_agg(e) from jsonb_array_elements(v_issues) e
+      where e ->> 'code' not in ('V11', 'V32', 'V33')
+      and not (e ->> 'code' = 'V45' and e ->> 'field' = 'subject_code')), '[]'::jsonb);
     v_cls := private.curriculum_row_class('needs_review', v_issues, r.school_id, n);
     if v_cls not in ('pass', 'warning') or (v_cls = 'warning' and r.status <> 'approved') then v_blocked := v_blocked + 1; continue; end if;
     v_subject := private.curriculum_find_subject(cv.id, n ->> 'subject_code', nullif(btrim(n ->> 'education_stage'), ''));

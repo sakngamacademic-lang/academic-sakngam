@@ -14,6 +14,7 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { BATCH_KIND_LABELS, curriculumKey, fetchCleanRowIds, rpc, useBatches, useBatchReports, useClassifiedRows, type BatchReport, type RowClass } from "../api";
+import { AllowlistApprove } from "../AllowlistApprove";
 import { CurriculumNav, EmptyState, Notice, Pager, SourcePdfLink } from "../components";
 
 /** ลำดับ dependency อัตโนมัติ: ข้อมูลโรงเรียน → แผน → รายวิชา → โครงสร้าง → กิจกรรม → ผลการเรียนรู้ */
@@ -151,6 +152,7 @@ function Workbench({ batch, report, canWork, isHead, onDone }: { batch: NonNulla
           </>
         )}
         {canWork && cls === "warning" && <Button size="sm" disabled={!ids.length} onClick={() => setBulk("warn")}><Check /> อนุมัติคำเตือนที่เลือก ({ids.length})</Button>}
+        {canWork && isHead && cls === "warning" && <AllowlistApprove batchId={batch.id} onDone={onDone} />}
         {canWork && (cls === "pass" || cls === "warning" || cls === "error") && <Button size="sm" variant="outline" disabled={!ids.length} onClick={() => setBulk("set")}>แก้ค่าเป็นกลุ่ม ({ids.length})</Button>}
       </div>
 

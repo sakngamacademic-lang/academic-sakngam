@@ -57,6 +57,7 @@ export function RegistryPage() {
   const [area, setArea] = useState("");
   const [cat, setCat] = useState("");
   const [confirmBuild, setConfirmBuild] = useState(false);
+  const [confirmOutcomes, setConfirmOutcomes] = useState(false);
   const [baseId, setBaseId] = useState("");
   const batches = useBatches();
   const [srcPick, setSrcPick] = useState("");
@@ -108,6 +109,7 @@ export function RegistryPage() {
             รวมรายวิชาที่มีคำเตือน (ตรวจเทียบ PDF แล้ว)</label>
         )}
         {canEdit && <Button size="sm" onClick={() => setConfirmBuild(true)}><DatabaseZap /> สร้างทะเบียนจากหลักฐานนำเข้า</Button>}
+        {canEdit && <Button size="sm" variant="outline" onClick={() => setConfirmOutcomes(true)}>สร้างผลการเรียนรู้เข้าทะเบียน</Button>}
         {can("curriculum.manage") && v && <Button size="sm" variant="outline" onClick={() => { const l = window.prompt("ชื่อฉบับใหม่ (เช่น พุทธศักราช 2570)"); if (l?.trim()) void act("curriculum_version_clone", { p_source_id: v.id, p_version_label: l.trim() }, () => "คัดลอกเป็นฉบับร่างใหม่แล้ว — เปิดฉบับใหม่แล้วแก้เฉพาะรายการที่เปลี่ยน"); }}><Copy /> คัดลอกเป็นปีถัดไป</Button>}
       </div>
       {v && v.status !== "draft" && <Notice>ฉบับนี้ไม่ใช่แบบร่าง — แก้ไขไม่ได้ (ต้องคัดลอกเป็นฉบับใหม่) การจัดการทะเบียน (ร่าง) แยกจากการประกาศใช้อย่างเป็นทางการ — ส่งตรวจ/อนุมัติ/ใช้งานฉบับเป็นขั้นตอนแยกที่หน้า “ฉบับหลักสูตร” โดยผู้ดูแลหลักสูตร</Notice>}
@@ -262,6 +264,9 @@ export function RegistryPage() {
       <ConfirmDialog open={confirmBuild} onOpenChange={setConfirmBuild} title="สร้างทะเบียนจากหลักฐานนำเข้า?"
         description="ระบบสร้างแผน รายวิชา การจัดวิชา และกิจกรรมตามลำดับ dependency จากแถวที่ผ่านการตรวจ (ไม่มี error/ข้อขัดแย้ง/คำเตือน) พร้อมเก็บหน้า PDF — หลักฐานนำเข้า 2,832 แถวไม่ถูกแก้หรือเปลี่ยนสถานะ · ฉบับยังเป็นแบบร่างจนกว่าจะประกาศใช้ (ขั้นตอนแยก)"
         confirmLabel="สร้างทะเบียน" onConfirm={() => act("curriculum_registry_build", { p_version_id: v!.id, p_include_warnings: withWarnings, ...(srcId && srcId !== v!.id ? { p_source_version_id: srcId } : {}) }, (r) => { const o = r as Record<string, { created: number; skipped: number }>; return `สร้างแล้ว: แผน ${o.study_programs?.created} · รายวิชา ${o.subjects?.created} · จัดวิชา ${o.subject_offerings?.created} · กิจกรรม ${o.learning_activities?.created} (ข้าม ${Object.values(o).reduce((a, x) => a + x.skipped, 0)} แถวที่ยังไม่ผ่าน)`; })} />
+      <ConfirmDialog open={confirmOutcomes} onOpenChange={setConfirmOutcomes} title="สร้างผลการเรียนรู้เข้าทะเบียน?"
+        description="ผูกผลการเรียนรู้จากหลักฐานนำเข้ากับรายวิชาที่อยู่ในทะเบียนตามรหัส พร้อมหน้า PDF — ข้ามรายวิชาที่ยังมีข้อขัดแย้งเปิดอยู่ ไม่สร้างรายวิชาหรือตัวชี้วัดขึ้นเอง และรันซ้ำได้โดยไม่ซ้ำ (เฉพาะผู้ดูแลหลักสูตร)"
+        confirmLabel="สร้างผลการเรียนรู้" onConfirm={() => act("curriculum_registry_build_outcomes", { p_version_id: v!.id, p_source_version_id: srcId || v!.id }, (r) => { const o = r as Record<string, number>; return `สร้างผลการเรียนรู้ ${o.built} · ข้าม (ไม่มีรายวิชา ${o.skipped_no_subject} · ติดเงื่อนไข ${o.skipped_blocked} · มีแล้ว ${o.skipped_existing})`; })} />
     </>
   );
 }

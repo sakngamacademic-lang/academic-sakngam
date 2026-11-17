@@ -11,6 +11,7 @@ import { allVersions, PAGE_SIZE, useCurricula, useSourceDocuments, VERSION_STATU
 
 const TABS = [
   { to: "/office/curriculum", label: "ภาพรวม", end: true },
+  { to: "/office/curriculum/readiness", label: "ความพร้อม & ตารางสอน" },
   { to: "/office/curriculum/versions", label: "ฉบับหลักสูตร" },
   { to: "/office/curriculum/programs", label: "แผนการเรียน" },
   { to: "/office/curriculum/subjects", label: "รายวิชา" },

@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, type ReactElement, type ReactNode } from "react";
 import type { RouteObject } from "react-router-dom";
 import { FullPageSpinner } from "@/features/auth/guards";
 
@@ -29,27 +29,34 @@ const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
 
-/** หน้าที่อยู่ในเมนู (ส่งให้ buildPortalRoutes) */
-export const curriculumMenuPages = {
+/** ทุกหน้าของระบบหลักสูตร (path ภายใน /office) — หน้าที่อยู่ในเมนูหลักให้ buildPortalRoutes สร้าง ที่เหลือเป็น route ย่อย */
+export const curriculumPages: Record<string, ReactElement> = {
   curriculum: wrap(<Dashboard />),
   "curriculum/structure": wrap(<Structure />),
   "curriculum/indicators": wrap(<Indicators />),
   "curriculum/imports": wrap(<Imports />),
   "curriculum/workbench": wrap(<Unified />),
   "curriculum/registry": wrap(<Registry />),
+  "curriculum/versions": wrap(<Versions />),
+  "curriculum/programs": wrap(<Programs />),
+  "curriculum/subjects": wrap(<Subjects />),
+  "curriculum/review": wrap(<Review />),
+  "curriculum/conflicts": wrap(<Conflicts />),
+  "curriculum/decisions": wrap(<Decisions />),
+  "curriculum/reports": wrap(<Reports />),
+  "curriculum/analysis": wrap(<Analysis />),
+  "curriculum/syllabi": wrap(<Syllabi />),
+  "curriculum/lesson-plans": wrap(<LessonPlans />),
+  "curriculum/readiness": wrap(<Readiness />),
 };
 
-/** หน้าย่อยที่เปิดจากแถบเมนูหลักสูตร */
-export const curriculumSubRoutes: RouteObject[] = [
-  { path: "curriculum/versions", element: wrap(<Versions />) },
-  { path: "curriculum/programs", element: wrap(<Programs />) },
-  { path: "curriculum/subjects", element: wrap(<Subjects />) },
-  { path: "curriculum/review", element: wrap(<Review />) },
-  { path: "curriculum/conflicts", element: wrap(<Conflicts />) },
-  { path: "curriculum/decisions", element: wrap(<Decisions />) },
-  { path: "curriculum/reports", element: wrap(<Reports />) },
-  { path: "curriculum/analysis", element: wrap(<Analysis />) },
-  { path: "curriculum/syllabi", element: wrap(<Syllabi />) },
-  { path: "curriculum/lesson-plans", element: wrap(<LessonPlans />) },
-  { path: "curriculum/readiness", element: wrap(<Readiness />) },
-];
+/** แยกหน้าที่อยู่ในเมนู (ส่งให้ buildPortalRoutes) กับหน้าย่อย (route ปกติ) — ไม่สร้าง route ซ้ำ */
+export function splitCurriculumPages(menuPaths: ReadonlySet<string>) {
+  const menu: Record<string, ReactElement> = {};
+  const sub: RouteObject[] = [];
+  for (const [path, element] of Object.entries(curriculumPages)) {
+    if (menuPaths.has(path)) menu[path] = element;
+    else sub.push({ path, element });
+  }
+  return { menu, sub };
+}

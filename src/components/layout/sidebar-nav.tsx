@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { ChevronDown, Wrench } from "lucide-react";
 import type { NavSection, PortalConfig } from "@/features/navigation/types";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +12,11 @@ interface SidebarNavProps {
 }
 
 export function SidebarNav({ portal, sections, onNavigate, collapsed }: SidebarNavProps) {
-  return (
-    <nav aria-label={`เมนู${portal.name}`} className="flex flex-col gap-4">
-      {sections.map((section, i) => (
+  const { pathname } = useLocation();
+  const main = sections.filter((s) => !s.tools);
+  const tools = sections.filter((s) => s.tools);
+  const toolsActive = tools.some((s) => s.items.some((i) => i.path && pathname.startsWith(`${portal.basePath}/${i.path}`)));
+  const render = (list: NavSection[]) => list.map((section, i) => (
         <div key={section.title ?? i}>
           {section.title && !collapsed && (
             <p className="mb-1.5 px-3 text-xs font-medium tracking-wide text-sidebar-muted">{section.title}</p>
@@ -28,7 +31,7 @@ export function SidebarNav({ portal, sections, onNavigate, collapsed }: SidebarN
                     to={to}
                     end={item.path === ""}
                     onClick={onNavigate}
-                    title={collapsed ? item.label : undefined}
+                    title={collapsed ? item.label : item.hint}
                     aria-label={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       cn(
@@ -53,6 +56,19 @@ export function SidebarNav({ portal, sections, onNavigate, collapsed }: SidebarN
             })}
           </ul>
         </div>
+      ));
+  return (
+    <nav aria-label={`เมนู${portal.name}`} className="flex flex-col gap-4">
+      {render(main)}
+      {tools.length > 0 && (collapsed ? render(tools) : (
+        <details className="group rounded-xl border border-white/10 p-1" open={toolsActive || undefined}>
+          <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent">
+            <Wrench className="size-4" aria-hidden="true" />
+            <span className="flex-1">{portal.id === "office" ? "เครื่องมือฝ่ายวิชาการ" : "เมนูอื่น ๆ"}</span>
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="mt-2 flex flex-col gap-3">{render(tools)}</div>
+        </details>
       ))}
     </nav>
   );

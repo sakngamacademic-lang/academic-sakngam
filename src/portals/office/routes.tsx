@@ -17,8 +17,10 @@ import { TaskDetailPage } from "@/features/tasks/pages/TaskDetailPage";
 import { StudentsPage } from "@/features/students/pages/StudentsPage";
 import { AssessmentPage } from "@/features/assessment/pages/AssessmentPage";
 import { ReviewsPage } from "@/features/tasks/pages/ReviewsPage";
-import { curriculumMenuPages, curriculumSubRoutes } from "@/features/curriculum/routes";
+import { splitCurriculumPages } from "@/features/curriculum/routes";
 import { officePortal } from "./navigation";
+
+const curriculum = splitCurriculumPages(new Set(officePortal.sections.flatMap((s) => s.items.map((i) => i.path))));
 
 const TASK_MANAGERS: readonly AppRole[] = ["academic_head", "academic_staff", "learning_area_head"];
 const TASK_VIEWERS: readonly AppRole[] = [...TASK_MANAGERS, "executive"];
@@ -36,7 +38,7 @@ export const officeRoutes: RouteObject = {
     // หน้าย่อยของภาระงาน (ไม่อยู่ในเมนู) — guard ตามบทบาทเดียวกับ Permission Matrix
     { path: "tasks/create", element: <RequireRoles roles={TASK_MANAGERS}><TaskCreatePage /></RequireRoles> },
     { path: "tasks/:taskId", element: <RequireRoles roles={TASK_VIEWERS}><TaskDetailPage /></RequireRoles> },
-    ...curriculumSubRoutes,
+    ...curriculum.sub,
     ...buildPortalRoutes(officePortal, {
     "": <OfficeDashboardPage />,
     "academic-years": <AcademicYearsPage />,
@@ -50,7 +52,7 @@ export const officeRoutes: RouteObject = {
     tasks: <TasksPage />,
     reviews: <ReviewsPage />,
     assessment: <AssessmentPage />,
-    ...curriculumMenuPages,
+    ...curriculum.menu,
   }),
   ],
 };

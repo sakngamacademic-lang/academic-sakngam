@@ -10,11 +10,15 @@ export interface NavItem {
   plannedPhase?: string;
   /** บทบาทที่เห็นเมนูและเข้า route ได้ (ไม่ระบุ = ทุกบทบาทของ portal) */
   roles?: readonly AppRole[];
+  /** คำอธิบายสั้น ๆ ภาษาง่าย (แสดงเป็น tooltip) */
+  hint?: string;
 }
 
 export interface NavSection {
   title?: string;
   items: NavItem[];
+  /** true = อยู่ในกล่องพับ “เครื่องมือฝ่ายวิชาการ” (งานเชิงเทคนิค/งานประจำ ไม่ใช่เมนูหลัก) */
+  tools?: boolean;
 }
 
 export interface PortalConfig {

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Info, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Info, Loader2, Wrench } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-controls";
@@ -9,22 +9,34 @@ import { callFunction } from "@/lib/storage";
 import { toast } from "@/lib/toast";
 import { allVersions, PAGE_SIZE, useCurricula, useSourceDocuments, VERSION_STATUS_LABELS, type SourceDocument, type VersionStatus } from "./api";
 
-interface NavItem { to: string; label: string; end?: boolean }
-/** เมนูหลักสูตรจัดกลุ่มตามงาน — route เดิมทุกหน้าคงไว้ (สิทธิ์จริงอยู่ที่ RLS/RPC) */
+interface NavItem { to: string; label: string; end?: boolean; hint?: string }
+/**
+ * เมนูหลักสูตร 4 กลุ่มหลัก + “เครื่องมือฝ่ายวิชาการ” (งานเชิงเทคนิค: นำเข้า ตรวจข้อมูล ข้อขัดแย้ง ฉบับทางการ)
+ * route เดิมทุกหน้าคงไว้ — สิทธิ์จริงอยู่ที่ RLS/RPC
+ */
 const GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "ภาพรวม", items: [{ to: "/office/curriculum", label: "ภาพรวมหลักสูตร", end: true }, { to: "/office/curriculum/readiness", label: "ความพร้อม & ตารางสอน" }] },
-  { label: "โครงสร้างหลักสูตร", items: [
-    { to: "/office/curriculum/versions", label: "ฉบับหลักสูตร" }, { to: "/office/curriculum/programs", label: "แผนการเรียน" },
-    { to: "/office/curriculum/subjects", label: "รายวิชา" }, { to: "/office/curriculum/structure", label: "โครงสร้าง" },
-    { to: "/office/curriculum/registry", label: "ทะเบียนรายวิชากลาง" }] },
-  { label: "มาตรฐานและตัวชี้วัด", items: [{ to: "/office/curriculum/indicators", label: "ตัวชี้วัด & Mapping" }] },
-  { label: "แหล่งข้อมูลและตรวจสอบ", items: [
-    { to: "/office/curriculum/imports", label: "แหล่งข้อมูล & นำเข้า" }, { to: "/office/curriculum/analysis", label: "วิเคราะห์เอกสาร (อัตโนมัติ)" },
-    { to: "/office/curriculum/workbench", label: "ตรวจหลักสูตร (หน้าเดียว)" }, { to: "/office/curriculum/review", label: "ตรวจรายแถว" },
-    { to: "/office/curriculum/conflicts", label: "ข้อขัดแย้ง" }, { to: "/office/curriculum/decisions", label: "สรุปตัดสินข้อขัดแย้ง" }] },
-  { label: "งานครู", items: [{ to: "/office/curriculum/syllabi", label: "คำอธิบาย/โครงสร้างรายวิชา" }, { to: "/office/curriculum/lesson-plans", label: "แผนการจัดการเรียนรู้" }] },
-  { label: "รายงาน", items: [{ to: "/office/curriculum/reports", label: "รายงานและส่งออก" }] },
+  { label: "หลักสูตรโรงเรียน", items: [
+    { to: "/office/curriculum", label: "ภาพรวมหลักสูตร", end: true, hint: "สรุปหลักสูตรที่ใช้อยู่" },
+    { to: "/office/curriculum/structure", label: "รายวิชาในแต่ละชั้น", hint: "วิชาที่เรียนในแต่ละชั้น/ภาคเรียน" },
+    { to: "/office/curriculum/programs", label: "แผนการเรียน", hint: "เช่น วิทย์–คณิต ศิลป์–ภาษา" },
+    { to: "/office/curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
+    { to: "/office/curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", hint: "สิ่งที่นักเรียนต้องรู้และทำได้" }] },
+  { label: "จัดทำรายวิชา", items: [{ to: "/office/curriculum/syllabi", label: "คำอธิบายรายวิชา", hint: "เขียนคำอธิบายและหน่วยการเรียนรู้" }] },
+  { label: "แผนการสอน", items: [{ to: "/office/curriculum/lesson-plans", label: "แผนการสอน", hint: "แผนการจัดการเรียนรู้รายหน่วย" }] },
+  { label: "รายงานและส่งออก", items: [
+    { to: "/office/curriculum/reports", label: "รายงานและดาวน์โหลด", hint: "ส่งออก PDF / Excel" },
+    { to: "/office/curriculum/readiness", label: "ความคืบหน้าภาพรวม", hint: "งานที่ทำแล้ว/ยังค้าง" }] },
+  { label: "เครื่องมือฝ่ายวิชาการ", items: [
+    { to: "/office/curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
+    { to: "/office/curriculum/subjects", label: "แก้ไขข้อมูลรายวิชา", hint: "รหัส ชื่อ หน่วยกิต ชั่วโมง" },
+    { to: "/office/curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", hint: "อัปโหลด PDF/Excel ต้นฉบับ" },
+    { to: "/office/curriculum/analysis", label: "อ่านเอกสารอัตโนมัติ", hint: "ให้ระบบอ่านมาตรฐาน/ตัวชี้วัดจาก PDF" },
+    { to: "/office/curriculum/workbench", label: "ตรวจข้อมูลหลักสูตร (หน้าเดียว)", hint: "ตรวจความครบถ้วนของข้อมูลที่นำเข้า" },
+    { to: "/office/curriculum/review", label: "ตรวจข้อมูลทีละแถว", hint: "ยืนยันหรือแก้ข้อมูลที่ระบบอ่านมา" },
+    { to: "/office/curriculum/conflicts", label: "ข้อมูลที่ไม่ตรงกัน", hint: "ข้อขัดแย้ง (CF) ที่รอฝ่ายวิชาการตัดสิน" },
+    { to: "/office/curriculum/decisions", label: "บันทึกการตัดสิน", hint: "ประวัติการตัดสินข้อมูลที่ไม่ตรงกัน" }] },
 ];
+const TOOLS = "เครื่องมือฝ่ายวิชาการ";
 const isActiveItem = (path: string, it: NavItem) => (it.end ? path === it.to || path === `${it.to}/` : path === it.to || path.startsWith(`${it.to}/`));
 
 /** แถบเมนูย่อยของระบบหลักสูตร — Desktop: ปุ่มหมวด + เมนูย่อย · มือถือ: ช่องเลือกหน้า (ไม่ต้องเลื่อนแนวนอน) */
@@ -61,18 +73,20 @@ export function CurriculumNav() {
             return <li key={g.label}><NavLink to={g.items[0]!.to} end={g.items[0]!.end} className={pill}>{g.label}</NavLink></li>;
           }
           const open = openGroup === g.label;
+          const tools = g.label === TOOLS;
           return (
-            <li key={g.label} className="relative">
+            <li key={g.label} className={cn("relative", tools && "md:ml-auto")}>
               <button type="button" className={pill} aria-haspopup="true" aria-expanded={open} onClick={() => setOpenGroup(open ? null : g.label)}>
-                {g.label}{active && current ? <span className="font-normal opacity-90">· {current.label}</span> : null}
+                {tools && <Wrench className="size-4" aria-hidden="true" />}{g.label}{active && current ? <span className="font-normal opacity-90">· {current.label}</span> : null}
                 <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden="true" />
               </button>
               {open && (
-                <ul className="absolute left-0 z-40 mt-2 min-w-64 rounded-xl border bg-popover p-1.5 shadow-lg">
+                <ul className={cn("absolute z-40 mt-2 w-72 rounded-xl border bg-popover p-1.5 shadow-lg", tools ? "right-0" : "left-0")}>
                   {g.items.map((i) => (
                     <li key={i.to}>
                       <NavLink to={i.to} end={i.end} className={({ isActive }) => cn("block rounded-lg px-3 py-2 text-sm", isActive ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted")}>
-                        {i.label}
+                        <span className="block">{i.label}</span>
+                        {i.hint && <span className="block text-xs font-normal text-muted-foreground">{i.hint}</span>}
                       </NavLink>
                     </li>
                   ))}

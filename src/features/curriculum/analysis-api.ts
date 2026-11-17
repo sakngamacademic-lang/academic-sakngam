@@ -200,3 +200,35 @@ export function describeValue(type: string, v: Record<string, unknown>): string 
     default: return s("name_th") !== "ข้อมูลไม่พอ" ? s("name_th") : s("code");
   }
 }
+
+// ---------------------------------------------------------------- Phase 2.2: ค้นหา/กรอง · ความคืบหน้า · ประวัติ
+export interface ItemFilters { type: string; status: string; area: string; standard: string; grade: string; flag: string; search: string }
+export const EMPTY_FILTERS: ItemFilters = { type: "", status: "", area: "", standard: "", grade: "", flag: "", search: "" };
+export const FLAG_FILTERS: Record<string, string> = {
+  any: "มีข้อสังเกตใด ๆ", TEXT_REPAIRED: "ซ่อมการถอดอักขระไทย", VARIANT_IN_DOC: "ค่าขัดแย้งในเอกสาร", VARIANT_FRAMEWORK: "ต่างจากฉบับที่มีในระบบ",
+  DUPLICATE_IN_DOC: "ซ้ำในเอกสาร", NO_STANDARD: "ไม่พบมาตรฐานกำกับ", NO_STATEMENT: "ไม่มีข้อความ", GRADE_FROM_LAYOUT: "ชั้นจากตำแหน่งคอลัมน์",
+};
+/** รายการที่ยอมรับพร้อมกันได้ (ตรงกับเงื่อนไขฝั่งฐานข้อมูล) */
+const BLOCKING = ["VARIANT_IN_DOC", "VARIANT_FRAMEWORK", "NO_STANDARD", "NO_STATEMENT", "COMMIT_CONFLICT", "COMMIT_INVALID", "NO_AREA"];
+export const bulkAcceptable = (i: AnalysisItem) => i.status === "extracted" && !!i.locator && !i.flags.some((f) => BLOCKING.includes(f.code));
+
+export function useAnalysisSearch(analysisId: string | undefined, f: ItemFilters, limit: number) {
+  return useQuery({
+    queryKey: [...curriculumKey, "analysis-search", analysisId, f, limit],
+    enabled: Boolean(analysisId),
+    queryFn: async () => (await callRpc<AnalysisItem[]>("document_analysis_items_search", {
+      p_analysis_id: analysisId, p_type: f.type || null, p_status: f.status || null, p_area: f.area || null, p_standard: f.standard.trim() || null,
+      p_grade: f.grade || null, p_flag: f.flag || null, p_search: f.search.trim() || null, p_limit: limit, p_offset: 0,
+    })) ?? [],
+  });
+}
+export interface SummaryRow { item_type: string; area_code: string | null; grade: string | null; status: ItemStatus; repaired: boolean; conflicted: boolean; n: number }
+export function useAnalysisSummary(analysisId: string | undefined) {
+  return useQuery({
+    queryKey: [...curriculumKey, "analysis-summary", analysisId],
+    enabled: Boolean(analysisId),
+    queryFn: async () => (await callRpc<SummaryRow[]>("document_analysis_summary", { p_analysis_id: analysisId })) ?? [],
+  });
+}
+export interface HistoryRow { at: string; actor_name: string; action: string; status: string | null; decision_note: string | null; edited: Record<string, unknown> | null }
+export const itemHistory = async (itemId: string) => (await callRpc<HistoryRow[]>("document_analysis_item_history", { p_item_id: itemId })) ?? [];

@@ -179,3 +179,9 @@ Deno.test("PDF ไทยหลายหน้า (pdf-lib + ฟอนต์ไ�
 function existsSync(p: string) {
   try { Deno.statSync(p); return true; } catch { return false; }
 }
+
+Deno.test("สาระ: “สาระที่ ๒ วิทยาศาสตร์กายภาพ” ผูกกับมาตรฐานที่ตามมา", () => {
+  const r = analyzePdfPages(["กลุ่มสาระการเรียนรู้วิทยาศาสตร์\nสาระที่ ๒ วิทยาศาสตร์กายภาพ\nมาตรฐาน ว ๒.๑ เข้าใจสมบัติของสสาร"]);
+  const s = r.items.find((i) => i.item_type === "standard")!;
+  assertEquals([s.extracted.strand_no, s.extracted.strand_name], ["2", "วิทยาศาสตร์กายภาพ"]);
+});

@@ -160,6 +160,7 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
   const meta: Record<string, unknown> = { page_count: pages.length };
   let area: string | null = null;
   let std: { code: string; area_code: string } | null = null;
+  let strand: { no: string; name: string | null } | null = null;
   const years = new Map<string, number>();
   const revisions = new Set<string>();
 
@@ -219,6 +220,8 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
         const found = LEARNING_AREAS.find((n) => clean(areaM[1]!).startsWith(n.replace(/\s+/g, " ")) || clean(areaM[1]!).replace(/\s/g, "").startsWith(n.replace(/\s/g, "")));
         if (found) area = found;
       }
+      const sm = /^\s*สาระที่\s*([0-9๐-๙]{1,2})(?![0-9๐-๙])\s*(.*)$/.exec(line);
+      if (sm) strand = { no: toArabic(sm[1]!), name: clean(sm[2] ?? "") || null };
       const s = STANDARD_LINE.exec(line);
       if (s) {
         const code = `${s[1]} ${toArabic(s[2]!)}.${toArabic(s[3]!)}`;
@@ -228,7 +231,7 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
         std = { code, area_code: s[1]! };
         items.push({
           item_type: "standard", item_key: code, locator: loc, excerpt: clean(lines.slice(i, i + 1 + cont.used).join(" ")).slice(0, 600),
-          extracted: { code, area_code: s[1], area_name: area, statement: statement || null },
+          extracted: { code, area_code: s[1], area_name: area, strand_no: strand?.no ?? null, strand_name: strand?.name ?? null, statement: statement || null },
           confidence: statement && area ? 0.85 : 0.5, insufficient: !statement,
           flags: [...pageFlags, ...(area ? [] : [{ code: "NO_AREA", message_th: "ไม่พบชื่อกลุ่มสาระก่อนมาตรฐานนี้ — ระบุจากต้นฉบับ" }])],
         });

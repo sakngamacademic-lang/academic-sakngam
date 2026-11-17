@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { PageHeader, TableToolbar } from "@/components/shared";
+import { PageHeader } from "@/components/shared";
 import { DashSection, KpiCard, LiveBadge } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { curriculumKey, rpc, useCoverage, useFrameworkVersions, useIndicators, usePendingMappings } from "../api";
+import { curriculumKey, rpc, useCoverage, usePendingMappings } from "../api";
+import { FrameworkRegistry } from "../FrameworkRegistry";
 import { CurriculumNav, EmptyState, Notice, Pager, SourceRef, useSelectedVersion, VersionPicker , VersionStatusNotice } from "../components";
 
 const COVERAGE_FILTERS = [
@@ -30,7 +31,7 @@ export function IndicatorsPage() {
       <PageHeader title="ตัวชี้วัด & Curriculum Mapping" description="Mapping บอกความสัมพันธ์ที่ตรวจแล้ว — ไม่ได้หมายความว่าเรียนหรือสอนครบ" />
       <CurriculumNav />
       <div role="tablist" aria-label="มุมมอง" className="mb-4 flex flex-wrap gap-1">
-        {([["gap", "Coverage / Gap"], ["review", "ตรวจ Mapping"], ["framework", "กรอบหลักสูตรแกนกลาง"]] as const).map(([k, l]) => (
+        {([["gap", "Coverage / Gap"], ["review", "ตรวจ Mapping"], ["framework", "ทะเบียนมาตรฐานและตัวชี้วัด"]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
             className={cn("h-9 rounded-full border px-3 text-sm", tab === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground")}>
             {l}
@@ -39,7 +40,7 @@ export function IndicatorsPage() {
       </div>
       {tab === "gap" && <GapReport />}
       {tab === "review" && <MappingReview />}
-      {tab === "framework" && <FrameworkBrowser />}
+      {tab === "framework" && <FrameworkRegistry />}
     </>
   );
 }
@@ -147,42 +148,3 @@ function MappingReview() {
   );
 }
 
-function FrameworkBrowser() {
-  const fw = useFrameworkVersions();
-  const [fwId, setFwId] = useState("");
-  const id = fwId || fw.data?.[0]?.id;
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const q = useIndicators(id, search, page);
-  const current = fw.data?.find((f) => f.id === id);
-  if (fw.isPending) return <p className="text-sm text-muted-foreground">กำลังโหลด…</p>;
-  if (!fw.data?.length) {
-    return (
-      <EmptyState title="ยังไม่มีข้อมูลกรอบหลักสูตรแกนกลางในระบบ">
-        ข้อมูลอ้างอิงระดับชาติ (มาตรฐาน/ตัวชี้วัด) นำเข้าได้เฉพาะผ่าน migration/seed ที่ตรวจจากเอกสารต้นทางแล้ว (D1) — ระบบไม่สร้างข้อมูลเอง
-      </EmptyState>
-    );
-  }
-  return (
-    <>
-      <TableToolbar search={search} onSearch={(v) => { setSearch(v); setPage(0); }} placeholder="ค้นหารหัสหรือข้อความตัวชี้วัด">
-        <Select value={id} onChange={(e) => { setFwId(e.target.value); setPage(0); }} aria-label="กรอบหลักสูตรแกนกลาง" className="sm:w-72">
-          {fw.data.map((f) => <option key={f.id} value={f.id}>{f.framework?.name_th} {f.version_label}</option>)}
-        </Select>
-      </TableToolbar>
-      {current && !current.is_complete && <Notice tone="warning">ชุดข้อมูลอ้างอิงนี้ยังไม่ครบ</Notice>}
-      <DashSection id="indicators" title="ตัวชี้วัด" meta={`${q.data?.total ?? 0} รายการ`}>
-        <ul className="divide-y text-sm">
-          {q.data?.rows.map((i) => (
-            <li key={i.id} className="py-2">
-              <p><code className="text-xs">{i.full_code}</code> <Badge variant="outline">{i.indicator_kind === "grade" ? "ชั้นปี" : "ช่วงชั้น"}</Badge></p>
-              <p className="text-muted-foreground">{i.statement_th}</p>
-              <p className="text-xs text-muted-foreground">อ้างอิง: {i.source_citation}</p>
-            </li>
-          ))}
-        </ul>
-        <Pager page={page} total={q.data?.total ?? 0} onPage={setPage} />
-      </DashSection>
-    </>
-  );
-}

@@ -87,6 +87,10 @@ select throws_ok($$select public.document_analysis_item_decide(array(select id f
   'P0001', null, 'ยอมรับรายการ “ข้อมูลไม่พอ” โดยไม่กรอกข้อความไม่ได้');
 select is(public.document_analysis_item_decide(array(select id from public.document_analysis_items where item_key = 'ว 1.1 ม.1/4'), 'accept',
   '{"full_code":"ว 1.1 ม.1/4","standard_code":"ว 1.1","grade":"ม.1","number":"4","statement":"กรอกจากต้นฉบับ"}'::jsonb, 'pdf:3', 'กรอกจากภาพหน้า 3'), 1, 'แก้ค่าแล้วยอมรับได้ (มีพิกัด)');
+-- รายการที่ติดธงขัดแย้งต้องยอมรับทีละรายการ (Phase 2) · ที่เหลือยอมรับพร้อมกันได้
+select public.document_analysis_item_decide(array[i.id], 'accept') from public.document_analysis_items i
+ where i.analysis_id = (select analysis_id from t_req) and i.status = 'extracted' and i.item_type in ('standard', 'indicator')
+   and (i.flags @> '[{"code":"VARIANT_IN_DOC"}]' or i.flags @> '[{"code":"VARIANT_FRAMEWORK"}]');
 select public.document_analysis_item_decide(array(select id from public.document_analysis_items where analysis_id = (select analysis_id from t_req)
   and status = 'extracted' and item_type in ('standard', 'indicator')), 'accept');
 

@@ -15,7 +15,8 @@ import { toast } from "@/lib/toast";
 import { allVersions, curriculumKey, useCurricula, useSourceDocuments, type SourceDocument } from "../api";
 import {
   AI_STATUS_LABELS, commitFramework, confirmFramework, decideItems, describeValue, DOC_CLASS_LABELS, effectiveValue, FRAMEWORK_CLASSES,
-  ITEM_STATUS_LABELS, ITEM_TYPE_LABELS, isActive, isStale, JOB_STATUS_LABELS, otherYears, progressText, reapStale, resumeAnalysis, startAnalysis, useAiCapability, useAnalyses, useAnalysisItems,
+  bulkAcceptable, EMPTY_FILTERS, FLAG_FILTERS, itemHistory, useAnalysisSearch, useAnalysisSummary, type HistoryRow, type ItemFilters, type SummaryRow,
+  ITEM_STATUS_LABELS, ITEM_TYPE_LABELS, isActive, isStale, JOB_STATUS_LABELS, otherYears, progressText, reapStale, resumeAnalysis, startAnalysis, useAiCapability, useAnalyses,
   useComplianceReview, useFrameworkVersionsWithCounts, VERDICT_LABELS, VERDICT_ORDER,
   type AnalysisItem, type DocumentAnalysis, type ItemStatus, type ReviewRow, type Verdict,
 } from "../analysis-api";
@@ -165,9 +166,13 @@ export function AnalysisPage() {
 }
 
 function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis; doc?: SourceDocument; canManage: boolean; onChanged: () => Promise<unknown> }) {
-  const [type, setType] = useState("");
-  const [status, setStatus] = useState("");
-  const items = useAnalysisItems(a.status === "done" ? a.id : undefined, type, status);
+  const [f, setF] = useState<ItemFilters>(EMPTY_FILTERS);
+  const [limit, setLimit] = useState(100);
+  const items = useAnalysisSearch(a.status === "done" ? a.id : undefined, f, limit);
+  const summary = useAnalysisSummary(a.status === "done" ? a.id : undefined);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [history, setHistory] = useState<Record<string, HistoryRow[] | "loading">>({});
+  const setFilter = (k: keyof ItemFilters, v: string) => { setF({ ...f, [k]: v }); setLimit(100); setPicked(new Set()); };
   const [editing, setEditing] = useState<AnalysisItem | null>(null);
   const [rejecting, setRejecting] = useState<AnalysisItem[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -195,7 +200,18 @@ function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis;
       setBusy(false);
     }
   };
-  const cleanVisible = (items.data ?? []).filter((i) => i.status === "extracted" && !i.flags.length);
+  const pickedItems = (items.data ?? []).filter((i) => picked.has(i.id));
+  const sum = summary.data ?? [];
+  const tot = (pred: (r: SummaryRow) => boolean) => sum.filter(pred).reduce((x, r) => x + r.n, 0);
+  const total = tot(() => true);
+  const done = tot((r) => r.status === "accepted" || r.status === "committed" || r.status === "rejected");
+  const areaCodes = [...new Set(sum.map((r) => r.area_code).filter(Boolean))] as string[];
+  const gradeCodes = [...new Set(sum.map((r) => r.grade).filter(Boolean))].sort() as string[];
+  const showHistory = async (id: string) => {
+    if (history[id]) return setHistory(({ [id]: _x, ...rest }) => rest);
+    setHistory({ ...history, [id]: "loading" });
+    try { const h = await itemHistory(id); setHistory((x) => ({ ...x, [id]: h })); } catch (e) { toast.error(errMsg(e)); setHistory(({ [id]: _x, ...rest }) => rest); }
+  };
 
   return (
     <DashSection id="analysis" className="mt-4" title={`ผลวิเคราะห์ ${doc?.register_code ?? ""}`} meta={`${JOB_STATUS_LABELS[a.status]} · ${new Date(a.created_at).toLocaleString("th-TH")}`}>
@@ -226,33 +242,76 @@ function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis;
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-end gap-2">
+          <section aria-label="ความคืบหน้าการตรวจรับรอง" className="mt-3 rounded-xl border p-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <b>ความคืบหน้าการตรวจ: {done}/{total} รายการ</b>
+              <span className="text-xs text-muted-foreground">ยอมรับ {tot((r) => r.status === "accepted")} · บันทึกเข้าฐานแล้ว {tot((r) => r.status === "committed")} · ปฏิเสธ {tot((r) => r.status === "rejected")} · รอตรวจ {tot((r) => r.status === "extracted")} · ข้อมูลไม่พอ {tot((r) => r.status === "insufficient")} · ซ้ำ {tot((r) => r.status === "duplicate")}</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
+              <div className="h-full bg-primary" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              มาตรฐาน {tot((r) => r.item_type === "standard")} · ตัวชี้วัด {tot((r) => r.item_type === "indicator")} · มีค่าขัดแย้ง {tot((r) => r.conflicted)} · ซ่อมอักขระไทย {tot((r) => r.repaired)} · หน้าที่อ่านไม่ได้ {tot((r) => r.item_type === "unreadable")}
+            </p>
+          </section>
+
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
             <FormField label="ชนิดข้อมูล" htmlFor="ai-type">
-              <Select id="ai-type" value={type} onChange={(e) => setType(e.target.value)}>
+              <Select id="ai-type" value={f.type} onChange={(e) => setFilter("type", e.target.value)}>
                 <option value="">ทั้งหมด</option>
                 {Object.keys(counts.byType).map((t) => <option key={t} value={t}>{ITEM_TYPE_LABELS[t] ?? t}</option>)}
               </Select>
             </FormField>
             <FormField label="สถานะ" htmlFor="ai-status">
-              <Select id="ai-status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <Select id="ai-status" value={f.status} onChange={(e) => setFilter("status", e.target.value)}>
                 <option value="">ทั้งหมด</option>
                 {Object.entries(ITEM_STATUS_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </Select>
             </FormField>
-            {canManage && cleanVisible.length > 0 && (
-              <Button size="sm" variant="outline" disabled={busy}
-                onClick={() => window.confirm(`ยอมรับ ${cleanVisible.length} รายการที่แสดงอยู่ (สถานะรอตรวจ ไม่มีธงเตือน)? ตรวจเทียบต้นฉบับแล้วใช่หรือไม่`)
-                  && act(() => decideItems(cleanVisible.map((i) => i.id), "accept"), `ยอมรับ ${cleanVisible.length} รายการ`)}>
-                <Check /> ยอมรับรายการที่แสดง ({cleanVisible.length})
-              </Button>
-            )}
+            <FormField label="กลุ่มสาระ (อักษร)" htmlFor="ai-area">
+              <Select id="ai-area" value={f.area} onChange={(e) => setFilter("area", e.target.value)}>
+                <option value="">ทั้งหมด</option>
+                {areaCodes.map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="ระดับชั้น" htmlFor="ai-grade">
+              <Select id="ai-grade" value={f.grade} onChange={(e) => setFilter("grade", e.target.value)}>
+                <option value="">ทั้งหมด</option>
+                {gradeCodes.map((g) => <option key={g} value={g}>{g}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="มาตรฐาน" htmlFor="ai-std"><Input id="ai-std" value={f.standard} onChange={(e) => setFilter("standard", e.target.value)} placeholder="เช่น ว 1.1" /></FormField>
+            <FormField label="ข้อสังเกต" htmlFor="ai-flag">
+              <Select id="ai-flag" value={f.flag} onChange={(e) => setFilter("flag", e.target.value)}>
+                <option value="">ทั้งหมด</option>
+                {Object.entries(FLAG_FILTERS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="ค้นหา" htmlFor="ai-q"><Input id="ai-q" value={f.search} onChange={(e) => setFilter("search", e.target.value)} placeholder="รหัสหรือข้อความ" /></FormField>
           </div>
+          {canManage && (
+            <div className="sticky bottom-2 z-10 mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2 text-sm shadow-sm">
+              <span>เลือก {pickedItems.length} รายการ</span>
+              <Button size="sm" variant="ghost" onClick={() => setPicked(new Set((items.data ?? []).filter(bulkAcceptable).map((i) => i.id)))}>เลือกรายการที่ยอมรับพร้อมกันได้</Button>
+              <Button size="sm" variant="outline" disabled={busy || !pickedItems.length}
+                onClick={() => window.confirm(`ยอมรับ ${pickedItems.length} รายการที่เลือก — ตรวจเทียบต้นฉบับครบแล้วใช่หรือไม่`)
+                  && act(() => decideItems(pickedItems.map((i) => i.id), "accept"), `ยอมรับ ${pickedItems.length} รายการ`).then(() => setPicked(new Set()))}>
+                <Check /> ยอมรับที่เลือก
+              </Button>
+              <Button size="sm" variant="ghost" disabled={busy || !pickedItems.length} onClick={() => setRejecting(pickedItems)}><X /> ปฏิเสธที่เลือก</Button>
+              <span className="text-xs text-muted-foreground">รายการที่ซ้ำ/ขัดแย้ง/ข้อมูลไม่พอ ต้องตรวจทีละรายการ</span>
+            </div>
+          )}
 
           {items.isPending ? <p className="mt-3 text-sm text-muted-foreground">กำลังโหลดรายการ…</p> : items.error ? <p role="alert" className="mt-3 text-sm text-destructive">{errMsg(items.error)}</p> : (
             <ul className="mt-3 space-y-2" data-testid="analysis-items">
               {(items.data ?? []).map((i) => (
                 <li key={i.id} className="rounded-xl border p-3 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
+                    {canManage && i.status !== "committed" && (
+                      <input type="checkbox" aria-label={`เลือก ${i.item_key}`} className="size-4" checked={picked.has(i.id)}
+                        onChange={(e) => setPicked((p) => { const n = new Set(p); if (e.target.checked) n.add(i.id); else n.delete(i.id); return n; })} />
+                    )}
                     <Badge variant={ITEM_TONE[i.status]}>{ITEM_STATUS_LABELS[i.status]}</Badge>
                     <span className="text-xs text-muted-foreground">{ITEM_TYPE_LABELS[i.item_type] ?? i.item_type}</span>
                     <code className="text-xs">{i.item_key}</code>
@@ -274,6 +333,17 @@ function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis;
                     </ul>
                   )}
                   {i.decision_note && <p className="mt-1 text-xs text-muted-foreground">หมายเหตุผู้ตรวจ: {i.decision_note}</p>}
+                  <button type="button" className="mt-1 text-xs text-primary underline-offset-4 hover:underline" onClick={() => showHistory(i.id)}>
+                    {history[i.id] ? "ซ่อนประวัติ" : "ดูประวัติการตรวจ/แก้ไข"}
+                  </button>
+                  {history[i.id] === "loading" && <p className="text-xs text-muted-foreground">กำลังโหลด…</p>}
+                  {Array.isArray(history[i.id]) && (
+                    <ol className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {(history[i.id] as HistoryRow[]).map((h, k) => (
+                        <li key={k}>{new Date(h.at).toLocaleString("th-TH")} · {h.actor_name} · {h.action === "INSERT" ? "ระบบอ่านเอกสาร" : ITEM_STATUS_LABELS[h.status as ItemStatus] ?? h.status}{h.decision_note ? ` — ${h.decision_note}` : ""}{h.edited ? " (แก้ค่า)" : ""}</li>
+                      ))}
+                    </ol>
+                  )}
                   {canManage && i.status !== "committed" && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {i.status !== "accepted" && i.status !== "insufficient" && i.locator && (
@@ -289,6 +359,7 @@ function AnalysisDetail({ a, doc, canManage, onChanged }: { a: DocumentAnalysis;
                 </li>
               ))}
               {!items.data?.length && <li className="text-sm text-muted-foreground">ไม่มีรายการในตัวกรองนี้</li>}
+              {(items.data?.length ?? 0) >= limit && limit < 500 && <li><Button size="sm" variant="ghost" onClick={() => setLimit(limit + 100)}>แสดงเพิ่ม</Button></li>}
             </ul>
           )}
 

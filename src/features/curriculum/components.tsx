@@ -17,6 +17,7 @@ interface NavItem { to: string; label: string; end?: boolean; hint?: string }
 const GROUPS: { label: string; items: NavItem[] }[] = [
   { label: "หลักสูตรโรงเรียน", items: [
     { to: "/office/curriculum", label: "ภาพรวมหลักสูตร", end: true, hint: "สรุปหลักสูตรที่ใช้อยู่" },
+    { to: "/office/curriculum/mapping", label: "เปรียบเทียบกับหลักสูตรแกนกลาง", hint: "Mapping หน่วยการเรียนรู้ ↔ มาตรฐาน/ตัวชี้วัด" },
     { to: "/office/curriculum/structure", label: "รายวิชาในแต่ละชั้น", hint: "วิชาที่เรียนในแต่ละชั้น/ภาคเรียน" },
     { to: "/office/curriculum/programs", label: "แผนการเรียน", hint: "เช่น วิทย์–คณิต ศิลป์–ภาษา" },
     { to: "/office/curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", hint: "ค้นหารายวิชา รหัส หน่วยกิต" },

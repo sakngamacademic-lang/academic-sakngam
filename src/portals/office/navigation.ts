@@ -2,6 +2,7 @@ import {
   BarChart3,
   BookOpen,
   BookText,
+  GitCompareArrows,
   FileDown,
   NotebookPen,
   ShieldCheck,
@@ -40,7 +41,12 @@ export const officePortal: PortalConfig = {
   // เมนูหลัก 4 กลุ่ม (หลักสูตรโรงเรียน / จัดทำรายวิชา / แผนการสอน / รายงานและส่งออก)
   // งานเชิงเทคนิคและงานประจำย้ายไป “เครื่องมือฝ่ายวิชาการ” (tools) — route และสิทธิ์เดิมครบ
   sections: [
-    { items: [{ path: "", label: "หน้าหลัก", icon: LayoutDashboard, hint: "สรุปงานวันนี้" }] },
+    {
+      items: [
+        { path: "", label: "หน้าหลัก", icon: LayoutDashboard, hint: "สรุปงานวันนี้" },
+        { path: "curriculum/mapping", label: "เปรียบเทียบหลักสูตร (Mapping)", icon: GitCompareArrows, hint: "เทียบหลักสูตรโรงเรียนกับหลักสูตรแกนกลาง" },
+      ],
+    },
     {
       title: "หลักสูตรโรงเรียน",
       items: [

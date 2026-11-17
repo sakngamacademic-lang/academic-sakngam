@@ -15,6 +15,8 @@ export function SidebarNav({ portal, sections, onNavigate, collapsed }: SidebarN
   const { pathname } = useLocation();
   const main = sections.filter((s) => !s.tools);
   const tools = sections.filter((s) => s.tools);
+  const allPaths = sections.flatMap((s) => s.items.map((i) => i.path));
+  const isEnd = (path: string) => path === "" || allPaths.some((p) => p !== path && p.startsWith(`${path}/`));
   const toolsActive = tools.some((s) => s.items.some((i) => i.path && pathname.startsWith(`${portal.basePath}/${i.path}`)));
   const render = (list: NavSection[]) => list.map((section, i) => (
         <div key={section.title ?? i}>
@@ -29,7 +31,7 @@ export function SidebarNav({ portal, sections, onNavigate, collapsed }: SidebarN
                 <li key={item.path}>
                   <NavLink
                     to={to}
-                    end={item.path === ""}
+                    end={isEnd(item.path)}
                     onClick={onNavigate}
                     title={collapsed ? item.label : item.hint}
                     aria-label={collapsed ? item.label : undefined}

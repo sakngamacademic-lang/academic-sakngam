@@ -162,3 +162,18 @@ Deno.test("จองรอบไม่ได้ (ฐานข้อมูลย�
   assertEquals(db.job.status, "failed");
   assert(db.job.error!.includes("20261201000200"), db.job.error!);
 });
+
+Deno.test("งบ CPU จริงต่อรอบ: หยุดเมื่อ CPU ของรอบเกินงบ แม้เวลาจริงยังไม่หมด · ไม่ข้ามหน้า", async () => {
+  let cpu = 0;
+  const db = fakeDb(await pdf(12), "pdf", { chunk: { maxPages: 50, budgetMs: 60_000, cpuBudgetMs: 600, cpuNow: () => (cpu += 250) } });
+  const results = await db.drain(0);
+  assertEquals(results.filter((r) => r === "continued").length, 4); // 3 หน้า/รอบ (250 ms/หน้า, งบ 600 ms)
+  assertEquals([...db.pages.keys()], Array.from({ length: 12 }, (_, i) => i + 1));
+  assertEquals(results.at(-1), "done");
+});
+
+Deno.test("runtime ไม่รายงาน CPU → ใช้เพดานหน้า/เวลาตามเดิม", async () => {
+  const db = fakeDb(await pdf(10), "pdf", { chunk: { maxPages: 4, budgetMs: 60_000, cpuBudgetMs: 1, cpuNow: () => null } });
+  const results = await db.drain(0);
+  assertEquals(results, ["continued", "continued", "continued", "done"]); // 4+4+2 หน้า แล้ววิเคราะห์
+});

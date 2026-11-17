@@ -127,7 +127,7 @@ export function useAiCapability() {
     queryKey: [...curriculumKey, "ai-capability"],
     staleTime: 5 * 60_000,
     retry: false,
-    queryFn: () => callFunction<{ ai: { enabled: boolean; reason: string | null; model: string | null } }>("curriculum-document-analyze", { probe: true }),
+    queryFn: () => callFunction<{ version?: string; ai: { enabled: boolean; reason: string | null; model: string | null } }>("curriculum-document-analyze", { probe: true }),
   });
 }
 

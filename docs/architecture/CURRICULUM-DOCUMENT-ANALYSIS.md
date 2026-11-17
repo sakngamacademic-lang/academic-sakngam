@@ -64,3 +64,9 @@ Migration: รัน `20261201000100_document_analysis.sql` ใน SQL Editor �
 - regex แถวเวลาเรียนเปลี่ยนเป็นตัวแยก token แบบเส้นตรง (`timeStructureLine`)
 - `curriculum_compliance_review` อ่านรหัสวิชาของฉบับครั้งเดียวแล้วจับคู่ CF ในหน่วยความจำ (ผลเท่าเดิม · ~0.5 วินาที)
 - หน้าเว็บ: แสดงความคืบหน้า “อ่านแล้ว X/Y หน้า”, สถานะ “ค้าง”, ปุ่ม “ทำต่อ”; ข้อความ error 57014 (timeout) / PGRST202 (ไม่พบฟังก์ชัน) เป็นภาษาไทย
+
+## C4.2 — ตรวจ CPU Time exceeded ซ้ำ (17 พ.ย. 2569)
+- หลักฐาน Staging: งาน SRC-02 ทั้ง 3 งานมี `started_at` แต่ `heartbeat_at` ว่างและ `chunk_count = 0` — รูปแบบนี้เกิดจาก `document_analysis_set_status('running')` ของ **ฟังก์ชันรุ่นแรก** (อ่านทั้งไฟล์ด้วย `unpdf.extractText`) เท่านั้น รุ่นแบ่งรอบจะตั้ง heartbeat + รอบที่ 1 ใน `document_analysis_claim` ก่อนเปิดไฟล์เสมอ → ฟังก์ชันบน Staging ยังเป็นรุ่นเดิม
+- วัด CPU (PDF ไทยฝังฟอนต์ 300 หน้า 1.98 MB สร้างด้วย LibreOffice): รุ่นเดิมอ่านทั้งไฟล์ **2,224 ms** (เกิน 2 วินาที) · รุ่นแบ่งรอบ: import ฟังก์ชัน ~310 ms + เปิด PDF 90–100 ms (ไม่ขึ้นกับหน้าเริ่ม = ไม่ถอดทั้งไฟล์ก่อน) + ~12 ms/หน้า · ทดสอบครบ 16 รอบ (process ใหม่ทุกรอบ อ่าน checkpoint) CPU ต่อรอบ 0.68–0.80 s → วิเคราะห์จบ
+- เพิ่มงบ CPU จริงต่อรอบ (`ANALYZE_CHUNK_CPU_MS`, ค่าเริ่ม 600 ms ถ้า runtime รายงาน `Deno.cpuUsage`) และลดเพดานเป็น 20 หน้า/รอบ
+- probe คืน `version` → หน้าเว็บแสดง “Edge Function รุ่นเดิม” ถ้า deploy ยังไม่อัปเดต

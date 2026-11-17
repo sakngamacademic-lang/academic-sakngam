@@ -25,6 +25,8 @@ const MAX_PDF_BYTES = 100 * 1024 * 1024;
 const MAX_XLSX_BYTES = 15 * 1024 * 1024;
 const MAX_PAGES = 3000;
 export const MAX_CHUNKS = 400;
+/** รุ่นของฟังก์ชัน — หน้าเว็บใช้ตรวจว่า Staging deploy รุ่นแบ่งรอบแล้วหรือยัง (รุ่นแรกอ่านทั้งไฟล์ครั้งเดียว ไม่มีค่านี้) */
+export const WORKER_VERSION = "chunked-2026-11-17";
 const envNum = (k: string, d: number) => {
   const v = Number(Deno.env.get(k));
   return Number.isFinite(v) && v > 0 ? v : d;
@@ -56,7 +58,7 @@ export interface Deps {
   aiCfg: typeof aiConfig;
   /** ส่งต่อรอบถัดไป (คำขอใหม่ = งบ CPU ใหม่) */
   scheduleNext(id: string, chunk: number): Promise<void>;
-  chunk: { maxPages: number; budgetMs: number; now?: () => number };
+  chunk: { maxPages: number; budgetMs: number; now?: () => number; cpuBudgetMs?: number; cpuNow?: () => number | null };
 }
 
 function liveDeps(): Deps {
@@ -83,7 +85,8 @@ function liveDeps(): Deps {
       await res.body?.cancel();
       if (!res.ok) throw new Error(`ส่งต่อรอบถัดไปไม่สำเร็จ (HTTP ${res.status}) — กด “ทำต่อ” เพื่อประมวลผลต่อจากหน้าที่ค้าง`);
     },
-    chunk: { maxPages: envNum("ANALYZE_CHUNK_MAX_PAGES", 25), budgetMs: envNum("ANALYZE_CHUNK_BUDGET_MS", 700) },
+    // วัดจริง (PDF ไทยฝังฟอนต์ 300 หน้า 1.98 MB): import ~310 ms + เปิด PDF ~100 ms + ~12 ms/หน้า CPU → รอบละ ≤ 20 หน้า / ≤ 600 ms CPU เผื่อเครื่องช้ากว่า 2 เท่า
+    chunk: { maxPages: envNum("ANALYZE_CHUNK_MAX_PAGES", 20), budgetMs: envNum("ANALYZE_CHUNK_BUDGET_MS", 700), cpuBudgetMs: envNum("ANALYZE_CHUNK_CPU_MS", 600) },
   };
 }
 
@@ -204,7 +207,7 @@ export const handler = handle(async (req) => {
   const caller = await requireUser(req);
   if (body.probe) {
     const cfg = aiConfig();
-    return { ai: { enabled: cfg.enabled, reason: cfg.reason, model: cfg.enabled ? AI_MODEL : null } };
+    return { version: WORKER_VERSION, ai: { enabled: cfg.enabled, reason: cfg.reason, model: cfg.enabled ? AI_MODEL : null } };
   }
   if (body.resume) {
     if (!isUuid(body.analysisId)) throw new HttpError(400, "รหัสงานไม่ถูกต้อง");

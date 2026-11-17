@@ -102,6 +102,12 @@ export function AnalysisPage() {
             {ai.isPending ? <Badge variant="outline">กำลังตรวจ…</Badge> : aiEnabled ? <Badge variant="success">AI เปิดใช้</Badge> : <Badge variant="secondary">AI ยังไม่เปิดใช้</Badge>}{" "}
             {aiEnabled ? `ช่วยจำแนกประเภทเมื่อระบบไม่มั่นใจ (${ai.data?.ai.model}) — ส่งเฉพาะข้อความบางหน้า ไม่ส่งไฟล์` : ai.data?.ai.reason ?? (ai.error ? "ตรวจสถานะ AI ไม่ได้ (ฟังก์ชันอาจยังไม่ได้ติดตั้ง)" : "")}
           </li>
+          {ai.data && (
+            <li>
+              {ai.data.version ? <Badge variant="success">Edge Function {ai.data.version}</Badge> : <Badge variant="destructive">Edge Function รุ่นเดิม</Badge>}{" "}
+              {ai.data.version ? "อ่าน PDF แบบแบ่งรอบ มี checkpoint ทำต่อได้" : "ฟังก์ชันที่ติดตั้งยังอ่าน PDF ทั้งไฟล์ในครั้งเดียว (เกิน CPU กับไฟล์หลายร้อยหน้า) — ต้อง deploy curriculum-document-analyze รุ่นล่าสุด"}
+            </li>
+          )}
           <li><Badge variant="secondary">ยังไม่รองรับ</Badge> หน้า PDF ที่เป็นภาพสแกน (ไม่มี OCR) → แสดงเป็น “ข้อมูลไม่พอ” ให้ผู้ดูแลกรอกจากต้นฉบับ</li>
         </ul>
         {aiEnabled && canManage && (

@@ -170,6 +170,16 @@ export async function xlsxCells(bytes: Uint8Array): Promise<{ sheet: string; add
   return out;
 }
 
+/** CPU ที่ process ใช้ไปแล้ว (ms) — null ถ้า runtime ไม่รองรับ Deno.cpuUsage */
+export function processCpuMs(): number | null {
+  try {
+    const u = (Deno as unknown as { cpuUsage?: () => { user: number; system: number } }).cpuUsage?.();
+    return u ? (u.user + u.system) / 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 /** เปิด PDF ครั้งเดียวต่อรอบ (pdf.js โหลดเฉพาะโครงสร้าง ยังไม่อ่านทุกหน้า) */
 export async function openPdf(bytes: Uint8Array) {
   const pdf = await getDocumentProxy(bytes);
@@ -184,10 +194,12 @@ export async function openPdf(bytes: Uint8Array) {
 export async function pdfPageRange(
   pdf: { numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }>; cleanup?(): unknown }> },
   fromPage: number,
-  opts: { maxPages: number; budgetMs: number; now?: () => number },
+  opts: { maxPages: number; budgetMs: number; now?: () => number; cpuBudgetMs?: number; cpuNow?: () => number | null },
 ): Promise<string[]> {
   const now = opts.now ?? (() => performance.now());
+  const cpuNow = opts.cpuNow ?? processCpuMs;
   const start = now();
+  const cpuStart = cpuNow();
   const texts: string[] = [];
   for (let p = fromPage; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -200,6 +212,9 @@ export async function pdfPageRange(
     );
     page.cleanup?.();
     if (texts.length >= opts.maxPages || now() - start >= opts.budgetMs) break;
+    // งบ CPU จริงของรอบนี้ (ถ้า runtime รายงานได้) — CPU limit นับ CPU ไม่ใช่เวลารอ I/O
+    const c = cpuNow();
+    if (opts.cpuBudgetMs && cpuStart != null && c != null && c - cpuStart >= opts.cpuBudgetMs) break;
   }
   return texts;
 }

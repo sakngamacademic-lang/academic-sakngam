@@ -128,3 +128,54 @@ Deno.test("timeStructureLine: ตัวเลขในวงเล็บ · ป�
   assertEquals(timeStructureLine("ม.1 120 120"), null);
   assertEquals(timeStructureLine("ภาษาไทย 120"), null);
 });
+
+Deno.test("เลขไทย: มาตรฐาน “มาตรฐาน ค ๑.๒” และตัวชี้วัด “ม.๑/๓” → รหัสเลขอารบิก ข้อความคงตามต้นฉบับ", () => {
+  const r = analyzePdfPages(["กลุ่มสาระการเรียนรู้คณิตศาสตร์\nมาตรฐาน ค ๑.๒ เข้าใจแบบรูปทีละ ๑๐\nค ๑.๒ ม.๑/๓ แก้ปัญหาทีละ ๑๐"]);
+  const s = r.items.find((i) => i.item_type === "standard")!;
+  assertEquals([s.item_key, s.extracted.statement], ["ค 1.2", "เข้าใจแบบรูปทีละ ๑๐"]);
+  assertEquals(r.items.find((i) => i.item_type === "indicator")?.item_key, "ค 1.2 ม.1/3");
+});
+
+Deno.test("ข้อที่มีเลขข้อแต่ไม่รู้ชั้น (ไม่มีหัวคอลัมน์/ต้นแถว) → ไม่สร้างตัวชี้วัด (ไม่เดาชั้น)", () => {
+  const r = analyzePdfPages(["มาตรฐาน ว ๑.๑ เข้าใจระบบนิเวศ\n๑. ระบุสิ่งมีชีวิต\n๒. อธิบายความสัมพันธ์"]);
+  assertEquals(r.items.filter((i) => i.item_type === "indicator").length, 0);
+});
+
+Deno.test("ตารางแถวละชั้น “ม.๑ ๑. …” → ชั้นจากต้นแถว ติดธงให้ตรวจ", () => {
+  const r = analyzePdfPages(["มาตรฐาน ว ๑.๒ เข้าใจสมบัติ\nม.๑ ๑. อธิบายเซลล์\n๒. เปรียบเทียบเซลล์\nม.๒ ๑. ระบุอวัยวะ"]);
+  const ind = r.items.filter((i) => i.item_type === "indicator");
+  assertEquals(ind.map((i) => i.item_key), ["ว 1.2 ม.1/1", "ว 1.2 ม.1/2", "ว 1.2 ม.2/1"]);
+  assert(ind.every((i) => i.flags!.some((f) => f.code === "GRADE_FROM_ROW")));
+});
+
+Deno.test("หัวกระดาษ “(ฉบับปรับปรุง พ.ศ. ๒๕๖๐)” ทุกหน้า → รายการฉบับปรับปรุงครั้งเดียว", () => {
+  const r = analyzePdfPages(Array.from({ length: 5 }, () => "มาตรฐานการเรียนรู้และตัวชี้วัดฯ (ฉบับปรับปรุง พ.ศ. ๒๕๖๐)\nเนื้อหา"));
+  assertEquals(r.items.filter((i) => i.item_type === "revision").map((i) => i.item_key), ["2560"]);
+});
+
+Deno.test("PDF ไทยหลายหน้า (pdf-lib + ฟอนต์ไทย) ตารางคอลัมน์ชั้น → ตัวชี้วัดถูกชั้น ครบ ข้อความตรง", { ignore: !existsSync("/usr/share/fonts/truetype/freefont/FreeSerif.ttf") }, async () => {
+  const { PDFDocument } = await import("npm:pdf-lib@1.17.1");
+  const fontkit = (await import("npm:@pdf-lib/fontkit@1.1.1")).default;
+  const { openPdf, pdfPageRange } = await import("./curriculum-parse.ts");
+  const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
+  const font = await doc.embedFont(Deno.readFileSync("/usr/share/fonts/truetype/freefont/FreeSerif.ttf"), { subset: true });
+  const want: string[] = [];
+  for (let p = 0; p < 6; p++) {
+    const page = doc.addPage([842, 595]);
+    page.drawText(`มาตรฐาน ว ๑.${p + 1} เข้าใจสิ่งมีชีวิต`, { x: 40, y: 560, size: 13, font });
+    page.drawText("ตัวชี้วัดชั้นปี", { x: 40, y: 538, size: 12, font });
+    ["ม. ๑", "ม. ๒", "ม. ๓"].forEach((g, k) => page.drawText(g, { x: 150 + k * 250, y: 516, size: 11, font }));
+    ["๑. สังเกตและอธิบายจำนวน", "-", "๑. เปรียบเทียบพืชและสัตว์"].forEach((t, k) => page.drawText(t, { x: 46 + k * 250, y: 494, size: 11, font }));
+    want.push(`ว 1.${p + 1} ม.1/1=สังเกตและอธิบายจำนวน`, `ว 1.${p + 1} ม.3/1=เปรียบเทียบพืชและสัตว์`);
+  }
+  const { numPages, pdf } = await openPdf(await doc.save());
+  const pages: string[] = [];
+  while (pages.length < numPages) pages.push(...await pdfPageRange(pdf, pages.length + 1, { maxPages: 4, budgetMs: 60_000 }));
+  const got = analyzePdfPages(pages).items.filter((i) => i.item_type === "indicator").map((i) => `${i.item_key}=${i.extracted.statement}`);
+  assertEquals(got, want);
+});
+
+function existsSync(p: string) {
+  try { Deno.statSync(p); return true; } catch { return false; }
+}

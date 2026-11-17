@@ -6,6 +6,7 @@
  */
 import ExcelJS from "npm:exceljs@4.4.0";
 import { extractText, getDocumentProxy } from "npm:unpdf@0.12.1";
+import { layoutPageText, type PdfTextItem } from "./pdf-layout.ts";
 
 export interface StagingRow {
   row_no: number;
@@ -189,7 +190,7 @@ export async function openPdf(bytes: Uint8Array) {
 /**
  * อ่านข้อความทีละหน้าแบบเรียงลำดับ (ไม่ Promise.all ทุกหน้าพร้อมกันแบบ unpdf.extractText ซึ่งใช้ CPU/หน่วยความจำเกินกำหนดของ Edge Function)
  * หยุดเมื่อครบ maxPages หรือใช้เวลาเกิน budgetMs (อ่านอย่างน้อย 1 หน้าเสมอ) — คืนเฉพาะหน้าที่อ่านจริง ต่อเนื่องจาก fromPage ไม่ข้ามหน้า
- * การรวมข้อความเหมือน unpdf.getPageText (str + "\n" เมื่อ hasEOL)
+ * หน้าที่ไม่มีตารางชั้นและไม่ต้องซ่อมอักขระ ได้ข้อความเหมือน unpdf.getPageText (str + "\n" เมื่อ hasEOL)
  */
 export async function pdfPageRange(
   pdf: { numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: unknown[] }>; cleanup?(): unknown }> },
@@ -204,12 +205,8 @@ export async function pdfPageRange(
   for (let p = fromPage; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
-    texts.push(
-      (content.items as { str?: string; hasEOL?: boolean }[])
-        .filter((it) => it.str != null)
-        .map((it) => it.str + (it.hasEOL ? "\n" : ""))
-        .join(""),
-    );
+    // ซ่อมอักขระไทยต่อฟอนต์ + จัดตารางตัวชี้วัดตามคอลัมน์ชั้น (ดู pdf-layout.ts)
+    texts.push(layoutPageText(content.items as PdfTextItem[]));
     page.cleanup?.();
     if (texts.length >= opts.maxPages || now() - start >= opts.budgetMs) break;
     // งบ CPU จริงของรอบนี้ (ถ้า runtime รายงานได้) — CPU limit นับ CPU ไม่ใช่เวลารอ I/O

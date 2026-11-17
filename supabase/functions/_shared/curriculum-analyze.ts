@@ -8,6 +8,10 @@
  * - รหัสวิชาใช้ parseCourseHeader เดิม (เก็บรหัสตามที่พิมพ์)
  */
 import { parseCourseHeader } from "./curriculum-pdf-text.ts";
+import { END_GRADES, REPAIRED_MARK } from "./pdf-layout.ts";
+
+/** เลขไทย → เลขอารบิก (ใช้กับรหัส/ปี/ชั้นเท่านั้น — ข้อความตัวชี้วัดเก็บตามต้นฉบับ) */
+export const toArabic = (s: string) => s.replace(/[๐-๙]/g, (d) => String(d.charCodeAt(0) - 0x0e50));
 
 export type DocClass = "core_curriculum" | "school_curriculum" | "learning_area_curriculum" | "standards_indicators" | "announcement_time" | "unknown";
 export type ItemType = "curriculum_year" | "revision" | "learning_area" | "grade_level" | "standard" | "indicator" | "subject" | "time_structure" | "study_program" | "unreadable";
@@ -100,9 +104,15 @@ export function classify(parts: { locator: string; text: string; early: boolean 
 }
 
 // ---------------------------------------------------------------- PDF
-const INDICATOR_LINE = /^\s*(?:([ก-ฮ])\s?(\d+)\.(\d+)\s+)?([มป])\.\s?([1-6](?:\s?-\s?[1-6])?)\s*\/\s*(\d{1,3})\b\s*(.*)$/;
-const INDICATOR_LINE_G = /(?:^|\n)\s*(?:[ก-ฮ]\s?\d+\.\d+\s+)?[มป]\.\s?[1-6](?:\s?-\s?[1-6])?\s*\/\s*\d{1,3}\b/g;
-const STANDARD_LINE = /^\s*มาตรฐาน\s*([ก-ฮ])\s?(\d+)\.(\d+)\s*(.*)$/;
+// รับทั้งเลขอารบิกและเลขไทย (เอกสารแกนกลางพิมพ์ “ว ๑.๑ ม.๑/๑”)
+const INDICATOR_LINE = /^\s*(?:([ก-ฮ])\s?([0-9๐-๙]+)\.([0-9๐-๙]+)\s+)?([มป])\.\s?([1-6๑-๖](?:\s?-\s?[1-6๑-๖])?)\s*\/\s*([0-9๐-๙]{1,3})(?![0-9๐-๙])\s*(.*)$/;
+const INDICATOR_LINE_G = /(?:^|\n)\s*(?:[ก-ฮ]\s?[0-9๐-๙]+\.[0-9๐-๙]+\s+)?[มป]\.\s?[1-6๑-๖](?:\s?-\s?[1-6๑-๖])?\s*\/\s*[0-9๐-๙]{1,3}|@@GRADE /g;
+const STANDARD_LINE = /^\s*มาตรฐาน\s*([ก-ฮ])\s?([0-9๐-๙]+)\.([0-9๐-๙]+)\s*(.*)$/;
+/** ตัวชี้วัดแบบเลขข้อในตารางชั้น: “๑. ระบุ…” */
+const NUMBERED = /^\s*(?:-\s+)?([0-9๐-๙]{1,2})\.\s*(.*)$/;
+/** ตารางแบบแถวละชั้น: “ม.๑ ๑. …” */
+const GRADE_ROW = /^\s*([ปม])\.\s*([1-6๑-๖])(?:\s*-\s*([1-6๑-๖]))?\s+(?:([0-9๐-๙]{1,2})\.\s*(.*))?$/;
+const GRADE_BLOCK = /^@@GRADE ([ปม]\.[1-6](?:-[1-6])?)@@$/;
 const STOP_LINE = /^\s*(มาตรฐาน|สาระที่|สาระการเรียนรู้แกนกลาง|ชั้น|ตัวชี้วัด|รวม|กลุ่มสาระ)/;
 
 function continuation(lines: string[], i: number, max = 4): { text: string; used: number } {
@@ -110,7 +120,7 @@ function continuation(lines: string[], i: number, max = 4): { text: string; used
   let j = i + 1;
   for (; j < lines.length && out.length < max; j++) {
     const l = lines[j]!.trim();
-    if (!l || INDICATOR_LINE.test(l) || STANDARD_LINE.test(l) || STOP_LINE.test(l) || /^\d{1,2}\.\s/.test(l)) break;
+    if (!l || l.startsWith("@@") || l === "-" || INDICATOR_LINE.test(l) || STANDARD_LINE.test(l) || STOP_LINE.test(l) || /^(?:-\s+)?[0-9๐-๙]{1,2}\.\s/.test(l) || GRADE_ROW.test(l)) break;
     out.push(l);
   }
   return { text: out.join(" "), used: j - i - 1 };
@@ -151,6 +161,7 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
   let area: string | null = null;
   let std: { code: string; area_code: string } | null = null;
   const years = new Map<string, number>();
+  const revisions = new Set<string>();
 
   pages.forEach((raw, idx) => {
     const page = idx + 1;
@@ -162,24 +173,31 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
       return;
     }
     const pageFlags: Flag[] = garbled(text) ? [{ code: "GARBLED_TEXT", message_th: "ข้อความไทยที่สกัดได้อาจเพี้ยน — ตรวจกับภาพหน้าต้นฉบับ" }] : [];
+    if (text.startsWith(REPAIRED_MARK)) {
+      pageFlags.push({ code: "TEXT_REPAIRED", message_th: "ซ่อมการถอดอักขระไทยจากฟอนต์ (นิคหิต/สระอา/รูปวรรณยุกต์) — ตรวจกับภาพหน้าต้นฉบับ" });
+    }
+    let grade: { code: string; from: "layout" | "row" } | null = null;
 
-    for (const m of text.matchAll(/หลักสูตร[^\n]{0,80}?(?:พุทธศักราช|พ\.ศ\.)\s*(25\d\d)/g)) {
-      const y = m[1]!;
+    for (const m of text.matchAll(/หลักสูตร[^\n]{0,80}?(?:พุทธศักราช|พ\.ศ\.)\s*((?:25|๒๕)[0-9๐-๙]{2})/g)) {
+      const y = toArabic(m[1]!);
       if (!years.has(y)) {
         years.set(y, page);
         items.push({ item_type: "curriculum_year", item_key: y, extracted: { year_be: Number(y), phrase: clean(m[0]) }, locator: loc, excerpt: clean(m[0]), confidence: 0.8 });
       }
     }
-    for (const m of text.matchAll(/ฉบับปรับปรุง\s*(?:พุทธศักราช|พ\.ศ\.)?\s*(25\d\d)/g)) {
-      items.push({ item_type: "revision", item_key: m[1]!, extracted: { revision_year_be: Number(m[1]), phrase: clean(m[0]) }, locator: loc, excerpt: clean(m[0]), confidence: 0.8 });
+    for (const m of text.matchAll(/ฉบับปรับปรุง\s*(?:พุทธศักราช|พ\.ศ\.)?\s*((?:25|๒๕)[0-9๐-๙]{2})/g)) {
+      const y = toArabic(m[1]!);
+      if (revisions.has(y)) continue; // หัวกระดาษซ้ำทุกหน้า → เก็บครั้งแรก
+      revisions.add(y);
+      items.push({ item_type: "revision", item_key: y, extracted: { revision_year_be: Number(y), phrase: clean(m[0]) }, locator: loc, excerpt: clean(m[0]), confidence: 0.8 });
     }
     for (const name of LEARNING_AREAS) {
       if (text.includes(`กลุ่มสาระการเรียนรู้${name}`) || text.includes(`กลุ่มสาระการเรียนรู้ ${name}`)) {
         items.push({ item_type: "learning_area", item_key: name, extracted: { name_th: name }, locator: loc, confidence: 0.9 });
       }
     }
-    for (const m of text.matchAll(/ชั้น(มัธยม|ประถม)ศึกษาปีที่\s*([1-6])(?!\d)/g)) {
-      const code = `${m[1] === "มัธยม" ? "ม" : "ป"}.${m[2]}`;
+    for (const m of text.matchAll(/ชั้น(มัธยม|ประถม)ศึกษาปีที่\s*([1-6๑-๖])(?![0-9๐-๙])/g)) {
+      const code = `${m[1] === "มัธยม" ? "ม" : "ป"}.${toArabic(m[2]!)}`;
       items.push({ item_type: "grade_level", item_key: code, extracted: { code }, locator: loc, confidence: 0.9 });
     }
     for (const m of text.matchAll(/แผนการเรียน\s*([^\n]{2,60})/g)) {
@@ -192,6 +210,10 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
     const timeContext = /เวลาเรียน|ชั่วโมง/.test(text);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
+      if (line === REPAIRED_MARK) continue;
+      const gb = GRADE_BLOCK.exec(line);
+      if (gb) { grade = { code: gb[1]!, from: "layout" }; continue; }
+      if (line === END_GRADES) { grade = null; continue; }
       const areaM = /กลุ่มสาระการเรียนรู้\s*([ก-๙ ]{2,40}?)(?:\s{2,}|$)/.exec(line);
       if (areaM) {
         const found = LEARNING_AREAS.find((n) => clean(areaM[1]!).startsWith(n.replace(/\s+/g, " ")) || clean(areaM[1]!).replace(/\s/g, "").startsWith(n.replace(/\s/g, "")));
@@ -199,8 +221,9 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
       }
       const s = STANDARD_LINE.exec(line);
       if (s) {
-        const code = `${s[1]} ${s[2]}.${s[3]}`;
-        const cont = continuation(lines, i, 3);
+        const code = `${s[1]} ${toArabic(s[2]!)}.${toArabic(s[3]!)}`;
+        const cont = continuation(lines, i, 6);
+        grade = null;
         const statement = clean(`${s[4] ?? ""} ${cont.text}`);
         std = { code, area_code: s[1]! };
         items.push({
@@ -213,9 +236,9 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
       }
       const ind = INDICATOR_LINE.exec(line);
       if (ind) {
-        const stdCode = ind[1] ? `${ind[1]} ${ind[2]}.${ind[3]}` : (std as { code: string } | null)?.code ?? null;
-        const grade = `${ind[4]}.${ind[5]!.replace(/\s/g, "")}`;
-        const number = ind[6]!;
+        const stdCode = ind[1] ? `${ind[1]} ${toArabic(ind[2]!)}.${toArabic(ind[3]!)}` : (std as { code: string } | null)?.code ?? null;
+        const grade = `${ind[4]}.${toArabic(ind[5]!.replace(/\s/g, ""))}`;
+        const number = toArabic(ind[6]!);
         const cont = continuation(lines, i);
         const statement = clean(`${ind[7] ?? ""} ${cont.text}`);
         const full = stdCode ? `${stdCode} ${grade}/${number}` : `${grade}/${number}`;
@@ -226,6 +249,32 @@ export function analyzePdfPages(pages: string[]): AnalysisResult {
           item_type: "indicator", item_key: full, locator: loc, excerpt: clean(lines.slice(i, i + 1 + cont.used).join(" ")).slice(0, 600),
           extracted: { full_code: full, standard_code: stdCode, grade, number, statement: statement || null },
           confidence: stdCode && statement ? (ind[1] ? 0.85 : 0.7) : 0.3, insufficient: !statement || !stdCode, flags,
+        });
+        i += cont.used;
+        continue;
+      }
+      // ตารางแถวละชั้น: “ม.๑ ๑. …” → ตั้งชั้นจากต้นแถว
+      const gr = std ? GRADE_ROW.exec(line) : null;
+      if (gr) {
+        grade = { code: `${gr[1]}.${toArabic(gr[2]!)}${gr[3] ? `-${toArabic(gr[3])}` : ""}`, from: "row" };
+        if (!gr[4]) continue;
+      }
+      const nm = grade ? (gr && gr[4] ? [line, gr[4], gr[5] ?? ""] : NUMBERED.exec(line)) : null;
+      if (nm && grade) {
+        const stdCode = (std as { code: string } | null)?.code ?? null;
+        const number = toArabic(nm[1]!);
+        const cont = continuation(lines, i, 30);
+        const statement = clean(`${nm[2] ?? ""} ${cont.text}`);
+        const full = stdCode ? `${stdCode} ${grade.code}/${number}` : `${grade.code}/${number}`;
+        const flags: Flag[] = [...pageFlags, grade.from === "layout"
+          ? { code: "GRADE_FROM_LAYOUT", message_th: "ระบุชั้นจากตำแหน่งคอลัมน์ในตาราง — ตรวจกับต้นฉบับ" }
+          : { code: "GRADE_FROM_ROW", message_th: "ระบุชั้นจากต้นแถวของตาราง — ตรวจกับต้นฉบับ" }];
+        if (!stdCode) flags.push({ code: "NO_STANDARD", message_th: "ไม่พบมาตรฐานที่กำกับตัวชี้วัดนี้ — ระบุจากต้นฉบับ" });
+        if (!statement) flags.push({ code: "NO_STATEMENT", message_th: "ข้อมูลไม่พอ — ไม่พบข้อความตัวชี้วัด" });
+        items.push({
+          item_type: "indicator", item_key: full, locator: loc, excerpt: clean([nm[0], ...lines.slice(i + 1, i + 1 + cont.used)].join(" ")).slice(0, 600),
+          extracted: { full_code: full, standard_code: stdCode, grade: grade.code, number, statement: statement || null },
+          confidence: stdCode && statement ? 0.7 : 0.3, insufficient: !statement || !stdCode, flags,
         });
         i += cont.used;
         continue;

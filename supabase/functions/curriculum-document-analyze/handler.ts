@@ -26,7 +26,7 @@ const MAX_XLSX_BYTES = 15 * 1024 * 1024;
 const MAX_PAGES = 3000;
 export const MAX_CHUNKS = 400;
 /** รุ่นของฟังก์ชัน — หน้าเว็บใช้ตรวจว่า Staging deploy รุ่นแบ่งรอบแล้วหรือยัง (รุ่นแรกอ่านทั้งไฟล์ครั้งเดียว ไม่มีค่านี้) */
-export const WORKER_VERSION = "chunked-2026-11-17";
+export const WORKER_VERSION = "chunked-thai-layout-2026-11-17";
 const envNum = (k: string, d: number) => {
   const v = Number(Deno.env.get(k));
   return Number.isFinite(v) && v > 0 ? v : d;

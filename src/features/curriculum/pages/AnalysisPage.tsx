@@ -110,6 +110,9 @@ export function AnalysisPage() {
       </DashSection>
 
       <DashSection id="docs" className="mt-4" title="เอกสารที่มีไฟล์" meta={`${withFile.length} รายการ`}>
+        {analyses.error && (
+          <p role="alert" className="mb-2 text-sm text-destructive">โหลดสถานะงานวิเคราะห์ไม่สำเร็จ: {errMsg(analyses.error)} — สถานะด้านล่างอาจไม่ถูกต้อง</p>
+        )}
         {sources.isPending ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : !withFile.length ? (
           <p className="text-sm text-muted-foreground">ยังไม่มีเอกสารที่แนบไฟล์ — อัปโหลดที่ <Link className="text-primary underline-offset-4 hover:underline" to="/office/curriculum/imports">แหล่งข้อมูล & นำเข้า</Link></p>
         ) : (
@@ -128,7 +131,7 @@ export function AnalysisPage() {
                       {isActive(a) && <span className="text-xs text-muted-foreground">{progressText(a)}</span>}
                       {a.doc_class && <Badge variant="secondary">{DOC_CLASS_LABELS[a.doc_class]}{a.class_confidence ? ` · มั่นใจ ${Math.round(a.class_confidence * 100)}%` : ""}</Badge>}
                     </span>
-                  ) : <span className="text-xs text-muted-foreground">ยังไม่วิเคราะห์</span>}
+                  ) : <span className="text-xs text-muted-foreground">{analyses.error ? "ไม่ทราบสถานะ" : analyses.isPending ? "กำลังโหลด…" : "ยังไม่วิเคราะห์"}</span>}
                   {a && <Button size="sm" variant="ghost" onClick={() => setSelected(a.id)}><FileSearch /> ดูผล</Button>}
                   {canManage && a && (a.status === "failed" || isStale(a)) && !Object.keys(a.item_counts).length && (
                       <Button size="sm" variant="outline" disabled={busyDoc !== null} onClick={() => resume(a)} title="ประมวลผลต่อจากหน้าที่ค้าง (ไม่สร้างงานใหม่)">

@@ -124,7 +124,18 @@ async function classifyWithAi(t: Claim, result: AnalysisResult, parts: { locator
 
 /** ประมวลผล 1 รอบ — คืนผลเพื่อทดสอบ: skipped (รอบซ้ำ/งานจบแล้ว) · continued · done · failed */
 export async function processChunk(analysisId: string, expectedChunk: number, deps: Deps = liveDeps()): Promise<"skipped" | "continued" | "done" | "failed"> {
-  const t = await deps.claim(analysisId, expectedChunk);
+  let t: Claim | null;
+  try {
+    t = await deps.claim(analysisId, expectedChunk);
+  } catch (e) {
+    // จองรอบไม่ได้ (เช่น ฐานข้อมูลยังไม่มี document_analysis_claim) → แจ้ง failed พร้อมเหตุผล แทนการค้าง running เงียบ ๆ
+    const raw = e instanceof Error ? e.message : String(e);
+    const msg = /document_analysis_claim|PGRST202|404|42883/.test(raw)
+      ? "ฐานข้อมูลยังไม่ได้ติดตั้ง migration 20261201000200 (document_analysis_claim) — ติดตั้งแล้วกด “ทำต่อ”"
+      : `จองรอบประมวลผลไม่สำเร็จ: ${raw.slice(0, 200)}`;
+    await deps.fail(analysisId, msg).catch(() => {});
+    return "failed";
+  }
   if (!t) return "skipped";
   try {
     if (t.file_ext === "xlsx") {

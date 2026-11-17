@@ -154,3 +154,11 @@ Deno.test("ผล AI ตรวจซ้ำ: พิกัดที่ไม่ไ
   assertEquals(aiConfig(() => undefined).enabled, false);
   assertEquals(aiConfig((k) => ({ ANTHROPIC_API_KEY: "x", AI_DOCUMENT_ANALYSIS: "enabled" } as Record<string, string>)[k]).enabled, true);
 });
+
+Deno.test("จองรอบไม่ได้ (ฐานข้อมูลยังไม่มีฟังก์ชันใหม่) → failed พร้อมเหตุผล ไม่ค้าง running", async () => {
+  const db = fakeDb(await pdf(3), "pdf");
+  db.deps.claim = () => Promise.reject(new Error("rpc document_analysis_claim failed: 404 Could not find the function"));
+  assertEquals(await processChunk("a1", 0, db.deps), "failed");
+  assertEquals(db.job.status, "failed");
+  assert(db.job.error!.includes("20261201000200"), db.job.error!);
+});

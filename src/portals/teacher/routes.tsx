@@ -8,6 +8,7 @@ import { MyDocumentsPage } from "@/features/documents/pages/MyDocumentsPage";
 import { AssessmentPage } from "@/features/assessment/pages/AssessmentPage";
 import { MyAssignmentsPage } from "@/features/tasks/pages/MyAssignmentsPage";
 import { SyllabusPage } from "@/features/syllabus/SyllabusPage";
+import { LessonPlanPage } from "@/features/lesson-plans/LessonPlanPage";
 import { teacherPortal } from "./navigation";
 
 export const teacherRoutes: RouteObject = {
@@ -26,5 +27,6 @@ export const teacherRoutes: RouteObject = {
     assignments: <MyAssignmentsPage />,
     courses: <AssessmentPage />,
     "courses-plan": <SyllabusPage />,
+    "lesson-plans": <LessonPlanPage />,
   }),
 };

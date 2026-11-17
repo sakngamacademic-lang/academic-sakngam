@@ -23,6 +23,7 @@ const Conflicts = page(() => import("./pages/ConflictsPage"), "ConflictsPage");
 const Decisions = page(() => import("./pages/DecisionsPage"), "DecisionsPage");
 const Reports = page(() => import("./pages/ReportsPage"), "ReportsPage");
 const Syllabi = page(() => import("@/features/syllabus/SyllabusPage"), "SyllabusPage");
+const LessonPlans = page(() => import("@/features/lesson-plans/LessonPlanPage"), "LessonPlanPage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
@@ -48,4 +49,5 @@ export const curriculumSubRoutes: RouteObject[] = [
   { path: "curriculum/reports", element: wrap(<Reports />) },
   { path: "curriculum/analysis", element: wrap(<Analysis />) },
   { path: "curriculum/syllabi", element: wrap(<Syllabi />) },
+  { path: "curriculum/lesson-plans", element: wrap(<LessonPlans />) },
 ];

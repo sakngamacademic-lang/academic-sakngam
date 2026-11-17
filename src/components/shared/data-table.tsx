@@ -58,7 +58,7 @@ export function DataTable<T>({ rows, columns, rowKey, loading, error, emptyText,
         <table className="w-full text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead>
-            <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+            <tr className="border-b bg-muted/60 text-left text-muted-foreground">
               {columns.map((c) => (
                 <th key={c.key} scope="col" className={cn("px-4 py-3 font-medium", c.className)}>
                   {c.header}
@@ -69,7 +69,7 @@ export function DataTable<T>({ rows, columns, rowKey, loading, error, emptyText,
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={rowKey(row)} className={cn("border-b last:border-0 hover:bg-muted/30", rowClassName?.(row))}>
+              <tr key={rowKey(row)} className={cn("border-b transition-colors last:border-0 even:bg-muted/25 hover:bg-accent/60", rowClassName?.(row))}>
                 {columns.map((c) => (
                   <td key={c.key} className={cn("px-4 py-3 align-middle", c.className)}>
                     {c.cell(row)}

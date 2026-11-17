@@ -1,7 +1,7 @@
 /* AUTO-SCOPED from docs/design/mockup/design-system.css (Welcome only) — ทุก selector อยู่ใต้ .welcome */
 @property --accent {syntax: "<color>";
   inherits: true;
-  initial-value: #8b7cf6;}
+  initial-value: #173b78;}
 .welcome { --bg-0: #06070d; --bg-1: #0a0d19; --bg-2: #10142a; --surface: rgba(18, 22, 42, 0.66); --surface-solid: #131830; --surface-hover: rgba(255, 255, 255, 0.05); --line: rgba(170, 180, 255, 0.12); --line-strong: rgba(170, 180, 255, 0.24); --text-1: #f1f2ff; --text-2: #b9bedc; --text-3: #8a90b4; --violet: #8b7cf6; --indigo: #6d7cff; --mint: #5eead4; --cyan: #38d6f5; --rose: #fb7b93; --amber: #f7c56b; --accent: #8b7cf6; --accent-soft: color-mix(in oklab, var(--accent) 18%, transparent); --accent-ink: #0a0d19; --font: "IBM Plex Sans Thai", "Noto Sans Thai", "Sarabun", system-ui, sans-serif; --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-md: 1rem; --fs-lg: 1.125rem; --fs-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem); --fs-2xl: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem); --fs-display-thin: 6rem; --fs-display-bold: 7.25rem; --lh-body: 1.7; --lh-display: 1.22; --tracking-label: 0.22em; --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem; --sp-5: 1.5rem; --sp-6: 2rem; --sp-7: 3rem; --sp-8: 4.5rem; --gutter: clamp(1rem, 0.4rem + 2.6vw, 3rem); --r-sm: 10px; --r-md: 16px; --r-lg: 24px; --r-pill: 999px; --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 40px 80px -40px rgba(0, 0, 0, 0.75), 0 12px 28px -18px rgba(0, 0, 0, 0.6); --shadow-glow: 0 0 60px -10px color-mix(in oklab, var(--accent) 55%, transparent); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); --dur-fast: 0.2s; --dur-base: 0.45s; --dur-slow: 0.8s; --dur-scene-out: 0.55s; --dur-scene-in: 0.95s; --delay-scene-in: 0.28s; --stagger: 60ms; --autoplay: 7s; --topbar-h: 4rem; color-scheme: dark; }
 .welcome { margin: 0; min-height: 100dvh; background: var(--bg-0); color: var(--text-1); font-family: var(--font); font-size: var(--fs-md); line-height: var(--lh-body); -webkit-font-smoothing: antialiased; transition: --accent var(--dur-slow) var(--ease-in-out); overflow-x: clip; }
 .welcome :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
@@ -335,3 +335,18 @@
 
 /* React: แผนภูมิใช้สี accent ของฉาก/ภาพย่อที่ครอบอยู่ */
 .welcome .chart { --chart-accent: var(--accent); }
+
+/* ===== Modern Light Theme (ค่าเริ่มต้น) — ใช้ Design Tokens เดียวกับระบบ; โหมดมืดเดิมยังใช้ได้เมื่อ html.dark ===== */
+:root:not(.dark) .welcome { --bg-0: #f6f8fc; --bg-1: #ffffff; --bg-2: #e8eef9; --surface: rgba(255, 255, 255, 0.86); --surface-solid: #ffffff; --surface-hover: rgba(23, 59, 120, 0.06); --line: #e2e8f0; --line-strong: #cbd5e1; --text-1: #17233b; --text-2: #334155; --text-3: #64748b; --violet: #6d5bd0; --indigo: #2456a6; --mint: #0f8a74; --cyan: #0e7490; --rose: #d6334f; --amber: #b45309; --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent); --accent-ink: #ffffff; --shadow-float: 0 1px 2px rgba(15, 23, 42, 0.06), 0 24px 48px -28px rgba(23, 59, 120, 0.35); --shadow-glow: 0 10px 30px -12px color-mix(in oklab, var(--accent) 45%, transparent); color-scheme: light; }
+:root:not(.dark) .welcome .disc { background: radial-gradient(circle at 32% 26%, #ffffff, transparent 60%), radial-gradient(circle at 50% 50%, #ffffff 0%, #eef2f8 75%); }
+:root:not(.dark) .welcome .card { background: var(--bg-1); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px -12px rgba(23, 59, 120, 0.18); }
+:root:not(.dark) .welcome .meter,
+:root:not(.dark) .welcome .progress__seg,
+:root:not(.dark) .welcome code { background: #e2e8f0; }
+:root:not(.dark) .welcome .chart .trk { stroke: #e2e8f0; }
+:root:not(.dark) .welcome .bg-noise { opacity: 0.02; mix-blend-mode: multiply; }
+:root:not(.dark) .welcome .bg-orb--a { opacity: 0.22; }
+:root:not(.dark) .welcome .bg-orb--b { opacity: 0.25; background: color-mix(in oklab, #e5a83b 40%, transparent); }
+:root:not(.dark) .welcome .bg-arc path { opacity: 0.08; }
+:root:not(.dark) .welcome .topbar { background: color-mix(in oklab, #ffffff 85%, transparent); }
+:root:not(.dark) .welcome .pill--demo { color: #92400e; }

@@ -35,7 +35,7 @@ const RISK_COLORS = ["var(--rose)", "var(--amber)", "var(--accent)"];
 
 export const SCENES: Scene[] = [
   {
-    accent: "#8b7cf6",
+    accent: "#173b78",
     name: "ระบบบริหารงานวิชาการ",
     navLabel: "ภาพรวม",
     thumbName: "ภาพรวมระบบ",
@@ -63,7 +63,7 @@ export const SCENES: Scene[] = [
     secondaryCta: true,
   },
   {
-    accent: "#6d7cff",
+    accent: "#2456a6",
     name: "หลักสูตรและข้อมูลพื้นฐาน",
     navLabel: "หลักสูตร",
     thumbName: "หลักสูตร",
@@ -92,7 +92,7 @@ export const SCENES: Scene[] = [
     },
   },
   {
-    accent: "#38d6f5",
+    accent: "#0e7490",
     name: "วัดและประเมินผล",
     navLabel: "วัดผล",
     thumbName: "วัดผล",
@@ -119,7 +119,7 @@ export const SCENES: Scene[] = [
     },
   },
   {
-    accent: "#5eead4",
+    accent: "#0f8a74",
     name: "ภาระงานเอกสาร",
     navLabel: "เอกสาร",
     thumbName: "เอกสาร",
@@ -148,7 +148,7 @@ export const SCENES: Scene[] = [
     },
   },
   {
-    accent: "#c084fc",
+    accent: "#6d5bd0",
     name: "ติดตามนักเรียน",
     navLabel: "ติดตามนักเรียน",
     thumbName: "ติดตามนักเรียน",

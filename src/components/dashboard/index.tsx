@@ -31,7 +31,7 @@ export function DashSection({
       id={id}
       aria-labelledby={`${id}-title`}
       className={cn(
-        "min-w-0 rounded-2xl border bg-card p-4 sm:p-5",
+        "min-w-0 rounded-2xl border bg-card p-4 shadow-card sm:p-5",
         highlight && "border-warning/40 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--amber)_9%,transparent),transparent_70%)]",
         className,
       )}
@@ -49,21 +49,28 @@ export function DashSection({
 }
 
 /* --------------------------------------------------------------------- KPI */
-type KpiTone = "default" | "accent" | "alert" | "ok";
+type KpiTone = "default" | "accent" | "alert" | "ok" | "orange" | "blue" | "green" | "purple" | "pink" | "indigo";
+const PASTEL = ["orange", "blue", "green", "purple", "pink", "indigo"] as const;
+type Pastel = (typeof PASTEL)[number];
+const isPastel = (t: KpiTone): t is Pastel => (PASTEL as readonly string[]).includes(t);
 
-const kpiTone: Record<KpiTone, string> = {
+const kpiTone: Record<Exclude<KpiTone, Pastel>, string> = {
   default: "",
-  accent: "border-primary/40 bg-[color-mix(in_oklab,var(--violet)_10%,var(--bg-1))]",
-  alert: "border-destructive/40 bg-[color-mix(in_oklab,var(--rose)_9%,var(--bg-1))]",
+  accent: "border-primary/30 bg-[color-mix(in_oklab,var(--primary)_6%,var(--bg-1))]",
+  alert: "border-destructive/30 bg-[color-mix(in_oklab,var(--destructive)_6%,var(--bg-1))]",
   ok: "border-success/30",
 };
-const kpiValueTone: Record<KpiTone, string> = {
+const kpiValueTone: Record<Exclude<KpiTone, Pastel>, string> = {
   default: "text-foreground",
   accent: "text-primary",
   alert: "text-destructive",
   ok: "text-success",
 };
 
+/**
+ * การ์ดสถิติ — โทนพาสเทล (orange/blue/green/purple/pink/indigo) ใช้ token --tone-*-bg/fg ส่วนกลาง
+ * สีเป็นเพียงตัวช่วย — ข้อความหัวการ์ดบอกความหมายเสมอ (ไม่สื่อสถานะด้วยสีอย่างเดียว)
+ */
 export function KpiCard({
   label,
   value,
@@ -81,25 +88,42 @@ export function KpiCard({
   onClick?: () => void;
   loading?: boolean;
 }) {
-  const body = (
+  const pastel = isPastel(tone);
+  const style = pastel ? { backgroundColor: `var(--tone-${tone}-bg)` } : undefined;
+  const body = pastel ? (
+    <div className="flex items-center gap-3 sm:gap-4">
+      {Icon && (
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card shadow-sm sm:size-12" style={{ color: `var(--tone-${tone}-fg)` }}>
+          <Icon className="size-5 sm:size-6" aria-hidden="true" />
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-snug text-foreground/85">{label}</p>
+        <p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
+          {loading ? <span className="inline-block h-8 w-16 rounded-md bg-muted align-middle" aria-label="กำลังโหลด" /> : value}
+        </p>
+        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+      </div>
+    </div>
+  ) : (
     <>
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {Icon && <Icon className="size-4 shrink-0" aria-hidden="true" />}
         <span className="truncate">{label}</span>
       </p>
-      <p className={cn("mt-1 text-2xl font-semibold tabular-nums sm:text-3xl", kpiValueTone[tone])}>
+      <p className={cn("mt-1 text-2xl font-semibold tabular-nums sm:text-3xl", kpiValueTone[tone as Exclude<KpiTone, Pastel>])}>
         {loading ? <span className="inline-block h-8 w-16 rounded-md bg-muted align-middle" aria-label="กำลังโหลด" /> : value}
       </p>
       {hint && <p className="mt-0.5 truncate text-xs text-muted-foreground">{hint}</p>}
     </>
   );
-  const cls = cn("min-w-0 rounded-2xl border bg-card p-4 text-left sm:p-5", kpiTone[tone]);
+  const cls = cn("min-w-0 rounded-2xl border bg-card p-4 text-left shadow-card sm:p-5", pastel ? "border-transparent" : kpiTone[tone as Exclude<KpiTone, Pastel>]);
   return onClick ? (
-    <button type="button" onClick={onClick} className={cn(cls, "cursor-pointer transition-colors hover:border-input focus-visible:outline-2 focus-visible:outline-ring")}>
+    <button type="button" onClick={onClick} style={style} className={cn(cls, "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring")}>
       {body}
     </button>
   ) : (
-    <div className={cls}>{body}</div>
+    <div className={cls} style={style}>{body}</div>
   );
 }
 
@@ -132,7 +156,7 @@ export function QuickActions({ items, label = "ทางลัด" }: { items: Q
           <span className="min-w-0 flex-1 truncate">{a.label}</span>
           {a.soon && (
             <span
-              className={cn("shrink-0 rounded-full px-1.5 text-[10px] font-normal", a.primary ? "bg-black/15" : "bg-muted text-muted-foreground")}
+              className={cn("shrink-0 rounded-full px-1.5 text-[10px] font-normal", a.primary ? "bg-white/20" : "bg-muted text-muted-foreground")}
               title={`หน้านี้จะเปิดใช้งานใน ${a.soon}`}
             >
               เร็ว ๆ นี้

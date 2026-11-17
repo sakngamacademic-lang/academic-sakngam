@@ -3,11 +3,81 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Dark Premium Editorial — ค่าจาก docs/design/DESIGN-SYSTEM.md (แหล่งเดียวกับ mockup)
- * 1) Palette ของ Design System (ใช้ตรงในแผนภูมิและส่วนเน้น)
- * 2) Semantic tokens แบบ shadcn/ui ที่ map มาจาก palette — คอมโพเนนต์เดิมทุกตัวได้ธีมใหม่โดยไม่ต้องแก้ทีละไฟล์
+ * Modern Academic Light (ค่าเริ่มต้น) — Design tokens ส่วนกลาง: ทุกคอมโพเนนต์ใช้ผ่าน semantic tokens ด้านล่าง ไม่กำหนดสีรายหน้า
+ * ธีมมืดเดิม (Dark Premium) ยังใช้ได้ผ่านคลาส .dark บน <html>
  */
 :root {
+  /* 1) Palette — Sak Ngam Academic */
+  --navy-900: #17233b;
+  --navy-800: #19345e;
+  --navy-700: #173b78;
+  --navy-600: #2456a6;
+  --gold: #e5a83b;
+  --gold-soft: #fbe7bf;
+  --bg-0: #f6f8fc;
+  --bg-1: #ffffff;
+  --bg-2: #eef2f8;
+  --surface-solid: #f1f5fb;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --text-1: #17233b;
+  --text-2: #334155;
+  --text-3: #64748b;
+  /* สีแผนภูมิ (อ่านได้บนพื้นขาว) */
+  --violet: #6d5bd0;
+  --indigo: #2456a6;
+  --cyan: #0e7490;
+  --mint: #0f8a74;
+  --amber: #c27a0e;
+  --rose: #d6334f;
+  --chart-accent: var(--navy-700);
+
+  /* พาสเทลสำหรับการ์ดสถิติ (พื้น / ไอคอน) */
+  --tone-orange-bg: #fff5e8; --tone-orange-fg: #b45309;
+  --tone-blue-bg: #eef5ff;   --tone-blue-fg: #1d4ed8;
+  --tone-green-bg: #ecf9f1;  --tone-green-fg: #15803d;
+  --tone-purple-bg: #f4f0ff; --tone-purple-fg: #6d28d9;
+  --tone-pink-bg: #fff0f4;   --tone-pink-fg: #be185d;
+  --tone-indigo-bg: #eef0ff; --tone-indigo-fg: #4338ca;
+
+  /* 2) Semantic */
+  --radius: 0.875rem;
+  --background: var(--bg-0);
+  --foreground: var(--text-1);
+  --card: var(--bg-1);
+  --card-foreground: var(--text-1);
+  --popover: var(--bg-1);
+  --popover-foreground: var(--text-1);
+  --primary: var(--navy-700);
+  --primary-hover: var(--navy-600);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-solid);
+  --secondary-foreground: var(--text-1);
+  --muted: var(--bg-2);
+  --muted-foreground: var(--text-3);
+  --accent: #eaf1fb;
+  --accent-foreground: var(--navy-700);
+  --destructive: #c62828;
+  --success: #15803d;
+  --warning: #b45309;
+  --info: #0369a1;
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--navy-600);
+  --shadow-card: 0 1px 2px rgb(23 35 59 / 0.04), 0 4px 16px rgb(23 35 59 / 0.05);
+  /* Sidebar กรมท่า (ทั้งสองธีม) */
+  --sidebar: var(--navy-800);
+  --sidebar-gradient: linear-gradient(180deg, #1f4278 0%, #19345e 45%, #142b4e 100%);
+  --sidebar-foreground: #e6ecf7;
+  --sidebar-muted: #a9b8d3;
+  --sidebar-accent: rgb(255 255 255 / 0.1);
+  --sidebar-active: var(--gold-soft);
+  --sidebar-active-foreground: var(--navy-900);
+  color-scheme: light;
+}
+
+/* ธีมมืดเดิม — เปิดด้วยปุ่มสลับธีม (เก็บค่าในเครื่องผู้ใช้) */
+:root.dark {
   /* 1) Palette */
   --bg-0: #06070d;
   --bg-1: #0a0d19;
@@ -54,6 +124,18 @@
   --sidebar-foreground: var(--text-2);
   --sidebar-muted: var(--text-3);
   --sidebar-accent: rgba(139, 124, 246, 0.16);
+  --sidebar-gradient: linear-gradient(180deg, var(--bg-1), var(--bg-1));
+  --sidebar-active: rgba(139, 124, 246, 0.22);
+  --sidebar-active-foreground: #ffffff;
+  --primary-hover: #a094ff;
+  --shadow-card: none;
+  --gold-soft: rgba(247, 197, 107, 0.2);
+  --tone-orange-bg: rgba(247,197,107,.08); --tone-orange-fg: var(--amber);
+  --tone-blue-bg: rgba(56,214,245,.08);    --tone-blue-fg: var(--cyan);
+  --tone-green-bg: rgba(94,234,212,.08);   --tone-green-fg: var(--mint);
+  --tone-purple-bg: rgba(139,124,246,.1);  --tone-purple-fg: var(--violet);
+  --tone-pink-bg: rgba(251,123,147,.08);   --tone-pink-fg: var(--rose);
+  --tone-indigo-bg: rgba(109,124,255,.1);  --tone-indigo-fg: var(--indigo);
   color-scheme: dark;
 }
 
@@ -89,6 +171,10 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --shadow-card: var(--shadow-card);
 }
 
 @layer base {
@@ -104,7 +190,22 @@
     line-height: 1.7;
   }
   h1, h2, h3, h4 {
-    line-height: 1.4;
+    line-height: 1.45;
+  }
+  /* โฟกัสชัดเจนสำหรับผู้ใช้คีย์บอร์ด */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ลดการเคลื่อนไหวตามการตั้งค่าของผู้ใช้ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

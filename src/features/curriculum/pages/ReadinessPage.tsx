@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileDown, Loader2, Plus, Printer } from "lucide-react";
+import { AlertTriangle, BookOpen, BookOpenCheck, ClipboardCheck, ClipboardList, FileDown, FileText, Layers, Loader2, Plus, Printer, ShieldCheck, Users, UsersRound } from "lucide-react";
 import { PageHeader } from "@/components/shared";
 import { DashSection, KpiCard } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
@@ -36,25 +36,36 @@ export function ReadinessPage() {
   const s = useQuery({ queryKey: [...key, "summary"], queryFn: () => callRpc<Summary>("academic_readiness_summary", {}) });
   return (
     <>
-      <PageHeader title="ความพร้อมของหลักสูตรและงานวิชาการ" description="นับจากข้อมูลจริงในระบบ — ข้อมูลร่างแสดงแยกจากข้อมูลที่อนุมัติแล้ว" />
+      <PageHeader icon={BookOpen} title="ความพร้อมของหลักสูตรและงานวิชาการ" description="ภาพรวมจากข้อมูลจริงในระบบ — ข้อมูลร่างแสดงแยกจากข้อมูลที่อนุมัติแล้ว" />
       <CurriculumNav />
       {s.isPending ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : s.error ? <p role="alert" className="text-sm text-destructive">{dbErrorMessage(s.error)}</p> : s.data && (
         <>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <KpiCard label="ข้อขัดแย้งที่ยังไม่ตัดสิน" value={s.data.conflicts_open} />
-            <KpiCard label="รายการจาก PDF รอตรวจ" value={s.data.analysis_pending} />
-            <KpiCard label="คำอธิบายรายวิชาอนุมัติแล้ว" value={s.data.syllabi.approved ?? 0} />
-            <KpiCard label="คำอธิบาย/โครงสร้างรอตรวจ" value={(s.data.syllabi.submitted ?? 0) + (s.data.syllabi.reviewed ?? 0)} />
-            <KpiCard label="แผนการสอนที่ส่งแล้ว" value={(s.data.plans.submitted ?? 0) + (s.data.plans.area_approved ?? 0) + (s.data.plans.approved ?? 0)} />
-            <KpiCard label="แผนการสอนอนุมัติแล้ว" value={s.data.plans.approved ?? 0} />
-            <KpiCard label="งานมอบหมายที่ยังค้าง" value={s.data.tasks_open} />
-            <KpiCard label="กลุ่มเรียนพร้อมจัดตาราง" value={`${s.data.timetable.ready}/${s.data.timetable.sections}`} />
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
+            <KpiCard tone="orange" icon={AlertTriangle} label="ข้อขัดแย้งที่ยังไม่ได้ตัดสิน" value={s.data.conflicts_open} />
+            <KpiCard tone="blue" icon={FileText} label="รายการจาก PDF รอตรวจ" value={s.data.analysis_pending} />
+            <KpiCard tone="green" icon={BookOpenCheck} label="คำอธิบายรายวิชาอนุมัติแล้ว" value={s.data.syllabi.approved ?? 0} />
+            <KpiCard tone="purple" icon={Layers} label="คำอธิบาย/โครงสร้างรอตรวจ" value={(s.data.syllabi.submitted ?? 0) + (s.data.syllabi.reviewed ?? 0)} />
+            <KpiCard tone="blue" icon={ClipboardList} label="แผนการสอนที่ส่งแล้ว" value={(s.data.plans.submitted ?? 0) + (s.data.plans.area_approved ?? 0) + (s.data.plans.approved ?? 0)} />
+            <KpiCard tone="green" icon={ShieldCheck} label="แผนการสอนอนุมัติแล้ว" value={s.data.plans.approved ?? 0} />
+            <KpiCard tone="pink" icon={UsersRound} label="งานมอบหมายที่ยังค้าง" value={s.data.tasks_open} />
+            <KpiCard tone="indigo" icon={Users} label="กลุ่มเรียนพร้อมจัดตาราง" value={`${s.data.timetable.ready} / ${s.data.timetable.sections}`}
+              hint={s.data.timetable.sections ? undefined : "ยังไม่มีกลุ่มเรียนในระบบ"} />
           </div>
-          <DashSection id="versions" className="mt-4" title="ความพร้อมของหลักสูตรแต่ละปี">
+          {s.data.timetable.sections > 0 && (
+            <div className="mt-3 rounded-2xl border bg-card p-4 shadow-card">
+              <p className="flex items-center justify-between text-sm font-medium"><span className="flex items-center gap-2"><ClipboardCheck className="size-4" aria-hidden="true" /> ความพร้อมข้อมูลจัดตารางสอน</span>
+                <span className="tabular-nums">{Math.round((s.data.timetable.ready / s.data.timetable.sections) * 100)}%</span></p>
+              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={s.data.timetable.sections} aria-valuenow={s.data.timetable.ready} aria-label="กลุ่มเรียนที่ข้อมูลครบ">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${(s.data.timetable.ready / s.data.timetable.sections) * 100}%` }} />
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">คิดจากกลุ่มเรียนที่มีจำนวนคาบ ครูผู้สอน และห้องเรียนครบ</p>
+            </div>
+          )}
+          <DashSection id="versions" className="mt-4 border-l-4 border-l-[var(--gold)]" title={<span className="flex items-center gap-2"><BookOpen className="size-5 text-[var(--gold)]" aria-hidden="true" /> ความพร้อมของหลักสูตรแต่ละปี</span>}>
             <ul className="space-y-1 text-sm">
               {s.data.versions.map((v) => (
-                <li key={v.label} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
-                  <b>{v.label}</b><Badge variant={v.status === "active" || v.status === "approved" ? "success" : "secondary"}>{VSTATUS[v.status] ?? v.status}</Badge>
+                <li key={v.label} className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 p-3">
+                  <b className="text-base">{v.label}</b><Badge variant={v.status === "active" || v.status === "approved" ? "success" : "info"}>{VSTATUS[v.status] ?? v.status}</Badge>
                   <span className="text-xs text-muted-foreground">รายวิชา {v.subjects} · การจัดรายวิชา {v.offerings} · {v.framework_linked ? "ผูกกรอบแกนกลางแล้ว" : "ยังไม่ผูกกรอบแกนกลาง"}</span>
                 </li>
               ))}

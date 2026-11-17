@@ -17,7 +17,7 @@ export const CHART_PALETTE = [
   "var(--text-3)",
 ] as const;
 
-const TRACK = "rgba(255,255,255,0.08)";
+const TRACK = "var(--line)";
 const TEXT = "var(--text-1)";
 const MUTED = "var(--text-3)";
 const ACCENT = "var(--chart-accent, var(--violet))";

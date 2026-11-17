@@ -48,7 +48,7 @@ export function AssessmentPage() {
             <div role="tablist" aria-label="หมวด" className="flex gap-1">
               {TABS.map((t) => (
                 <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}
-                  className={`h-10 rounded-full border px-4 text-sm ${tab === t.key ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground"}`}>{t.label}</button>
+                  className={`h-10 rounded-full border px-4 text-sm ${tab === t.key ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{t.label}</button>
               ))}
             </div>
           </div>

@@ -140,7 +140,7 @@ function Analytics() {
             <ul className="divide-y text-sm">{byCat.map(([k, n]) => <li key={k} className="flex justify-between py-1.5"><span>{CONFLICT_CATEGORY_LABELS[k as keyof typeof CONFLICT_CATEGORY_LABELS] ?? k}</span><b className="tabular-nums">{n}</b></li>)}</ul>
           )}
         </DashSection>
-        <DashSection id="mapping" title="Mapping ตัวชี้วัด">
+        <DashSection id="mapping" title="การจับคู่ตัวชี้วัด">
           <ul className="grid grid-cols-3 gap-2 text-sm">
             {([["verified", "ยืนยันแล้ว"], ["pending", "รอตรวจ"], ["rejected", "ปฏิเสธ"]] as const).map(([k, l]) => <li key={k} className="rounded-lg border px-3 py-2"><p className="text-xs text-muted-foreground">{l}</p><p className="text-lg font-semibold tabular-nums">{mapping.data?.[k] ?? "…"}</p></li>)}
           </ul>

@@ -19,7 +19,7 @@ export function StructurePage() {
       <div role="tablist" aria-label="ชุดข้อมูล" className="mb-4 flex flex-wrap gap-1">
         {([["verified", "ข้อมูลที่ยืนยันแล้ว"], ["staged", "ข้อมูลรอตรวจ (ยังไม่ยืนยัน)"]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
-            className={cn("h-9 rounded-full border px-3 text-sm", view === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+            className={cn("h-9 rounded-full border px-3 text-sm", view === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
         ))}
       </div>
       {view === "verified" ? <VerifiedStructure /> : <StagedStructure />}

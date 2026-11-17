@@ -133,7 +133,7 @@ function Workbench({ batch, report, canWork, isHead, onDone }: { batch: NonNulla
       <div className="mb-3 flex flex-wrap gap-1" role="tablist">
         {TABS.map((t) => (
           <button key={t.cls} type="button" role="tab" aria-selected={cls === t.cls} onClick={() => { setCls(t.cls); setPage(0); setPicked(new Set()); }}
-            className={cn("rounded-full border px-3 py-1 text-sm", cls === t.cls ? "border-primary/60 bg-primary/15" : "text-muted-foreground")}>
+            className={cn("rounded-full border px-3 py-1 text-sm", cls === t.cls ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground")}>
             {t.label} ({report[t.cls as keyof BatchReport] as number})
           </button>
         ))}

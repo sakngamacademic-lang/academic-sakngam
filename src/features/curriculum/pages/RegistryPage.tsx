@@ -156,7 +156,7 @@ export function RegistryPage() {
 
       <div className="mb-3 flex flex-wrap gap-1" role="tablist">
         {([["subjects", "รายวิชา"], ["programs", "แผน & การจัดวิชา"], ["proposals", `ข้อเสนอ (${reg.data?.proposals.length ?? 0})`], ["compare", "เปรียบเทียบปี"]] as const).map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn("rounded-full border px-3 py-1 text-sm", tab === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground")}>{l}</button>
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={cn("rounded-full border px-3 py-1 text-sm", tab === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground")}>{l}</button>
         ))}
       </div>
 

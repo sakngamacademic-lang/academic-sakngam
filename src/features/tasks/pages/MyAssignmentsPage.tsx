@@ -68,7 +68,7 @@ export function MyAssignmentsPage() {
             onClick={() => setTab(t.key)}
             className={cn(
               "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm whitespace-nowrap",
-              tab === t.key ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground",
+              tab === t.key ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label} <span className="rounded-full bg-muted px-1.5 text-xs tabular-nums">{all.filter(inTab[t.key]).length}</span>

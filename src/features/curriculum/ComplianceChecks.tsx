@@ -22,7 +22,7 @@ export function ComplianceChecks({ rows, programs }: { rows: ComplianceRow[]; pr
       <div className="mb-3 flex flex-wrap gap-1" role="tablist" aria-label="กรองตามสถานะ">
         {([["attention", `ต้องดำเนินการ (${views.length - count("pass")})`], ...CHECK_STATUS_ORDER.map((s) => [s, `${CHECK_STATUS_LABELS[s]} (${count(s)})`])] as [string, string][]).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={filter === k} onClick={() => { setFilter(k as ComplianceStatus | "attention"); setLimit(PAGE); }}
-            className={`rounded-full border px-3 py-1 text-sm ${filter === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground"}`}>{l}</button>
+            className={`rounded-full border px-3 py-1 text-sm ${filter === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground"}`}>{l}</button>
         ))}
       </div>
       {!shown.length && <p className="text-sm text-muted-foreground">ไม่มีรายการในสถานะนี้</p>}

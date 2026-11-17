@@ -18,7 +18,7 @@ import { toast } from "@/lib/toast";
  * ไม่บังคับรูปแบบการสอน · ส่งออก Word (.doc) / พิมพ์เป็น PDF จากเบราว์เซอร์
  */
 type PlanStatus = "draft" | "submitted" | "returned" | "area_approved" | "approved";
-const STATUS: Record<PlanStatus, string> = { draft: "ร่าง", submitted: "รอตรวจ", returned: "ส่งกลับแก้ไข", area_approved: "หัวหน้ากลุ่มสาระเห็นชอบ", approved: "อนุมัติแล้ว" };
+const STATUS: Record<PlanStatus, string> = { draft: "ร่าง (ใช้งานได้)", submitted: "รอตรวจ", returned: "ส่งกลับแก้ไข", area_approved: "หัวหน้ากลุ่มสาระเห็นชอบ", approved: "อนุมัติแล้ว" };
 const TONE: Record<PlanStatus, "secondary" | "warning" | "destructive" | "info" | "success"> = { draft: "secondary", submitted: "warning", returned: "destructive", area_approved: "info", approved: "success" };
 const FIELDS: [string, string][] = [
   ["objective_k", "จุดประสงค์ด้านความรู้ (K)"], ["objective_p", "จุดประสงค์ด้านทักษะ/กระบวนการ (P)"], ["objective_a", "จุดประสงค์ด้านคุณลักษณะ (A)"],
@@ -40,6 +40,17 @@ interface PlanData {
   documents: { id: string; title: string }[];
 }
 
+/** ค่าเริ่มต้นของแผนจากหน่วยการเรียนรู้ (ไม่เขียนทับช่องที่มีข้อความแล้ว) */
+function unitContent(u: { essence: string | null; objectives: string | null; tasks?: string | null; assessment_methods?: string | null }, current: Record<string, string> = {}) {
+  const out: Record<string, string> = {};
+  const put = (k: string, v: string | null | undefined) => { if (v?.trim() && !current[k]?.trim()) out[k] = v.trim(); };
+  put("content", u.essence);
+  put("objective_k", u.objectives);
+  put("tasks", u.tasks);
+  put("tools", u.assessment_methods);
+  return out;
+}
+
 export function LessonPlanPage() {
   const [params, setParams] = useSearchParams();
   const id = params.get("id");
@@ -55,11 +66,11 @@ function PlanList({ onOpen }: { onOpen: (id: string) => void }) {
   const [creating, setCreating] = useState(false);
   return (
     <>
-      <PageHeader title="แผนการจัดการเรียนรู้" description="สร้างแผนจากหน่วยการเรียนรู้ — ระบบดึงรายวิชา ตัวชี้วัด และชั่วโมงให้อัตโนมัติ" actions={<Button onClick={() => setCreating(true)}><Plus /> สร้างแผน</Button>} />
+      <PageHeader title="แผนการสอน" description="เลือกรายวิชาและหน่วยการเรียนรู้ — ระบบดึงรายวิชา ตัวชี้วัด ชั่วโมง สาระสำคัญ และจุดประสงค์ให้อัตโนมัติ" actions={<Button onClick={() => setCreating(true)}><Plus /> สร้างแผน</Button>} />
       <div className="mb-3 flex flex-wrap items-end gap-2">
         <div role="tablist" className="flex gap-1">
           {([["mine", "แผนของฉัน"], ...(reviewer ? [["review", "รอฉันตรวจ"]] : []), ["all", "ค้นหาทั้งหมดที่เห็นได้"]] as [typeof scope, string][]).map(([k, l]) => (
-            <button key={k} type="button" role="tab" aria-selected={scope === k} onClick={() => setScope(k)} className={`h-9 rounded-full border px-3 text-sm ${scope === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground"}`}>{l}</button>
+            <button key={k} type="button" role="tab" aria-selected={scope === k} onClick={() => setScope(k)} className={`h-9 rounded-full border px-3 text-sm ${scope === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground"}`}>{l}</button>
           ))}
         </div>
         <FormField label="ค้นหารายวิชา/ครู/ชื่อแผน" htmlFor="pq"><Input id="pq" value={q} onChange={(e) => setQ(e.target.value)} /></FormField>
@@ -83,6 +94,8 @@ function PlanList({ onOpen }: { onOpen: (id: string) => void }) {
 function CreatePlan({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const subjects = useMySubjects();
   const [sid, setSid] = useState("");
+  const only = subjects.data?.length === 1 ? subjects.data[0]!.subject_id : "";
+  if (!sid && only) setSid(only);
   const subj = subjects.data?.find((s) => s.subject_id === sid);
   const syl = useSyllabus(subj?.syllabus_id ?? null);
   const [busy, setBusy] = useState(false);
@@ -93,7 +106,16 @@ function CreatePlan({ onClose, onCreated }: { onClose: () => void; onCreated: (i
       const f = new FormData(e.currentTarget);
       setBusy(true);
       try {
-        onCreated(await callRpc<string>("lesson_plan_create", { p_subject_id: sid, p_unit_id: String(f.get("unit") || "") || null, p_title: String(f.get("title") ?? "") }));
+        const unitId = String(f.get("unit") || "") || null;
+        const newId = await callRpc<string>("lesson_plan_create", { p_subject_id: sid, p_unit_id: unitId, p_title: String(f.get("title") ?? "") });
+        const u = syl.data?.units.find((x) => x.id === unitId);
+        const filled = u ? unitContent(u) : {};
+        if (Object.keys(filled).length) {
+          // เติมเนื้อหาจากหน่วยการเรียนรู้ให้อัตโนมัติ (ครูแก้ต่อได้) — ไม่ต้องกรอกซ้ำ
+          const r = await requireSupabase().from("lesson_plans").update({ content: filled }).eq("id", newId);
+          if (r.error) toast.error(dbErrorMessage(r.error));
+        }
+        onCreated(newId);
       } catch (err) { toast.error(dbErrorMessage(err)); } finally { setBusy(false); }
     }}>
       <FormField label="รายวิชา" htmlFor="ps"><Select id="ps" value={sid} onChange={(e) => setSid(e.target.value)} required>
@@ -102,7 +124,7 @@ function CreatePlan({ onClose, onCreated }: { onClose: () => void; onCreated: (i
       <FormField label="หน่วยการเรียนรู้" htmlFor="pu" hint={subj && !subj.syllabus_id ? "รายวิชานี้ยังไม่มีโครงสร้างรายวิชา — สร้างแผนโดยไม่ผูกหน่วยได้" : undefined}>
         <Select id="pu" name="unit" disabled={!syl.data?.units.length}><option value="">ไม่ระบุ</option>{(syl.data?.units ?? []).map((u) => <option key={u.id} value={u.id}>หน่วยที่ {u.seq} {u.title}</option>)}</Select>
       </FormField>
-      <FormField label="ชื่อแผน (เว้นว่าง = ชื่อหน่วย)" htmlFor="pt"><Input id="pt" name="title" maxLength={300} /></FormField>
+      <FormField label="ชื่อแผน (เว้นว่าง = ชื่อหน่วย)" htmlFor="pt" hint="ระบบดึงรายวิชา ชั่วโมง ตัวชี้วัด สาระสำคัญ จุดประสงค์ และภาระงานจากหน่วยให้อัตโนมัติ"><Input id="pt" name="title" maxLength={300} /></FormField>
       <div className="flex gap-2 sm:col-span-3"><Button type="submit" size="sm" disabled={busy || !sid}>{busy ? <Loader2 className="animate-spin" /> : <Plus />} สร้าง</Button><Button type="button" size="sm" variant="ghost" onClick={onClose}>ยกเลิก</Button></div>
     </form>
   );
@@ -140,12 +162,13 @@ function PlanEditor({ id, onBack, onOpen }: { id: string; onBack: () => void; on
         {d.unit && <p className="text-sm">หน่วยที่ {d.unit.seq} {d.unit.title} · {p.hours ?? d.unit.hours ?? "–"} ชั่วโมง</p>}
         {p.copied_from_title && <p className="text-xs text-muted-foreground">คัดลอกจาก: {p.copied_from_title}</p>}
       </header>
+      {w && <p className="rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-sm print:hidden">ช่องต่าง ๆ บันทึกอัตโนมัติเมื่อพิมพ์เสร็จ · ฉบับร่างใช้งานและดาวน์โหลด Word/PDF ได้ทันที ไม่ต้องส่งตรวจ</p>}
       <section className="rounded-xl border p-3 text-sm" aria-label="ข้อมูลจากหน่วยการเรียนรู้">
         <p className="font-medium">มาตรฐานและตัวชี้วัด (ดึงจากโครงสร้างรายวิชา)</p>
-        {d.targets.length ? <ul className="list-disc pl-5">{d.targets.map((t) => <li key={t.code}><code className="text-xs">{t.code}</code> {t.statement_th}</li>)}</ul> : <p className="text-xs text-muted-foreground">ยังไม่มี — ผูกตัวชี้วัดกับหน่วยในหน้าโครงสร้างรายวิชา</p>}
+        {d.targets.length ? <ul className="list-disc pl-5">{d.targets.map((t) => <li key={t.code}><code className="text-xs">{t.code}</code> {t.statement_th}</li>)}</ul> : <p className="text-xs text-muted-foreground">ยังไม่มี — เลือกตัวชี้วัดให้หน่วยที่หน้า “คำอธิบายรายวิชา” ขั้นที่ 3 แล้วระบบจะแสดงที่นี่อัตโนมัติ</p>}
         {d.unit?.essence && <p className="mt-2"><b>สาระสำคัญ:</b> {d.unit.essence}</p>}
       </section>
-      <section className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2" aria-label="รายละเอียดแผน">
+      <section key={Object.keys(p.content).sort().join()} className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2" aria-label="รายละเอียดแผน">
         <FormField label="ชื่อแผน" htmlFor="tt"><Input id="tt" defaultValue={p.title} disabled={!w} onBlur={(e) => e.target.value.trim() && e.target.value !== p.title && save({ title: e.target.value.trim() })} /></FormField>
         <FormField label="รูปแบบการสอน (ไม่บังคับ)" htmlFor="tm"><Input id="tm" list="models" defaultValue={p.teaching_model ?? ""} disabled={!w} onBlur={(e) => e.target.value !== (p.teaching_model ?? "") && save({ teaching_model: e.target.value.trim() || null })} /></FormField>
         <datalist id="models">{MODELS.map((m) => <option key={m} value={m} />)}</datalist>
@@ -170,7 +193,8 @@ function PlanEditor({ id, onBack, onOpen }: { id: string; onBack: () => void; on
           {!d.reviews.length && <li className="text-xs text-muted-foreground">ยังไม่มี</li>}</ol>
       </section>
       <div className="sticky bottom-2 z-10 flex flex-wrap gap-2 rounded-xl border bg-card p-2 shadow-sm print:hidden">
-        {w && <Button size="sm" disabled={busy} onClick={() => window.confirm("ส่งแผนนี้ให้หัวหน้ากลุ่มสาระตรวจ?") && act("submit")}><Send /> ส่งตรวจ</Button>}
+        {w && d.unit && Object.keys(unitContent(d.unit, p.content)).length > 0 && <Button size="sm" disabled={busy} onClick={() => save({ content: { ...p.content, ...unitContent(d.unit!, p.content) } })}><Copy /> เติมข้อมูลจากหน่วยการเรียนรู้</Button>}
+        {w && <Button size="sm" variant="outline" disabled={busy} onClick={() => window.confirm("ส่งแผนนี้ให้หัวหน้ากลุ่มสาระตรวจเป็นเอกสารทางการ? ระหว่างตรวจจะแก้ไขไม่ได้") && act("submit")}><Send /> ส่งตรวจ (ถ้าโรงเรียนกำหนด)</Button>}
         {!p.is_owner && can("curriculum.edit") && p.status === "submitted" && <Button size="sm" variant="outline" disabled={busy} onClick={() => act("area_approve", window.prompt("ความเห็น (ถ้ามี)") ?? undefined)}><Check /> เห็นชอบ</Button>}
         {!p.is_owner && can("curriculum.manage") && ["area_approved", "submitted"].includes(p.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => window.confirm("อนุมัติแผนนี้?") && act("approve")}><Check /> อนุมัติ</Button>}
         {!p.is_owner && can("curriculum.edit") && ["submitted", "area_approved"].includes(p.status) && <Button size="sm" variant="ghost" disabled={busy} onClick={() => { const n = window.prompt("ระบุจุดที่ต้องแก้ไข"); if (n?.trim()) void act("return", n.trim()); }}><Undo2 /> ส่งกลับแก้ไข</Button>}

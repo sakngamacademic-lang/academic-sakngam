@@ -18,7 +18,7 @@ const COVERAGE_FILTERS = [
   { value: "", label: "ทั้งหมด" },
   { value: "verified", label: "มีความสัมพันธ์ที่ยืนยันแล้ว" },
   { value: "pending_review", label: "รอตรวจ" },
-  { value: "unmapped", label: "ยังไม่มี Mapping" },
+  { value: "unmapped", label: "ยังไม่จับคู่" },
   { value: "evidence", label: "หลักฐานไม่ครบ" },
   { value: "duplicate", label: "อาจซ้ำซ้อน" },
 ];
@@ -28,12 +28,12 @@ export function IndicatorsPage() {
   const [tab, setTab] = useState<"gap" | "review" | "framework">("gap");
   return (
     <>
-      <PageHeader title="ตัวชี้วัด & Curriculum Mapping" description="Mapping บอกความสัมพันธ์ที่ตรวจแล้ว — ไม่ได้หมายความว่าเรียนหรือสอนครบ" />
+      <PageHeader title="มาตรฐานและตัวชี้วัด" description="การจับคู่บอกความสัมพันธ์ที่ตรวจแล้ว — ไม่ได้หมายความว่าเรียนหรือสอนครบ" />
       <CurriculumNav />
       <div role="tablist" aria-label="มุมมอง" className="mb-4 flex flex-wrap gap-1">
-        {([["gap", "Coverage / Gap"], ["review", "ตรวจ Mapping"], ["framework", "ทะเบียนมาตรฐานและตัวชี้วัด"]] as const).map(([k, l]) => (
+        {([["gap", "ความครอบคลุมและส่วนที่ขาด"], ["review", "ตรวจการจับคู่"], ["framework", "ทะเบียนมาตรฐานและตัวชี้วัด"]] as const).map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={cn("h-9 rounded-full border px-3 text-sm", tab === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground hover:text-foreground")}>
+            className={cn("h-9 rounded-full border px-3 text-sm", tab === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
             {l}
           </button>
         ))}
@@ -73,12 +73,12 @@ function GapReport() {
               ชุดข้อมูลอ้างอิง (Reference Dataset) ของกรอบแกนกลางยังไม่ครบ — ตัวเลขด้านล่างเป็น <b>รายงานเบื้องต้น</b> ไม่แสดงเปอร์เซ็นต์ความครอบคลุม
             </Notice>
           )}
-          <section aria-label="สรุป Coverage" className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <section aria-label="สรุปความครอบคลุม" className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
             <KpiCard label="ตัวชี้วัดในชุดอ้างอิง" value={total} loading={q.isPending} />
-            <KpiCard label="Mapping ยืนยันแล้ว" tone="ok" value={d?.verified ?? 0} loading={q.isPending}
+            <KpiCard label="จับคู่ที่ยืนยันแล้ว" tone="ok" value={d?.verified ?? 0} loading={q.isPending}
               hint={complete && total ? `${Math.round(((d?.verified ?? 0) / total) * 100)}% ของชุดอ้างอิง` : undefined} />
             <KpiCard label="รอตรวจ" tone="accent" value={d?.pending ?? 0} loading={q.isPending} />
-            <KpiCard label="ยังไม่มี Mapping" tone="alert" value={d?.unmapped ?? 0} loading={q.isPending} />
+            <KpiCard label="ยังไม่จับคู่" tone="alert" value={d?.unmapped ?? 0} loading={q.isPending} />
           </section>
           <DashSection id="coverage" title={<span className="flex items-center gap-2">รายการตัวชี้วัด <LiveBadge /></span>}>
             {q.error && <p role="alert" className="text-sm text-destructive">{dbErrorMessage(q.error)}</p>}
@@ -88,7 +88,7 @@ function GapReport() {
                   <span><code className="text-xs">{r.full_code}</code> <span className="text-xs text-muted-foreground">{r.area_code} · {r.grade_code}</span></span>
                   <span className="flex flex-wrap gap-1">
                     <Badge variant={r.coverage_status === "verified" ? "success" : r.coverage_status === "pending_review" ? "warning" : "outline"}>
-                      {r.coverage_status === "verified" ? `ยืนยันแล้ว ${r.verified_count}` : r.coverage_status === "pending_review" ? "รอตรวจ" : "ยังไม่มี Mapping"}
+                      {r.coverage_status === "verified" ? `ยืนยันแล้ว ${r.verified_count}` : r.coverage_status === "pending_review" ? "รอตรวจ" : "ยังไม่จับคู่"}
                     </Badge>
                     {r.evidence_incomplete && <Badge variant="warning">หลักฐานไม่ครบ</Badge>}
                     {r.possible_duplicate && <Badge variant="info">อาจซ้ำซ้อน</Badge>}
@@ -123,7 +123,7 @@ function MappingReview() {
     <>
       <div className="mb-4"><VersionPicker value={sel.selected?.id ?? ""} onChange={sel.select} versions={sel.versions} /></div>
       {!editable && <Notice>ตรวจ mapping ได้เฉพาะฉบับร่าง และผู้มีสิทธิ์แก้ไขหลักสูตรของกลุ่มสาระนั้น</Notice>}
-      <DashSection id="pending" title="Mapping รอตรวจ" meta={`${q.data?.length ?? 0} รายการ`}>
+      <DashSection id="pending" title="จับคู่ที่รอตรวจ" meta={`${q.data?.length ?? 0} รายการ`}>
         {!q.data?.length ? <p className="text-sm text-muted-foreground">ไม่มีรายการรอตรวจ</p> : (
           <ul className="divide-y text-sm">
             {q.data.map((m) => (

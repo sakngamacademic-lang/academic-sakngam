@@ -526,7 +526,7 @@ function ComparisonSection() {
           <div className="mb-3 flex flex-wrap gap-1" role="tablist">
             {(["all", ...VERDICT_ORDER] as const).map((k) => (
               <button key={k} type="button" role="tab" aria-selected={filter === k} onClick={() => setFilter(k)}
-                className={`rounded-full border px-3 py-1 text-sm ${filter === k ? "border-primary/60 bg-primary/15" : "text-muted-foreground"}`}>
+                className={`rounded-full border px-3 py-1 text-sm ${filter === k ? "border-primary bg-primary font-medium text-primary-foreground" : "text-muted-foreground"}`}>
                 {k === "all" ? `ทั้งหมด (${rows.length})` : `${VERDICT_LABELS[k]} (${count(k)})`}
               </button>
             ))}

@@ -1,4 +1,4 @@
-import { Bell, BookOpenCheck, FileText, FolderLock, LayoutDashboard, UserRound, Users } from "lucide-react";
+import { Bell, BookOpenCheck, BookText, FileText, FolderLock, LayoutDashboard, UserRound, Users } from "lucide-react";
 import type { PortalConfig } from "@/features/navigation/types";
 import { TEACHER_ROLES } from "@/features/auth/roles";
 
@@ -20,6 +20,7 @@ export const teacherPortal: PortalConfig = {
     {
       title: "การสอน",
       items: [
+        { path: "courses-plan", label: "คำอธิบาย & โครงสร้างรายวิชา", icon: BookText },
         { path: "courses", label: "คะแนนและผลการเรียน", icon: BookOpenCheck },
         { path: "homeroom", label: "ห้องที่ปรึกษา", icon: Users, plannedPhase: "Phase 2" },
       ],

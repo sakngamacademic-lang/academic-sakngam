@@ -20,6 +20,7 @@ const TABS = [
   { to: "/office/curriculum/analysis", label: "วิเคราะห์เอกสาร (อัตโนมัติ)" },
   { to: "/office/curriculum/decisions", label: "สรุปตัดสินข้อขัดแย้ง" },
   { to: "/office/curriculum/conflicts", label: "ข้อขัดแย้ง" },
+  { to: "/office/curriculum/syllabi", label: "คำอธิบาย/โครงสร้างรายวิชา" },
   { to: "/office/curriculum/reports", label: "รายงาน" },
   { to: "/office/curriculum/registry", label: "ทะเบียนรายวิชากลาง" },
   { to: "/office/curriculum/workbench", label: "ตรวจหลักสูตร (หน้าเดียว)" },

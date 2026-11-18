@@ -21,7 +21,8 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     { to: "/office/curriculum/structure", label: "รายวิชาในแต่ละชั้น", hint: "วิชาที่เรียนในแต่ละชั้น/ภาคเรียน" },
     { to: "/office/curriculum/programs", label: "แผนการเรียน", hint: "เช่น วิทย์–คณิต ศิลป์–ภาษา" },
     { to: "/office/curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
-    { to: "/office/curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", hint: "สิ่งที่นักเรียนต้องรู้และทำได้" }] },
+    { to: "/office/curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", hint: "สิ่งที่นักเรียนต้องรู้และทำได้" },
+    { to: "/office/curriculum/coverage", label: "ความครอบคลุมมาตรฐาน", hint: "มาตรฐานใดครอบคลุมแล้ว/ต้องตรวจ" }] },
   { label: "จัดทำรายวิชา", items: [{ to: "/office/curriculum/syllabi", label: "คำอธิบายรายวิชา", hint: "เขียนคำอธิบายและหน่วยการเรียนรู้" }] },
   { label: "แผนการสอน", items: [{ to: "/office/curriculum/lesson-plans", label: "แผนการสอน", hint: "แผนการจัดการเรียนรู้รายหน่วย" }] },
   { label: "รายงานและส่งออก", items: [

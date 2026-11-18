@@ -27,6 +27,7 @@ const LessonPlans = page(() => import("@/features/lesson-plans/LessonPlanPage"),
 const Readiness = page(() => import("./pages/ReadinessPage"), "ReadinessPage");
 const Mapping = page(() => import("@/features/mapping/MappingPage"), "MappingPage");
 const Viewer = page(() => import("./pages/CurriculumStructureViewer"), "CurriculumStructureViewer");
+const Coverage = page(() => import("@/features/mapping/CoveragePage"), "CoveragePage");
 const Present = page(() => import("./presentation/PresentationPage"), "PresentationPage");
 const InternalReview = page(() => import("./presentation/InternalReviewPage"), "InternalReviewPage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
@@ -58,6 +59,7 @@ export const curriculumPages: Record<string, ReactElement> = {
   "curriculum/readiness": wrap(<Readiness />),
   "curriculum/mapping": wrap(<Mapping />),
   "curriculum/present": wrap(<Present />),
+  "curriculum/coverage": wrap(<Coverage />),
   "curriculum/internal-review": wrap(<InternalReview />),
 };
 

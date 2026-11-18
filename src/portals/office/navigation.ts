@@ -54,6 +54,7 @@ export const officePortal: PortalConfig = {
         { path: "curriculum/structure", label: "รายวิชาในแต่ละชั้น", icon: ListChecks, hint: "วิชาที่เรียนในแต่ละชั้นและภาคเรียน" },
         { path: "curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", icon: BookOpen, hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
         { path: "curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", icon: Target, hint: "สิ่งที่นักเรียนต้องรู้และทำได้" },
+        { path: "curriculum/coverage", label: "ความครอบคลุมมาตรฐาน", icon: ListChecks, hint: "มาตรฐานใดครอบคลุมแล้ว/ต้องตรวจ" },
       ],
     },
     {

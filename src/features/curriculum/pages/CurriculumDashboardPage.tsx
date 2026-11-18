@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { CategorySection } from "../categories/CategorySection";
 import { AlertTriangle, BookOpen, ClipboardCheck, Inbox, Layers, ListChecks, Target } from "lucide-react";
 import { PageHeader } from "@/components/shared";
 import { DashSection, KpiCard, LiveBadge } from "@/components/dashboard";
@@ -57,6 +59,7 @@ export function CurriculumDashboardPage() {
       )}
 
       {!noData && <Analytics />}
+      {!noData && <CategoryBlock versions={versions} />}
 
       {inUse.length > 0 && (
         <DashSection id="in-use" className="mt-6" title={<span className="flex items-center gap-2">หลักสูตรที่อนุมัติ / ใช้อยู่ <LiveBadge /></span>}>
@@ -72,6 +75,23 @@ export function CurriculumDashboardPage() {
           </ul>
         </DashSection>
       )}
+    </>
+  );
+}
+
+/** ประเภทหลักสูตรและเกณฑ์ประเมิน — เลือกฉบับหลักสูตร (ค่าเริ่มต้น: ฉบับที่ใช้งาน → ฉบับล่าสุดที่ยังไม่เลิกใช้) */
+function CategoryBlock({ versions }: { versions: ReturnType<typeof allVersions> }) {
+  const [id, setId] = useState("");
+  const live = versions.filter((v) => v.status !== "retired");
+  const v = versions.find((x) => x.id === id) ?? live.find((x) => x.status === "active") ?? live[0] ?? versions[0];
+  if (!v) return null;
+  return (
+    <>
+      {versions.length > 1 && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">ฉบับหลักสูตรสำหรับจัดหมวดและเกณฑ์:</span>
+          <VersionPicker value={v.id} onChange={setId} versions={versions} /></div>
+      )}
+      <CategorySection versionId={v.id} versionLabel={`${v.curriculum_name} ${v.version_label}`} />
     </>
   );
 }

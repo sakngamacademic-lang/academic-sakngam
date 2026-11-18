@@ -12,6 +12,8 @@ export interface NavItem {
   roles?: readonly AppRole[];
   /** คำอธิบายสั้น ๆ ภาษาง่าย (แสดงเป็น tooltip) */
   hint?: string;
+  /** จัดกลุ่มเฉพาะใน UI: รายการที่ group เดียวกันแสดงเป็นเมนูย่อยเดียว (รายการแรกที่มองเห็นเป็นลิงก์หลัก ที่เหลือเป็นลิงก์ย่อยเมื่ออยู่ในกลุ่มนั้น) · route/สิทธิ์ของแต่ละรายการคงเดิม */
+  group?: string;
 }
 
 export interface NavSection {
@@ -19,6 +21,8 @@ export interface NavSection {
   items: NavItem[];
   /** true = อยู่ในกล่องพับ “เครื่องมือฝ่ายวิชาการ” (งานเชิงเทคนิค/งานประจำ ไม่ใช่เมนูหลัก) */
   tools?: boolean;
+  /** แสดงเป็นเมนูหลักแบบพับ/ขยาย (Accordion) พร้อมไอคอน */
+  accordion?: { icon: LucideIcon };
 }
 
 export interface PortalConfig {

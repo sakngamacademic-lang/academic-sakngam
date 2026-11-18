@@ -38,14 +38,17 @@ export function useCategoryData(versionId: string | null) {
     queryKey: [...catKey, versionId], enabled: !!versionId,
     queryFn: async (): Promise<CategoryData> => {
       const v = versionId!;
-      const [programs, subjects, offerings, activities] = await Promise.all([
+      const [programs, subjects, offerings, activities, outcomes] = await Promise.all([
         all<ProgramRow>((a, b) => sb().from("study_programs").select("id, code, name_th, stage, source_document_id, source_locator").eq("curriculum_version_id", v).order("code").range(a, b)),
         all<{ id: string; code: string; name_th: string; subject_type: string; description_th: string | null; credits: number | null; learning_hours: number | null; source_document_id: string | null; source_locator: string | null; grade_levels: { code: string } | null }>((a, b) =>
           sb().from("subjects").select("id, code, name_th, subject_type, description_th, credits, learning_hours, source_document_id, source_locator, grade_levels(code)").eq("curriculum_version_id", v).order("code").range(a, b)),
         all<{ subject_id: string; study_program_id: string | null }>((a, b) => sb().from("subject_offerings").select("subject_id, study_program_id").eq("curriculum_version_id", v).range(a, b)),
         all<{ id: string; activity_type: string; name_th: string; activity_hours: number; study_program_id: string | null; source_document_id: string; source_locator: string; grade_levels: { code: string } | null }>((a, b) =>
           sb().from("learning_activities").select("id, activity_type, name_th, activity_hours, study_program_id, source_document_id, source_locator, grade_levels(code)").eq("curriculum_version_id", v).range(a, b)),
+        all<{ subject_id: string; statement_th: string }>((a, b) => sb().from("subject_learning_outcomes").select("subject_id, statement_th").eq("curriculum_version_id", v).order("code").range(a, b)),
       ]);
+      const outOf = new Map<string, string[]>();
+      for (const o of outcomes) (outOf.get(o.subject_id) ?? outOf.set(o.subject_id, []).get(o.subject_id)!).push(o.statement_th);
       const progOf = new Map<string, Set<string>>();
       for (const o of offerings) if (o.study_program_id) (progOf.get(o.subject_id) ?? progOf.set(o.subject_id, new Set()).get(o.subject_id)!).add(o.study_program_id);
       let installed = true;
@@ -62,7 +65,7 @@ export function useCategoryData(versionId: string | null) {
       }
       return {
         programs,
-        subjects: subjects.map((s) => ({ id: s.id, code: s.code, name_th: s.name_th, subject_type: s.subject_type, description_th: s.description_th, grade: schoolGrade(s.grade_levels?.code),
+        subjects: subjects.map((s) => ({ id: s.id, code: s.code, name_th: s.name_th, subject_type: s.subject_type, description_th: s.description_th, outcomes: outOf.get(s.id) ?? [], grade: schoolGrade(s.grade_levels?.code),
           program_ids: [...(progOf.get(s.id) ?? [])], source_document_id: s.source_document_id, source_locator: s.source_locator, hours: s.learning_hours, credits: s.credits })),
         activities: activities.map((x) => ({ id: x.id, activity_type: x.activity_type, name_th: x.name_th, activity_hours: x.activity_hours, study_program_id: x.study_program_id,
           grade: schoolGrade(x.grade_levels?.code), source_document_id: x.source_document_id, source_locator: x.source_locator })),

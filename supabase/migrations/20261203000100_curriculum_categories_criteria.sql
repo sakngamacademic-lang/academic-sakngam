@@ -81,6 +81,9 @@ create table public.criteria_evidence (
   check (result not in ('direct', 'partial') or (status = 'confirmed' and source_document_id is not null and source_locator is not null)),
   check (status <> 'rejected' or length(btrim(coalesce(note, ''))) > 0)
 );
+comment on table public.curriculum_category_links is 'การจัดหมวดหลักสูตร (หลายหมวดได้) — ไม่แก้ subjects.subject_type · เขียนผ่าน curriculum_category_set เท่านั้น';
+comment on table public.assessment_criteria is 'ทะเบียนเกณฑ์ประเมิน (บันทึกจากเอกสารต้นฉบับโดยคน) — ยืนยันได้เมื่อมีเอกสาร+เลขหน้า';
+comment on table public.criteria_evidence is 'หลักฐานตามเกณฑ์ — ตรงเกณฑ์/บางส่วนต้องคนยืนยัน มีที่มา และเกณฑ์ต้องยืนยันแล้ว';
 create index criteria_evidence_criterion_idx on public.criteria_evidence (criterion_id, curriculum_version_id);
 
 do $$
@@ -179,10 +182,14 @@ end $$;
 create or replace function public.criteria_evidence_set(p_criterion_id uuid, p_version_id uuid, p_target_type text, p_target_id uuid, p_result text, p_status text,
   p_note text default null, p_source_document_id uuid default null, p_source_locator text default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare v_id uuid;
+declare v_id uuid; v_crit text;
 begin
   perform private.require_curriculum_admin();
-  if not exists (select 1 from public.assessment_criteria where id = p_criterion_id and school_id = private.current_school_id() and status <> 'retired') then raise exception 'ไม่พบเกณฑ์'; end if;
+  select status into v_crit from public.assessment_criteria where id = p_criterion_id and school_id = private.current_school_id() and status <> 'retired';
+  if not found then raise exception 'ไม่พบเกณฑ์'; end if;
+  if not exists (select 1 from public.curriculum_versions where id = p_version_id and school_id = private.current_school_id()) then raise exception 'ไม่พบฉบับหลักสูตร'; end if;
+  -- หลักฐาน “ตรงเกณฑ์/บางส่วน” ต้องอ้างเกณฑ์ที่ยืนยันกับต้นฉบับแล้วเท่านั้น
+  if p_result in ('direct', 'partial') and v_crit <> 'verified' then raise exception 'ต้องยืนยันเกณฑ์กับเอกสารต้นฉบับก่อนบันทึกว่าหลักฐานตรงเกณฑ์'; end if;
   if not private.curriculum_target_exists(p_version_id, p_target_type, p_target_id) then raise exception 'ไม่พบหลักฐานที่อ้างถึงในระบบ'; end if;
   insert into public.criteria_evidence (criterion_id, curriculum_version_id, target_type, target_id, result, status, note, source_document_id, source_locator, decided_by, decided_at)
   values (p_criterion_id, p_version_id, p_target_type, p_target_id, p_result, p_status, nullif(btrim(coalesce(p_note, '')), ''), p_source_document_id, p_source_locator,
@@ -197,6 +204,7 @@ end $$;
 revoke all on function private.curriculum_target_exists(uuid, text, uuid), private.require_curriculum_admin(),
   public.curriculum_category_set(uuid, text, text, uuid, text, text, uuid, text), public.assessment_criterion_save(uuid, jsonb),
   public.assessment_criterion_verify(uuid, text), public.criteria_evidence_set(uuid, uuid, text, uuid, text, text, text, uuid, text) from public, anon;
-grant execute on function private.curriculum_target_exists(uuid, text, uuid), private.require_curriculum_admin() to authenticated;
+-- private helpers: เรียกได้เฉพาะภายใน RPC (security definer) — ไม่ให้สิทธิ์ authenticated โดยตรง
+revoke all on function private.curriculum_target_exists(uuid, text, uuid), private.require_curriculum_admin() from authenticated;
 grant execute on function public.curriculum_category_set(uuid, text, text, uuid, text, text, uuid, text), public.assessment_criterion_save(uuid, jsonb),
   public.assessment_criterion_verify(uuid, text), public.criteria_evidence_set(uuid, uuid, text, uuid, text, text, text, uuid, text) to authenticated;

@@ -1,6 +1,6 @@
 // deno test --config supabase/functions/deno.json scripts/curriculum-classify.test.ts — ข้อมูลจำลองเท่านั้น
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { classify, criterionResult, type EvidenceRow } from "../src/features/curriculum/categories/classify.ts";
+import { classify, criterionResult, stageOf, type EvidenceRow } from "../src/features/curriculum/categories/classify.ts";
 
 const P = (id: string, code: string, name: string) => ({ id, code, name_th: name, stage: "upper_secondary", source_document_id: "d", source_locator: "pdf:5" });
 const S = (id: string, code: string, name: string, type: string, progs: string[], desc: string | null = null) =>
@@ -46,4 +46,39 @@ Deno.test("สถานะเกณฑ์: ตรงเกณฑ์นับเ�
   assertEquals(criterionResult([e("pending", "proposed")]), "pending");
   assertEquals(criterionResult([e("partial", "confirmed"), e("pending", "proposed")]), "partial");
   assertEquals(criterionResult([e("direct", "confirmed")]), "direct");
+});
+
+Deno.test("สมรรถนะอาชีพ ม.ต้น จากเนื้อหา: ปฏิบัติ + มิติเศรษฐกิจ = content · ไม่มีมิติเศรษฐกิจ = partial · ไม่มีข้อมูล = insufficient", () => {
+  const sub = (id: string, code: string, grade: string, desc: string | null, outcomes: string[] = []) =>
+    ({ ...S(id, code, "x (ตัวอย่าง)", "additional", ["pg"], desc), grade, outcomes });
+  const r = classify({ programs, activities: [], links: [], subjects: [
+    sub("m1", "ง21262", "ม.1", "ปฏิบัติการเตรียมดิน ปลูก ดูแลรักษา เก็บเกี่ยว และจัดผลผลิตจำหน่าย คำนวณค่าใช้จ่าย กำหนดราคาขาย"),
+    sub("m2", "ง22263", "ม.2", "มีทักษะกระบวนการทำงาน เจตคติที่ดีต่อการประกอบอาชีพ"),
+    sub("m3", "ง23265", "ม.3", null),
+    sub("m4", "ง21261", "ม.1", null, ["ทำบัญชีรายรับรายจ่าย กำหนดราคาขายสินค้า", "ปฏิบัติทำขนมไทยชนิดต่าง ๆ ได้"]),
+  ] });
+  const v = (id: string) => r.find((c) => c.category === "vocational" && c.targetId === id);
+  assertEquals(v("m1")?.strength, "content");
+  assertEquals(v("m1")?.stage, "lower");
+  assert(v("m1")!.competencies.some((k) => k.label.includes("บัญชี") && k.evidence.includes("ค่าใช้จ่าย")));
+  assertEquals(v("m2")?.strength, "partial");
+  assertEquals(v("m3")?.strength, "insufficient");
+  assertEquals(v("m4")?.strength, "content"); // หลักฐานจากผลการเรียนรู้
+  assert(v("m4")!.competencies.some((k) => k.evidence.startsWith("ผลการเรียนรู้")));
+  assert(r.every((c) => c.status === "proposed"));
+});
+
+Deno.test("ไม่จัดวิชาอื่นเป็นสมรรถนะอาชีพจากคำทั่วไป (ปฏิบัติ/ชิ้นงาน/จำหน่ายออกจากห้องสมุด)", () => {
+  const r = classify({ programs, activities: [], links: [], subjects: [
+    { ...S("x1", "ศ23202", "ทักษะนาฏศิลป์ (ตัวอย่าง)", "additional", ["pg"], "การฝึกปฏิบัติการทำงานกลุ่มจัดการแสดง การประดิษฐ์เครื่องแต่งกาย"), grade: "ม.3" },
+    { ...S("x2", "ท23201", "ห้องสมุด (ตัวอย่าง)", "additional", ["pg"], "ศึกษา ปฏิบัติ การซ่อมแซมหนังสือ การสำรวจและการจำหน่ายออกจากห้องสมุด นำความรู้ไปประกอบอาชีพได้"), grade: "ม.3" },
+    { ...S("x3", "ว20286", "ออกแบบ (ตัวอย่าง)", "additional", ["pg"], "ฝึกปฏิบัติทักษะ สร้างสรรค์ชิ้นงานตามแบบ"), grade: "ม.2" },
+  ] });
+  assertEquals(r.filter((c) => c.category === "vocational" && c.targetType === "subject").length, 0);
+});
+
+Deno.test("ช่วงชั้นจากระดับชั้น/แผนการเรียน", () => {
+  assertEquals(stageOf("ม.3"), "lower");
+  assertEquals(stageOf("ม.4"), "upper");
+  assertEquals(stageOf(null, "upper_secondary"), "upper");
 });

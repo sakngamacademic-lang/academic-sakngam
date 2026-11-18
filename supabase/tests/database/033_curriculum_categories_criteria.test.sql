@@ -1,7 +1,7 @@
 -- pgTAP: ประเภทหลักสูตร + ทะเบียนเกณฑ์ + หลักฐาน — เฉพาะผู้ดูแลหลักสูตรเขียนได้ · ยืนยันเกณฑ์ต้องมีต้นฉบับ · หลักฐานตรงเกณฑ์ต้องคนยืนยัน · ไม่แตะรายวิชา
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(17);
 insert into public.schools (id, code, name_th) values ('aaaaaaaa-0000-4000-a000-000000000000', 'T-A', 'โรงเรียน A');
 insert into auth.users (id, email, raw_app_meta_data) values
   ('aaaaaaaa-0000-4000-a000-000000000001', 'head@a.test', '{"school_id":"aaaaaaaa-0000-4000-a000-000000000000"}'),
@@ -53,6 +53,11 @@ select throws_ok($$ select public.curriculum_category_set('cccccccc-2222-4000-a0
 select throws_ok($$ select public.curriculum_category_set('cccccccc-2222-4000-a000-000000000001', 'local', 'subject', gen_random_uuid(), 'confirmed', 'x') $$,
   'P0001', 'ไม่พบรายวิชา/แผนการเรียน/กิจกรรมในฉบับหลักสูตรนี้', 'ไม่สร้างรายวิชาปลอม');
 
+-- 5b หลักฐานตรงเกณฑ์บนเกณฑ์ร่างไม่ได้ (ต้องยืนยันเกณฑ์ก่อน)
+insert into t_ids select 'c0', public.assessment_criterion_save(null, '{"code":"K5-0","title_th":"เกณฑ์ร่าง","categories":["vocational"]}');
+select throws_ok($$ select public.criteria_evidence_set((select id from t_ids where k = 'c0'), 'cccccccc-2222-4000-a000-000000000001', 'program', '77777777-0000-4000-a000-000000000001', 'direct', 'confirmed', 'x', 'eeeeeeee-0000-4000-a000-000000000001', 'pdf:5') $$,
+  'P0001', 'ต้องยืนยันเกณฑ์กับเอกสารต้นฉบับก่อนบันทึกว่าหลักฐานตรงเกณฑ์', 'หลักฐานตรงเกณฑ์ต้องอ้างเกณฑ์ที่ยืนยันแล้ว');
+
 -- 6-8 เกณฑ์: ยืนยันไม่ได้ถ้าไม่มีต้นฉบับ · มีต้นฉบับแล้วยืนยันได้ · ยืนยันแล้วแก้ไม่ได้
 insert into t_ids select 'c1', public.assessment_criterion_save(null, '{"code":"K5-1","title_th":"เกณฑ์ทดสอบ","categories":["vocational"],"report_section":"vocational"}');
 select throws_ok($$ select public.assessment_criterion_verify((select id from t_ids where k = 'c1'), 'verified') $$, '23514', null, 'ยืนยันเกณฑ์ไม่ได้ถ้าไม่มีเอกสาร+เลขหน้า');
@@ -67,6 +72,13 @@ select throws_ok($$ select public.criteria_evidence_set((select id from t_ids wh
 select throws_ok($$ select public.criteria_evidence_set((select id from t_ids where k = 'c1'), 'cccccccc-2222-4000-a000-000000000001', 'program', '77777777-0000-4000-a000-000000000001', 'none', 'rejected') $$,
   '23514', null, 'ปฏิเสธต้องมีเหตุผล');
 
+-- 12b หลักฐานตรงเกณฑ์เมื่อเกณฑ์ยืนยันแล้ว + มีที่มา
+select lives_ok($$ select public.criteria_evidence_set((select id from t_ids where k = 'c1'), 'cccccccc-2222-4000-a000-000000000001', 'program', '77777777-0000-4000-a000-000000000001', 'direct', 'confirmed', 'ตรวจกับ PDF', 'eeeeeeee-0000-4000-a000-000000000001', 'pdf:5') $$, 'ยืนยันหลักฐานตรงเกณฑ์ได้เมื่อครบเงื่อนไข');
+-- 13-15 ตารางเขียนตรงไม่ได้ · helper ส่วนตัวเรียกตรงไม่ได้ · มี Audit Log
+select throws_ok($$ insert into public.assessment_criteria (code, title_th) values ('X', 'y') $$, '42501', null, 'เขียนตารางเกณฑ์ตรงไม่ได้ (ต้องผ่าน RPC)');
+select throws_ok($$ select private.require_curriculum_admin() $$, '42501', null, 'helper ส่วนตัวไม่เปิดให้เรียกตรง');
+reset role;
+select ok((select count(*) from public.audit_logs where table_name in ('curriculum_category_links', 'assessment_criteria', 'criteria_evidence')) >= 5, 'ทุกการเปลี่ยนแปลงมี Audit Log');
 -- 12 ไม่แตะรายวิชาทางการ
 reset role;
 select pg_temp.login('aaaaaaaa-0000-4000-a000-000000000001');

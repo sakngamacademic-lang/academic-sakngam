@@ -1,6 +1,6 @@
 /** รายงานตามหัวข้อเกณฑ์ระดับ 5 (Word .doc / PDF ผ่านการพิมพ์) — ทุกบรรทัดมีที่มา · ไม่ประกาศผลระดับคุณภาพ */
 import type { CategoryData } from "./api";
-import { CATEGORIES, criterionResult, EVIDENCE_LABEL, type Candidate, type Category } from "./classify";
+import { CATEGORIES, criterionResult, EVIDENCE_LABEL, STAGE_LABEL, STRENGTH_LABEL, type Candidate, type Category } from "./classify";
 
 const SECTIONS: { key: string; title: string; cat: Category | null }[] = [
   { key: "structure", title: "1. หลักสูตรสถานศึกษาและโครงสร้างเวลาเรียน", cat: "general" },
@@ -18,7 +18,7 @@ export function buildReportHtml(versionLabel: string, d: CategoryData, cands: Ca
   const label = (id: string) => cands.find((c) => c.targetId === id)?.label ?? "เอกสารหลักฐาน";
   const body = SECTIONS.map((s) => {
     const crit = d.criteria.filter((k) => k.report_section === s.key || (!k.report_section && s.cat && k.categories.includes(s.cat)));
-    const items = s.cat ? cands.filter((c) => c.category === s.cat && c.status !== "rejected") : [];
+    const items = s.cat ? cands.filter((c) => c.category === s.cat && c.status !== "rejected").sort((a, b) => (a.stage ?? "z").localeCompare(b.stage ?? "z")) : [];
     const confirmed = items.filter((c) => c.status === "confirmed");
     const critHtml = crit.length ? crit.map((k) => {
       const ev = d.evidence.filter((e) => e.criterion_id === k.id);
@@ -27,7 +27,8 @@ export function buildReportHtml(versionLabel: string, d: CategoryData, cands: Ca
         <table><tr><th>หลักฐาน</th><th>ผลตรวจ</th><th>ที่มา</th><th>หมายเหตุ</th></tr>${ev.map((e) => `<tr><td>${esc(label(e.target_id))}</td><td>${e.status === "confirmed" ? EVIDENCE_LABEL[e.result] : STATUS[e.status]}</td><td>${esc(loc(e.source_locator))}</td><td>${esc(e.note)}</td></tr>`).join("") || `<tr><td colspan="4">ยังไม่มีหลักฐานยืนยัน</td></tr>`}</table>`;
     }).join("") : `<p class="muted">ยังไม่มีเกณฑ์ในทะเบียนสำหรับหัวข้อนี้ (ต้องบันทึกจากแบบประเมินต้นฉบับ)</p>`;
     const itemsHtml = s.cat ? `<p><b>รายการจากหลักสูตร:</b> ${items.length} รายการ (ยืนยันแล้ว ${confirmed.length})</p>
-      <table><tr><th>รายการ</th><th>รายละเอียด</th><th>สถานะการตรวจ</th><th>เหตุผล</th><th>ที่มา</th></tr>${items.slice(0, 120).map((c) => `<tr><td>${esc(c.label)}</td><td>${esc(c.sub)}</td><td>${STATUS[c.status]}${c.strength === "keyword" && c.status === "proposed" ? " · พบคำสำคัญเท่านั้น" : ""}</td><td>${esc(c.stored?.reason ?? c.reasons.join(" / "))}</td><td>${esc(loc(c.locator))}</td></tr>`).join("")}</table>${items.length > 120 ? `<p class="muted">แสดง 120 จาก ${items.length} รายการ</p>` : ""}` : "";
+      ${(["lower", "upper"] as const).map((st) => { const n = items.filter((c) => c.stage === st && c.targetType === "subject"); return n.length ? `<p>${STAGE_LABEL[st]}: รายวิชา ${n.length} วิชา (${esc(n.map((c) => c.label.split(" ")[0]).join(", "))})</p>` : ""; }).join("")}
+      <table><tr><th>ช่วงชั้น</th><th>รายการ</th><th>รายละเอียด</th><th>สถานะการตรวจ</th><th>ระดับหลักฐาน</th><th>สมรรถนะ/เหตุผล</th><th>ที่มา</th></tr>${items.slice(0, 150).map((c) => `<tr><td>${c.stage ? STAGE_LABEL[c.stage] : "-"}</td><td>${esc(c.label)}</td><td>${esc(c.sub)}</td><td>${STATUS[c.status]}</td><td>${STRENGTH_LABEL[c.strength]}</td><td>${esc(c.stored?.reason ?? c.reasons.join(" / "))}${c.competencies.length ? `<br><small>${esc(c.competencies.map((k) => `${k.label}: ${k.evidence}`).join(" | "))}</small>` : ""}</td><td>${esc(loc(c.locator))}</td></tr>`).join("")}</table>${items.length > 150 ? `<p class="muted">แสดง 150 จาก ${items.length} รายการ</p>` : ""}` : "";
     return `<h2>${esc(s.title)}</h2>${critHtml}${itemsHtml}`;
   }).join("");
   const unverified = d.criteria.some((k) => k.status !== "verified") || cands.some((c) => c.status === "proposed") || !d.criteria.length;

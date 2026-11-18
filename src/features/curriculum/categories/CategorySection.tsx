@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { useSourceDocuments } from "../api";
 import { formatLocator, SourcePdfLink } from "../components";
 import { catKey, saveCriterion, setCategory, setEvidence, useCategoryData, verifyCriterion, type CategoryData, type Criterion } from "./api";
-import { CATEGORIES, classify, criterionResult, EVIDENCE_LABEL, type Candidate, type Category, type EvidenceResult, type EvidenceRow } from "./classify";
+import { CATEGORIES, classify, criterionResult, EVIDENCE_LABEL, STAGE_LABEL, STRENGTH_LABEL, type Candidate, type Category, type EvidenceResult, type EvidenceRow, type Strength } from "./classify";
+import { CriteriaImport } from "./CriteriaImport";
 import { exportCategoryReport } from "./report";
 
 const STATUS_LABEL = { proposed: "รอตรวจความสอดคล้อง", confirmed: "ผู้ดูแลยืนยันแล้ว", rejected: "ไม่เกี่ยวข้อง (ตรวจแล้ว)" } as const;
@@ -95,7 +96,8 @@ function ItemsPanel({ items, cat, versionId, admin }: { items: Candidate[]; cat:
   const [limit, setLimit] = useState(40);
   const [busy, setBusy] = useState<string | null>(null);
   const rows = items.filter((c) => (!type || c.targetType === type) && (!strength || c.strength === strength) && (!status || c.status === status))
-    .sort((a, b) => Number(a.status === "proposed") - Number(b.status === "proposed") || (a.strength === "structural" ? -1 : 1) - (b.strength === "structural" ? -1 : 1));
+    .sort((a, b) => Number(a.status === "proposed") - Number(b.status === "proposed") || SRANK[b.strength] - SRANK[a.strength] || a.label.localeCompare(b.label, "th"));
+  const groups = (["lower", "upper", null] as const).map((st) => ({ st, rows: rows.filter((c) => c.stage === st) })).filter((g) => g.rows.length);
   const decide = async (c: Candidate, s: "confirmed" | "rejected") => {
     const reason = window.prompt(s === "confirmed" ? "เหตุผลการจัดหมวด (เช่น ตรวจกับหลักสูตร PDF หน้า …)" : "เหตุผลที่ไม่จัดอยู่ในหมวดนี้", c.stored?.reason ?? c.reasons[0] ?? "");
     if (!reason?.trim()) return;
@@ -111,48 +113,73 @@ function ItemsPanel({ items, cat, versionId, admin }: { items: Candidate[]; cat:
       <p className="mb-2 font-semibold">รายวิชา แผนการเรียน และกิจกรรมที่เกี่ยวข้อง</p>
       <div className="mb-2 grid grid-cols-1 gap-2 min-[480px]:grid-cols-3">
         <Select aria-label="ชนิดรายการ" value={type} onChange={(e) => setType(e.target.value)}><option value="">ทุกชนิด</option><option value="program">แผนการเรียน</option><option value="subject">รายวิชา</option><option value="activity">กิจกรรม</option></Select>
-        <Select aria-label="ระดับหลักฐาน" value={strength} onChange={(e) => setStrength(e.target.value)}><option value="">ทุกระดับหลักฐาน</option><option value="structural">หลักฐานเชิงโครงสร้าง</option><option value="keyword">พบคำสำคัญเท่านั้น</option></Select>
+        <Select aria-label="ระดับหลักฐาน" value={strength} onChange={(e) => setStrength(e.target.value)}><option value="">ทุกระดับหลักฐาน</option>{(Object.keys(STRENGTH_LABEL) as Strength[]).map((k) => <option key={k} value={k}>{STRENGTH_LABEL[k]}</option>)}</Select>
         <Select aria-label="สถานะการตรวจ" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">ทุกสถานะ</option>{Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
       </div>
-      {!rows.length ? <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">ไม่พบรายการในหมวดนี้จากข้อมูลหลักสูตร — ผู้ดูแลเพิ่มได้หลังตรวจเอกสาร</p> : (
-        <ul className="divide-y">
-          {rows.slice(0, limit).map((c) => (
-            <li key={`${c.targetType}-${c.targetId}`} className="space-y-1 py-2.5 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">{c.label}</span>
-                <Badge variant={c.status === "confirmed" ? "success" : c.status === "rejected" ? "outline" : "secondary"}>{STATUS_LABEL[c.status]}</Badge>
-                <Badge variant={c.strength === "structural" ? "info" : "warning"}>{c.strength === "structural" ? "หลักฐานเชิงโครงสร้าง" : "พบคำสำคัญเท่านั้น"}</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{c.sub}</p>
-              <ul className="list-disc pl-5 text-xs">{(c.stored ? [c.stored.reason] : c.reasons).map((r, i) => <li key={i}>{r}</li>)}</ul>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                ที่มา: {formatLocator(c.locator)} <SourcePdfLink docId={c.sourceDocId} locator={c.locator} />
-                {admin && (
-                  <span className="ml-auto flex gap-1">
-                    <Button size="sm" variant="outline" className="h-8" disabled={busy !== null} onClick={() => decide(c, "confirmed")}><CheckCircle2 /> ยืนยันว่าอยู่ในหมวด</Button>
-                    <Button size="sm" variant="ghost" className="h-8" disabled={busy !== null} onClick={() => decide(c, "rejected")}><XCircle /> ไม่เกี่ยวข้อง</Button>
-                  </span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {!rows.length ? <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">ไม่พบรายการในหมวดนี้จากข้อมูลหลักสูตร — ผู้ดูแลเพิ่มได้หลังตรวจเอกสาร</p> : groups.map(({ st, rows: gr }) => {
+        const subs = gr.filter((c) => c.targetType === "subject");
+        return (
+          <section key={st ?? "none"} aria-label={st ? STAGE_LABEL[st] : "ไม่ระบุช่วงชั้น"} className="mt-3 first:mt-0">
+            <div className="sticky top-16 z-[1] -mx-1 rounded-lg bg-accent/90 px-2 py-1.5 backdrop-blur">
+              <p className="text-sm font-semibold">{st ? STAGE_LABEL[st] : "ไม่ระบุช่วงชั้น"} · {gr.length} รายการ{subs.length ? ` · รายวิชา ${subs.length} วิชา` : ""}</p>
+              {subs.length > 0 && <p className="line-clamp-2 text-xs text-muted-foreground">รหัสวิชา: {subs.map((c) => c.label.split(" ")[0]).join(", ")}</p>}
+            </div>
+            <ul className="divide-y">
+              {gr.slice(0, limit).map((c) => <Item key={`${c.targetType}-${c.targetId}`} c={c} admin={admin} busy={busy !== null} onDecide={decide} />)}
+            </ul>
+          </section>
+        );
+      })}
       {rows.length > limit && <Button size="sm" variant="ghost" onClick={() => setLimit(limit + 60)}>แสดงเพิ่ม ({rows.length - limit})</Button>}
     </div>
   );
 }
 
+const SRANK: Record<Strength, number> = { structural: 4, content: 3, partial: 2, keyword: 1, insufficient: 0 };
+const STRENGTH_VARIANT: Record<Strength, "info" | "success" | "warning" | "secondary" | "outline"> = { structural: "info", content: "success", partial: "warning", keyword: "warning", insufficient: "outline" };
+function Item({ c, admin, busy, onDecide }: { c: Candidate; admin: boolean; busy: boolean; onDecide: (c: Candidate, s: "confirmed" | "rejected") => void }) {
+  return (
+    <li className="space-y-1 py-2.5 text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{c.label}</span>
+        <Badge variant={c.status === "confirmed" ? "success" : c.status === "rejected" ? "outline" : "secondary"}>{STATUS_LABEL[c.status]}</Badge>
+        <Badge variant={STRENGTH_VARIANT[c.strength]}>{STRENGTH_LABEL[c.strength]}</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">{c.sub}</p>
+      <ul className="list-disc pl-5 text-xs">{(c.stored ? [c.stored.reason] : c.reasons).map((r, i) => <li key={i}>{r}</li>)}</ul>
+      {c.competencies.length > 0 && (
+        <details className="rounded-lg bg-muted/40 px-2 py-1 text-xs">
+          <summary className="cursor-pointer font-medium">สมรรถนะที่เกี่ยวข้อง ({c.competencies.length}): {c.competencies.map((k) => k.label).join(" · ")}</summary>
+          <ul className="mt-1 space-y-1">{c.competencies.map((k) => <li key={k.label}><b>{k.label}</b> — {k.evidence}</li>)}</ul>
+        </details>
+      )}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        ที่มา: {formatLocator(c.locator)} <SourcePdfLink docId={c.sourceDocId} locator={c.locator} />
+        {admin && (
+          <span className="ml-auto flex gap-1">
+            <Button size="sm" variant="outline" className="h-8" disabled={busy} onClick={() => onDecide(c, "confirmed")}><CheckCircle2 /> ยืนยันว่าอยู่ในหมวด</Button>
+            <Button size="sm" variant="ghost" className="h-8" disabled={busy} onClick={() => onDecide(c, "rejected")}><XCircle /> ไม่เกี่ยวข้อง</Button>
+          </span>
+        )}
+      </div>
+    </li>
+  );
+}
+
 // ------------------------------------------------------------------ เกณฑ์ + หลักฐาน
 function CriteriaPanel({ crit, cat, data, items, versionId, admin }: { crit: Criterion[]; cat: Category; data: CategoryData; items: Candidate[]; versionId: string; admin: boolean }) {
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<"" | "one" | "import">("");
   return (
     <div className="space-y-3 rounded-2xl border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold">เกณฑ์ประเมินที่เชื่อมโยง</p>
-        {admin && <Button size="sm" variant="outline" onClick={() => setAdding(!adding)}><Plus /> เพิ่มเกณฑ์จากเอกสารต้นฉบับ</Button>}
+        {admin && <span className="flex flex-wrap gap-1">
+          <Button size="sm" variant="outline" onClick={() => setAdding(adding === "import" ? "" : "import")}><FileDown /> นำเข้าเกณฑ์จากต้นฉบับ</Button>
+          <Button size="sm" variant="ghost" onClick={() => setAdding(adding === "one" ? "" : "one")}><Plus /> เพิ่มทีละข้อ</Button>
+        </span>}
       </div>
-      {adding && <CriterionForm cat={cat} parents={data.criteria} onDone={() => setAdding(false)} />}
+      {adding === "import" && <CriteriaImport cat={cat} existing={data.criteria} onDone={() => setAdding("")} />}
+      {adding === "one" && <CriterionForm cat={cat} parents={data.criteria} onDone={() => setAdding("")} />}
       {!crit.length && (
         <div className="rounded-xl border border-dashed p-4 text-sm">
           <p className="font-medium">ยังไม่มีเกณฑ์ในทะเบียนสำหรับหมวดนี้</p>

@@ -16,7 +16,7 @@ interface NavItem { to: string; label: string; end?: boolean; hint?: string }
  */
 const GROUPS: { label: string; items: NavItem[] }[] = [
   { label: "หลักสูตรโรงเรียน", items: [
-    { to: "/office/curriculum", label: "ภาพรวมหลักสูตร", end: true, hint: "สรุปหลักสูตรที่ใช้อยู่" },
+    { to: "/office/curriculum", label: "โครงสร้างหลักสูตร 2569", end: true, hint: "เลือกชั้น → แผน → ภาคเรียน → รายวิชา" },
     { to: "/office/curriculum/mapping", label: "เปรียบเทียบกับหลักสูตรแกนกลาง", hint: "จับคู่หน่วยการเรียนรู้กับมาตรฐาน/ตัวชี้วัด" },
     { to: "/office/curriculum/structure", label: "รายวิชาในแต่ละชั้น", hint: "วิชาที่เรียนในแต่ละชั้น/ภาคเรียน" },
     { to: "/office/curriculum/programs", label: "แผนการเรียน", hint: "เช่น วิทย์–คณิต ศิลป์–ภาษา" },
@@ -28,6 +28,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     { to: "/office/curriculum/reports", label: "รายงานและดาวน์โหลด", hint: "ส่งออก PDF / Excel" },
     { to: "/office/curriculum/readiness", label: "ความคืบหน้าภาพรวม", hint: "งานที่ทำแล้ว/ยังค้าง" }] },
   { label: "เครื่องมือฝ่ายวิชาการ", items: [
+    { to: "/office/curriculum/overview", label: "ภาพรวมและเครื่องมือหลักสูตร", hint: "วิเคราะห์ จัดหมวด เกณฑ์ประเมิน นำเสนอ" },
     { to: "/office/curriculum/internal-review", label: "ตรวจสอบภายใน", hint: "ข้อสังเกต CF เกณฑ์ และการยืนยันเอกสาร" },
     { to: "/office/curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
     { to: "/office/curriculum/subjects", label: "แก้ไขข้อมูลรายวิชา", hint: "รหัส ชื่อ หน่วยกิต ชั่วโมง" },

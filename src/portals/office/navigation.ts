@@ -50,7 +50,7 @@ export const officePortal: PortalConfig = {
     {
       title: "หลักสูตรโรงเรียน",
       items: [
-        { path: "curriculum", label: "ภาพรวมหลักสูตร", icon: BookOpen, hint: "หลักสูตรที่โรงเรียนใช้อยู่" },
+        { path: "curriculum", label: "โครงสร้างหลักสูตร 2569", icon: BookOpen, hint: "เลือกชั้น → แผนการเรียน → ภาคเรียน → ดูรายวิชา" },
         { path: "curriculum/structure", label: "รายวิชาในแต่ละชั้น", icon: ListChecks, hint: "วิชาที่เรียนในแต่ละชั้นและภาคเรียน" },
         { path: "curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", icon: BookOpen, hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
         { path: "curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", icon: Target, hint: "สิ่งที่นักเรียนต้องรู้และทำได้" },
@@ -76,6 +76,7 @@ export const officePortal: PortalConfig = {
       title: "ตรวจหลักสูตรและข้อมูล",
       tools: true,
       items: [
+        { path: "curriculum/overview", label: "ภาพรวมและเครื่องมือหลักสูตร", icon: LayoutDashboard, hint: "วิเคราะห์ จัดหมวด เกณฑ์ประเมิน นำเสนอ" },
         { path: "curriculum/internal-review", label: "ตรวจสอบภายใน", icon: ClipboardCheck, hint: "ข้อสังเกต ข้อขัดแย้ง การยืนยันเอกสาร" },
         { path: "curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", icon: ShieldCheck, hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
         { path: "curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", icon: FileSpreadsheet, hint: "อัปโหลด PDF/Excel ต้นฉบับ" },

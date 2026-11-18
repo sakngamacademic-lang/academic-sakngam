@@ -17,6 +17,10 @@ export const teacherPortal: PortalConfig = {
       ],
     },
     {
+      title: "หลักสูตรโรงเรียน",
+      items: [{ path: "curriculum", label: "โครงสร้างหลักสูตร", icon: BookOpenCheck, hint: "ดูรายวิชาของแต่ละชั้นและแผนการเรียน" }],
+    },
+    {
       title: "จัดทำรายวิชา",
       items: [{ path: "courses-plan", label: "คำอธิบายรายวิชา", icon: BookText, hint: "เลือกวิชา → เลือกตัวชี้วัด → เขียน → บันทึก" }],
     },

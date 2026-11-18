@@ -26,6 +26,7 @@ const Syllabi = page(() => import("@/features/syllabus/SyllabusPage"), "Syllabus
 const LessonPlans = page(() => import("@/features/lesson-plans/LessonPlanPage"), "LessonPlanPage");
 const Readiness = page(() => import("./pages/ReadinessPage"), "ReadinessPage");
 const Mapping = page(() => import("@/features/mapping/MappingPage"), "MappingPage");
+const Viewer = page(() => import("./pages/CurriculumStructureViewer"), "CurriculumStructureViewer");
 const Present = page(() => import("./presentation/PresentationPage"), "PresentationPage");
 const InternalReview = page(() => import("./presentation/InternalReviewPage"), "InternalReviewPage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
@@ -33,8 +34,12 @@ const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
 
 /** ทุกหน้าของระบบหลักสูตร (path ภายใน /office) — หน้าที่อยู่ในเมนูหลักให้ buildPortalRoutes สร้าง ที่เหลือเป็น route ย่อย */
+/** ใช้ในพอร์ทัลครู: ดูโครงสร้างหลักสูตรอย่างเดียว */
+export const curriculumViewerPage = wrap(<Viewer />);
+
 export const curriculumPages: Record<string, ReactElement> = {
-  curriculum: wrap(<Dashboard />),
+  curriculum: wrap(<Viewer />),
+  "curriculum/overview": wrap(<Dashboard />),
   "curriculum/structure": wrap(<Structure />),
   "curriculum/indicators": wrap(<Indicators />),
   "curriculum/imports": wrap(<Imports />),

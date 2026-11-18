@@ -37,7 +37,7 @@ export function PresentationPage() {
   const docs = useSourceDocuments();
   const cands = useMemo(() => (cat.data ? classify(cat.data) : []), [cat.data]);
   const loading = curricula.isPending || cat.isPending || extras.isPending || summary.isPending || docs.isPending;
-  const close = () => navigate(`/office/curriculum${v ? `?v=${v.id}` : ""}`);
+  const close = () => navigate(`/office/curriculum/overview${v ? `?v=${v.id}` : ""}`);
 
   return (
     <div role="dialog" aria-modal="true" aria-label="นำเสนอหลักสูตร" className="fixed inset-0 z-50 overflow-y-auto bg-background">

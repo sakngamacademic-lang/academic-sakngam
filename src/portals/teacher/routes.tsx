@@ -10,6 +10,7 @@ import { MyAssignmentsPage } from "@/features/tasks/pages/MyAssignmentsPage";
 import { SyllabusPage } from "@/features/syllabus/SyllabusPage";
 import { LessonPlanPage } from "@/features/lesson-plans/LessonPlanPage";
 import { teacherPortal } from "./navigation";
+import { curriculumViewerPage } from "@/features/curriculum/routes";
 
 export const teacherRoutes: RouteObject = {
   path: teacherPortal.basePath,
@@ -28,5 +29,6 @@ export const teacherRoutes: RouteObject = {
     courses: <AssessmentPage />,
     "courses-plan": <SyllabusPage />,
     "lesson-plans": <LessonPlanPage />,
+    curriculum: curriculumViewerPage,
   }),
 };

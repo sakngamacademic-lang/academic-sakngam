@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, ExternalLink, FileUp, Loader2, Plus, ScanText } from "lucide-react";
+import { Archive, Download, ExternalLink, FileUp, Loader2, Plus, ScanText, Trash2 } from "lucide-react";
 import { DataTable, PageHeader } from "@/components/shared";
 import { DashSection, LiveBadge } from "@/components/dashboard";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import {
   type SourceDocument,
 } from "../api";
 import { startAnalysis } from "../analysis-api";
+import { BACKEND_READY, deletePlan, SOURCE_REFERENCES, type RefResult } from "../source-delete";
 import { fileErrorMessage, isPdfName, parsePdfPage, pdfPageUrl } from "../source-file";
 import { CurriculumNav, EmptyState, formatLocator, Notice } from "../components";
 
@@ -45,6 +46,7 @@ export function ImportsPage() {
   const curricula = useCurricula();
   const [dialog, setDialog] = useState<null | "source" | "conflict" | "batch">(null);
   const [parsing, setParsing] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<SourceDocument | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: curriculumKey });
   const docCode = useMemo(() => new Map(sources.data?.map((d) => [d.id, d.register_code])), [sources.data]);
   const versionLabel = new Map(allVersions(curricula.data).map((v) => [v.id, v.version_label]));
@@ -81,9 +83,16 @@ export function ImportsPage() {
             { key: "rel", header: "ความน่าเชื่อถือ", cell: (d) => d.reliability ? <Badge variant={d.reliability === "A" ? "success" : d.reliability === "D" ? "destructive" : "secondary"}>{d.reliability}</Badge> : <Badge variant="outline">รอตรวจสอบ</Badge> },
             { key: "content", header: "เนื้อหา", cell: (d) => (d.content_status === "has_content" ? (d.file_id ? "มีไฟล์" : "ยังไม่แนบไฟล์") : <Badge variant="warning">{d.content_status}</Badge>) },
             { key: "file", header: "ไฟล์", cell: (d) => (d.file_id ? <SourceFileActions doc={d} /> : <span className="text-xs text-muted-foreground">—</span>), className: "w-[19rem]" },
+            // ปุ่มลบ: เฉพาะผู้ดูแลหลักสูตร (curriculum.manage) · ครู/ผู้อ่านอย่างเดียวไม่เห็น
+            ...(canManage ? [{ key: "delete", header: "จัดการ", className: "w-20 text-right", cell: (d: SourceDocument) => (
+              <Button size="sm" variant="outline" aria-label={`ลบ ${d.register_code}`} onClick={() => setDeleting(d)}
+                className="h-8 border-destructive/40 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /> ลบ</Button>
+            ) }] : []),
           ]}
         />
       </DashSection>
+
+      {deleting && <SourceDeleteDialog doc={deleting} onClose={() => setDeleting(null)} />}
 
       <DashSection id="conflicts" className="mt-4" title="ข้อขัดแย้งระหว่างเอกสาร"
         meta={`${conflicts.data?.filter((c) => c.status !== "resolved").length ?? 0} ยังไม่ตัดสิน · ${conflicts.data?.length ?? 0} ทั้งหมด`}
@@ -367,5 +376,60 @@ export function SourceFileActions({ doc }: { doc: SourceDocument }) {
       </div>
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+/** ยืนยันการลบ: ตรวจการอ้างอิงแบบอ่านอย่างเดียวก่อน · มีการอ้างอิง → เสนอเก็บเข้าคลัง · ไม่ลบไฟล์จริงใน Storage */
+function SourceDeleteDialog({ doc, onClose }: { doc: SourceDocument; onClose: () => void }) {
+  const [results, setResults] = useState<RefResult[] | null>(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const check = async () => {
+    setResults(null); setCheckError(null);
+    try {
+      const sb = requireSupabase();
+      const rs = await Promise.all(SOURCE_REFERENCES.map(async (r) => {
+        const { count, error } = await sb.from(r.table).select("id", { count: "exact", head: true }).eq(r.column, doc.id);
+        // ไม่มีจำนวนกลับมา (error หรือ header หาย) = ตรวจไม่ได้ → ไม่สรุปว่าลบได้
+        return { ...r, count: error || count == null ? null : count };
+      }));
+      setResults(rs);
+    } catch (e) { setCheckError(dbErrorMessage(e)); }
+  };
+  useEffect(() => { void check(); }, [doc.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const plan = results ? deletePlan(results) : null;
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title="ลบรายการทะเบียนเอกสาร" description="ตรวจการอ้างอิงก่อนลบ — ระบบจะไม่ลบไฟล์จริงใน Storage" role="alertdialog">
+        <div className="space-y-3 text-sm">
+          <div className="rounded-xl border bg-muted/40 p-3">
+            <p className="text-xs text-muted-foreground">รหัสเอกสาร</p>
+            <p className="font-mono text-base font-semibold">{doc.register_code}</p>
+            <p className="mt-1 text-xs text-muted-foreground">ชื่อเอกสาร</p>
+            <p className="font-medium">{doc.title}</p>
+          </div>
+          {checkError && <p role="alert" className="text-destructive">ตรวจการอ้างอิงไม่สำเร็จ: {checkError}</p>}
+          {!plan && !checkError && <p className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-4 animate-spin" /> กำลังตรวจการอ้างอิงในหลักสูตร มาตรฐาน ตัวชี้วัด การตรวจทาน และหลักฐาน…</p>}
+          {plan?.mode === "archive" && (
+            <div role="status" className="rounded-xl border border-warning/40 bg-warning/10 p-3">
+              <p className="font-medium">มีการอ้างอิงอยู่ {plan.total} รายการ — ลบถาวรไม่ได้</p>
+              <ul className="mt-1 list-disc pl-5">{plan.referenced.map((r) => <li key={r.table + r.column}>{r.label}: {r.count}</li>)}</ul>
+              <p className="mt-2">เสนอให้ <b>เก็บเข้าคลัง/เลิกใช้งาน</b> แทน เพื่อไม่ให้หลักฐานเดิมสูญหาย</p>
+            </div>
+          )}
+          {plan?.mode === "delete" && <p role="status" className="rounded-xl border bg-success/10 p-3">ไม่พบการอ้างอิง — ลบได้เฉพาะ <b>รายการทะเบียน</b> ไฟล์จริงใน Storage จะยังอยู่ (ลบแยกต่างหากโดยผู้ดูแลระบบ)</p>}
+          {plan?.mode === "unknown" && (
+            <p role="status" className="rounded-xl border border-warning/40 bg-warning/10 p-3">ตรวจได้ไม่ครบ {plan.unchecked.length} แหล่ง ({plan.unchecked.map((r) => r.label).join(", ")}) — ยังสรุปไม่ได้ จึงไม่ลบ</p>
+          )}
+          {!BACKEND_READY && plan && (
+            <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">ระบบยังไม่มีคำสั่งลบหรือเก็บเข้าคลังฝั่งฐานข้อมูลที่ปลอดภัย (พร้อม Audit Log) — ปุ่มด้านล่างจะใช้ได้หลังพัฒนาและได้รับอนุมัติ</p>
+          )}
+        </div>
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
+          {plan?.mode === "archive" && <Button variant="outline" disabled={!BACKEND_READY}><Archive /> เก็บเข้าคลัง/เลิกใช้งาน</Button>}
+          {plan?.mode === "delete" && <Button variant="destructive" disabled={!BACKEND_READY}><Trash2 /> ลบรายการทะเบียน</Button>}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

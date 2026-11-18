@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, Save } from "lucide-react";
+import { AlertTriangle, FileSearch, Loader2, Save } from "lucide-react";
+import { callRpc } from "@/features/master-data/api";
+import { JOB_STATUS_LABELS, startAnalysis, useAnalyses } from "../analysis-api";
 import { Button } from "@/components/ui/button";
 import { FormField, Input, Select } from "@/components/ui/form-controls";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -24,6 +26,21 @@ export function CriteriaImport({ cat, existing, onDone }: { cat: Category; exist
   const [cats, setCats] = useState<Category[]>([cat]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const analyses = useAnalyses();
+  const job = analyses.data?.find((a) => a.source_document_id === docId) ?? null; // ล่าสุดก่อน
+  const [range, setRange] = useState({ from: "", to: "" });
+  const [reading, setReading] = useState(false);
+  const readPdf = async () => {
+    if (!job || job.status !== "done") return;
+    setReading(true);
+    try {
+      const pages = (await callRpc<string[]>("document_analysis_page_texts", { p_analysis_id: job.id })) ?? [];
+      const a = Math.max(1, Number(range.from) || 1), b = Math.min(pages.length, Number(range.to) || pages.length);
+      const out = pages.slice(a - 1, b).map((t, i) => `หน้า ${a + i}\n${(t ?? "").trim()}`).join("\n");
+      setText(out);
+      toast.success(`อ่านข้อความ PDF หน้า ${a}–${b} แล้ว — ตรวจตัวอย่างด้านล่าง แก้เฉพาะการตัดบรรทัด/เลขข้อให้ตรงต้นฉบับ`);
+    } catch (e) { toast.error(dbErrorMessage(e)); } finally { setReading(false); }
+  };
   const parsed = useMemo(() => parseCriteriaText(text, meta.prefix.trim()), [text, meta.prefix]);
   const clash = parsed.items.filter((i) => existing.some((e) => e.code === i.code)).map((i) => i.code);
   const save = async () => {
@@ -53,8 +70,8 @@ export function CriteriaImport({ cat, existing, onDone }: { cat: Category; exist
   return (
     <div className="space-y-3 rounded-xl border bg-background p-3 text-sm">
       <p className="text-xs text-muted-foreground">
-        1) ลงทะเบียน/อัปโหลดแบบประเมินที่หน้า “นำเข้าเอกสารหลักสูตร” (ภาพให้สแกนรวมเป็น PDF) · 2) คัดลอกข้อความตามต้นฉบับ ใส่ “หน้า N” ก่อนข้อความของแต่ละหน้า และเลขข้อ (1., 1.1, (1)) ·
-        3) ตรวจตัวอย่างด้านล่าง แล้วบันทึกเป็นร่าง — ระบบไม่แต่งข้อความ ไม่สร้างค่าขั้นต่ำ และไม่ยืนยันเกณฑ์ให้
+        1) ลงทะเบียน PDF แบบประเมินที่หน้า “นำเข้าเอกสารหลักสูตร” (ภาพให้สแกนรวมเป็น PDF) · 2) เลือกเอกสารแล้วกด “อ่านข้อความจาก PDF” ระบบใส่เลขหน้าให้อัตโนมัติ ·
+        3) ตรวจตัวอย่างที่แยกเป็นข้อ/องค์ประกอบย่อย แล้วบันทึกเป็นร่าง — ระบบไม่แต่งข้อความ ไม่สร้างค่าขั้นต่ำ และไม่ยืนยันเกณฑ์ให้
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="sm:col-span-2"><FormField label="เอกสารต้นฉบับของเกณฑ์" htmlFor="ci-doc"><Select id="ci-doc" value={docId} onChange={(e) => setDocId(e.target.value)}>
@@ -66,7 +83,20 @@ export function CriteriaImport({ cat, existing, onDone }: { cat: Category; exist
       </div>
       <fieldset><legend className="font-medium">ประเภทหลักสูตรที่เกี่ยวข้อง</legend><div className="mt-1 flex flex-wrap gap-1">{CATEGORIES.map((c) => (
         <label key={c.key} className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"><input type="checkbox" checked={cats.includes(c.key)} onChange={(e) => setCats(e.target.checked ? [...cats, c.key] : cats.filter((x) => x !== c.key))} />{c.short}</label>))}</div></fieldset>
-      <FormField label="ข้อความเกณฑ์จากต้นฉบับ" htmlFor="ci-text">
+      {docId && (
+        <div className="rounded-lg border border-primary/20 bg-accent/50 p-2 text-xs">
+          <p className="font-medium">อ่านข้อความจาก PDF ที่เลือก</p>
+          {!job ? <div className="mt-1 flex flex-wrap items-center gap-2"><span>ระบบยังไม่เคยอ่านไฟล์นี้</span>
+              <Button size="sm" variant="outline" onClick={async () => { try { await startAnalysis(docId, false); toast.success("เริ่มอ่าน PDF แล้ว — รอสักครู่แล้วกดอ่านข้อความ"); await analyses.refetch(); } catch (e) { toast.error(dbErrorMessage(e)); } }}><FileSearch /> ให้ระบบอ่าน PDF นี้</Button></div>
+            : job.status !== "done" ? <p className="mt-1">สถานะการอ่าน: {JOB_STATUS_LABELS[job.status] ?? job.status}{job.page_count ? ` · ${job.pages_done}/${job.page_count} หน้า` : ""} — รอให้เสร็จก่อน</p>
+            : <div className="mt-1 flex flex-wrap items-end gap-2">
+                <FormField label="จากหน้า" htmlFor="ci-from"><Input id="ci-from" className="h-8 w-20" inputMode="numeric" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value.replace(/\D/g, "") })} placeholder="1" /></FormField>
+                <FormField label="ถึงหน้า" htmlFor="ci-to"><Input id="ci-to" className="h-8 w-20" inputMode="numeric" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value.replace(/\D/g, "") })} placeholder={String(job.page_count ?? "")} /></FormField>
+                <Button size="sm" disabled={reading} onClick={readPdf}>{reading ? <Loader2 className="animate-spin" /> : <FileSearch />} อ่านข้อความจาก PDF</Button>
+              </div>}
+        </div>
+      )}
+      <FormField label="ข้อความเกณฑ์จากต้นฉบับ (ระบบเติมจาก PDF หรือวางเอง)" htmlFor="ci-text">
         <textarea id="ci-text" className="min-h-40 w-full rounded-md border bg-background px-3 py-2 font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)}
           placeholder={"หน้า 12\nระดับ 5\n1. (ข้อความเกณฑ์ตามต้นฉบับ)\n1.1 (องค์ประกอบย่อย)\n(1) (เงื่อนไขย่อย)"} />
       </FormField>

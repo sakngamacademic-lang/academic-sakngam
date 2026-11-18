@@ -13,6 +13,7 @@ import { formatLocator, SourcePdfLink } from "../components";
 import { catKey, saveCriterion, setCategory, setEvidence, useCategoryData, verifyCriterion, type CategoryData, type Criterion } from "./api";
 import { CATEGORIES, classify, criterionResult, EVIDENCE_LABEL, STAGE_LABEL, STRENGTH_LABEL, type Candidate, type Category, type EvidenceResult, type EvidenceRow, type Strength } from "./classify";
 import { CriteriaImport } from "./CriteriaImport";
+import { LocalAnalysis } from "./LocalAnalysis";
 import { exportCategoryReport } from "./report";
 
 const STATUS_LABEL = { proposed: "รอตรวจความสอดคล้อง", confirmed: "ผู้ดูแลยืนยันแล้ว", rejected: "ไม่เกี่ยวข้อง (ตรวจแล้ว)" } as const;
@@ -50,23 +51,28 @@ export function CategorySection({ versionId, versionLabel }: { versionId: string
           ระบบบันทึกผลการตรวจ/ทะเบียนเกณฑ์ยังไม่ได้ติดตั้งบนฐานข้อมูลนี้ (รอผู้ดูแลอนุมัติและรัน migration <code>20261203000100</code>) — ตอนนี้แสดงข้อเสนอการจัดหมวดจากข้อมูลจริงได้ แต่ยังยืนยัน/บันทึกเกณฑ์ไม่ได้
         </p>
       )}
+      <LocalAnalysis versionId={versionId} data={d} />
+      <details className="mt-4 rounded-2xl border p-3 sm:p-4">
+        <summary className="cursor-pointer font-semibold">รายละเอียดรายหมวดและเกณฑ์ประเมิน (สำหรับฝ่ายวิชาการ)</summary>
+        <p className="mb-3 mt-1 text-xs text-muted-foreground">ดูข้อเสนอการจัดหมวดทั้ง 5 ประเภท และนำเข้าเกณฑ์ระดับ 5 จาก PDF ต้นฉบับ — ปกติไม่ต้องจัดการทีละรายการ</p>
       <div role="tablist" aria-label="ประเภทหลักสูตร" className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        {CATEGORIES.map((c) => {
-          const items = cands.filter((x) => x.category === c.key);
-          const ok = items.filter((x) => x.status === "confirmed").length;
-          return (
-            <button key={c.key} type="button" role="tab" aria-selected={cat === c.key} onClick={() => setCat(c.key)}
-              className={cn("min-h-16 rounded-xl border px-3 py-2 text-left shadow-card transition-colors", cat === c.key ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary/40")}>
-              <span className="block text-sm font-semibold leading-snug">{c.label}</span>
-              <span className={cn("block text-xs", cat === c.key ? "text-primary-foreground/85" : "text-muted-foreground")}>{items.length} รายการ · ยืนยันแล้ว {ok} · เกณฑ์ {d.criteria.filter((k) => k.categories.includes(c.key)).length}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <ItemsPanel items={inCat} cat={cat} versionId={versionId} admin={admin && d.installed} />
-        <CriteriaPanel crit={crit} cat={cat} data={d} items={inCat} versionId={versionId} admin={admin && d.installed} />
-      </div>
+          {CATEGORIES.map((c) => {
+            const items = cands.filter((x) => x.category === c.key);
+            const ok = items.filter((x) => x.status === "confirmed").length;
+            return (
+              <button key={c.key} type="button" role="tab" aria-selected={cat === c.key} onClick={() => setCat(c.key)}
+                className={cn("min-h-16 rounded-xl border px-3 py-2 text-left shadow-card transition-colors", cat === c.key ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary/40")}>
+                <span className="block text-sm font-semibold leading-snug">{c.label}</span>
+                <span className={cn("block text-xs", cat === c.key ? "text-primary-foreground/85" : "text-muted-foreground")}>{items.length} รายการ · ยืนยันแล้ว {ok} · เกณฑ์ {d.criteria.filter((k) => k.categories.includes(c.key)).length}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <ItemsPanel items={inCat} cat={cat} versionId={versionId} admin={admin && d.installed} />
+          <CriteriaPanel crit={crit} cat={cat} data={d} items={inCat} versionId={versionId} admin={admin && d.installed} />
+        </div>
+      </details>
       {present && <Presentation versionLabel={versionLabel} data={d} cands={cands} onClose={() => setPresent(false)} />}
     </Shell>
   );
@@ -174,8 +180,8 @@ function CriteriaPanel({ crit, cat, data, items, versionId, admin }: { crit: Cri
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold">เกณฑ์ประเมินที่เชื่อมโยง</p>
         {admin && <span className="flex flex-wrap gap-1">
-          <Button size="sm" variant="outline" onClick={() => setAdding(adding === "import" ? "" : "import")}><FileDown /> นำเข้าเกณฑ์จากต้นฉบับ</Button>
-          <Button size="sm" variant="ghost" onClick={() => setAdding(adding === "one" ? "" : "one")}><Plus /> เพิ่มทีละข้อ</Button>
+          <Button size="sm" onClick={() => setAdding(adding === "import" ? "" : "import")}><FileDown /> นำเข้าเกณฑ์จาก PDF ต้นฉบับ</Button>
+          <Button size="sm" variant="ghost" className="text-xs" onClick={() => setAdding(adding === "one" ? "" : "one")}>กรอกเอง (กรณีพิเศษ)</Button>
         </span>}
       </div>
       {adding === "import" && <CriteriaImport cat={cat} existing={data.criteria} onDone={() => setAdding("")} />}
@@ -183,7 +189,7 @@ function CriteriaPanel({ crit, cat, data, items, versionId, admin }: { crit: Cri
       {!crit.length && (
         <div className="rounded-xl border border-dashed p-4 text-sm">
           <p className="font-medium">ยังไม่มีเกณฑ์ในทะเบียนสำหรับหมวดนี้</p>
-          <p className="text-muted-foreground">ระบบไม่สร้างเกณฑ์หรือค่าขั้นต่ำเอง — ผู้ดูแลหลักสูตรบันทึกข้อความเกณฑ์ระดับ 5 จากแบบประเมินต้นฉบับ (ลงทะเบียนเอกสารที่หน้า “นำเข้าเอกสารหลักสูตร” ก่อน) พร้อมเลขหน้า แล้วกดยืนยันเกณฑ์</p>
+          <p className="text-muted-foreground">ระบบไม่สร้างเกณฑ์หรือค่าขั้นต่ำเอง — ขั้นต่อไป: ลงทะเบียน PDF แบบประเมินที่หน้า “นำเข้าเอกสารหลักสูตร” แล้วกด “นำเข้าเกณฑ์จาก PDF ต้นฉบับ” ระบบจะอ่านข้อความและแยกข้อให้ตรวจก่อนบันทึก</p>
         </div>
       )}
       {crit.map((k) => <CriterionCard key={k.id} k={k} data={data} items={items} versionId={versionId} admin={admin} />)}

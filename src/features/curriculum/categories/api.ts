@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { requireSupabase } from "@/lib/supabase";
 import { callRpc } from "@/features/master-data/api";
 import { schoolGrade } from "@/features/mapping/match";
+import type { LocalItem } from "./local-match";
+import { parseCode } from "./local-match";
 import type { ActivityRow, Category, EvidenceRow, LinkStatus, ProgramRow, StoredLink, SubjectRow, TargetType } from "./classify";
 
 const sb = () => requireSupabase();
@@ -83,3 +85,27 @@ export const verifyCriterion = (id: string, status: "draft" | "verified" | "reti
 export const setEvidence = (a: { criterionId: string; versionId: string; targetType: string; targetId: string; result: EvidenceRow["result"]; status: LinkStatus; note?: string | null; docId?: string | null; locator?: string | null }) =>
   callRpc<string>("criteria_evidence_set", { p_criterion_id: a.criterionId, p_version_id: a.versionId, p_target_type: a.targetType, p_target_id: a.targetId, p_result: a.result,
     p_status: a.status, p_note: a.note ?? null, p_source_document_id: a.docId ?? null, p_source_locator: a.locator ?? null });
+
+// ------------------------------------------------------------------ สาระท้องถิ่น (migration 20261205000100)
+export interface LocalBatch { id: string; file_name: string; file_sha256: string; source_label: string | null; row_count: number; created_at: string }
+export function useLocalContent(versionId: string | null) {
+  return useQuery({
+    queryKey: [...catKey, "local", versionId], enabled: !!versionId,
+    queryFn: async (): Promise<{ installed: boolean; batch: LocalBatch | null; items: LocalItem[] }> => {
+      const b = await sb().from("local_content_batches").select("id, file_name, file_sha256, source_label, row_count, created_at").eq("curriculum_version_id", versionId!).eq("status", "active").maybeSingle();
+      if (b.error) { if (isMissing(b.error)) return { installed: false, batch: null, items: [] }; throw b.error; }
+      if (!b.data) return { installed: true, batch: null, items: [] };
+      const rows = await all<{ table_no: string; row_no: string; indicator_code_raw: string; core_content: string; local_content: string; source_status: string | null; source_ref: string | null }>((a, z) =>
+        sb().from("local_content_items").select("table_no, row_no, indicator_code_raw, core_content, local_content, source_status, source_ref").eq("batch_id", b.data!.id).range(a, z));
+      return { installed: true, batch: b.data as LocalBatch, items: rows.map((r) => ({ key: `${r.table_no}-${r.row_no}`, table: r.table_no, row: r.row_no, codeRaw: r.indicator_code_raw,
+        coreText: r.core_content.trim(), localText: r.local_content.trim(), status: r.source_status ?? "", source: r.source_ref ?? "", parsed: parseCode(r.indicator_code_raw) })) };
+    },
+  });
+}
+export const importLocalContent = (a: { versionId: string; fileName: string; sha256: string; sourceLabel: string | null; items: LocalItem[] }) =>
+  callRpc<string>("local_content_import", { p_version_id: a.versionId, p_file_name: a.fileName, p_file_sha256: a.sha256, p_source_label: a.sourceLabel,
+    p_rows: a.items.map((i) => ({ table: i.table, row: i.row, code: i.codeRaw, core: i.coreText, local: i.localText, status: i.status, source: i.source })) });
+export async function sha256Hex(buf: ArrayBuffer) {
+  const h = await crypto.subtle.digest("SHA-256", buf);
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}

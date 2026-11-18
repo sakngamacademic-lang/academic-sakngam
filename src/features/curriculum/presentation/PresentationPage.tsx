@@ -80,6 +80,11 @@ function Body({ versionId, versionLabel, year, data }: { versionId: string; vers
             <Pill tone={st.school === "confirmed" ? "ok" : "muted"}>{SCHOOL_LABEL[st.school]}</Pill>
             <Pill tone={st.review === "passed" ? "ok" : st.review === "issues" ? "warn" : "info"}>{REVIEW_LABEL[st.review]}</Pill>
           </div>
+          {(st.counts.confirmedIssues > 0 || st.counts.complianceFail > 0) && (
+            <p role="note" className="mt-4 rounded-xl border border-[var(--tone-orange-fg)]/30 bg-[var(--tone-orange-bg)] px-3 py-2 text-sm">
+              มีประเด็นที่ตรวจพบและยืนยันแล้ว {(st.counts.confirmedIssues + st.counts.complianceFail).toLocaleString("th-TH")} รายการ อยู่ระหว่างการพิจารณาแก้ไขโดยฝ่ายวิชาการ — ข้อมูลที่นำเสนอเป็นข้อมูลตามเอกสารต้นฉบับ ยังไม่ได้ปรับแก้
+            </p>
+          )}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="แผนการเรียน" value={cat.programs.length} />
             <Stat label="รายวิชา ม.ต้น" value={subjectsBy("lower")} />

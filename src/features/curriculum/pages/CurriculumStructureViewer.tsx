@@ -73,6 +73,23 @@ export function CurriculumStructureViewer() {
   const rooms = (data.data?.rooms ?? []).filter((r) => r.program === plan?.id).map((r) => r.room);
   const title = `${gradeName(grade)} · ${plan?.name_th ?? ""} · ${term ? `ภาคเรียนที่ ${term}` : "ทั้งปี"}`;
 
+  // ไม่มีฉบับที่บัญชีนี้อ่านได้ (เช่น ครู ขณะหลักสูตรยังเป็นฉบับร่าง — RLS ให้เห็นเฉพาะ approved/active) → แจ้งสถานะแทนหน้าว่าง/โหลดค้าง
+  if (curricula.isPending || curricula.error || !v) {
+    return (
+      <>
+        <PageHeader icon={BookOpen} title="โครงสร้างหลักสูตร" description="ดูรายวิชาตามระดับชั้น แผนการเรียน และภาคเรียน" />
+        {curricula.isPending ? <p className="flex items-center gap-2 p-6 text-muted-foreground"><Loader2 className="size-4 animate-spin" /> กำลังโหลด…</p>
+          : curricula.error ? <p role="alert" className="text-sm text-destructive">{dbErrorMessage(curricula.error)}</p>
+          : (
+            <div role="status" className="rounded-2xl border border-dashed bg-card p-8 text-center">
+              <p className="text-base font-semibold">หลักสูตร 2569 อยู่ระหว่างตรวจทาน</p>
+              <p className="mt-1 text-sm text-muted-foreground">ครูจะเห็นโครงสร้างหลักสูตรเมื่อฝ่ายวิชาการอนุมัติและประกาศใช้แล้ว</p>
+            </div>
+          )}
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader icon={BookOpen} title={`โครงสร้างหลักสูตร ${v?.effective_year_be ?? ""}`.trim()} description="เลือกระดับชั้น แผนการเรียน และภาคเรียน เพื่อดูรายวิชาทั้งหมด — กดชื่อวิชาเพื่อดูคำอธิบายรายวิชา"

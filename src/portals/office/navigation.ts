@@ -44,7 +44,6 @@ export const officePortal: PortalConfig = {
     {
       items: [
         { path: "", label: "หน้าหลัก", icon: LayoutDashboard, hint: "สรุปงานวันนี้" },
-        { path: "curriculum/mapping", label: "เปรียบเทียบหลักสูตร (Mapping)", icon: GitCompareArrows, hint: "เทียบหลักสูตรโรงเรียนกับหลักสูตรแกนกลาง" },
       ],
     },
     {
@@ -54,7 +53,6 @@ export const officePortal: PortalConfig = {
         { path: "curriculum/structure", label: "รายวิชาในแต่ละชั้น", icon: ListChecks, hint: "วิชาที่เรียนในแต่ละชั้นและภาคเรียน" },
         { path: "curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", icon: BookOpen, hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
         { path: "curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", icon: Target, hint: "สิ่งที่นักเรียนต้องรู้และทำได้" },
-        { path: "curriculum/coverage", label: "ความครอบคลุมมาตรฐาน", icon: ListChecks, hint: "มาตรฐานใดครอบคลุมแล้ว/ต้องตรวจ" },
       ],
     },
     {
@@ -79,6 +77,9 @@ export const officePortal: PortalConfig = {
       items: [
         { path: "curriculum/overview", label: "ภาพรวมและเครื่องมือหลักสูตร", icon: LayoutDashboard, hint: "วิเคราะห์ จัดหมวด เกณฑ์ประเมิน นำเสนอ" },
         { path: "curriculum/internal-review", label: "ตรวจสอบภายใน", icon: ClipboardCheck, hint: "ข้อสังเกต ข้อขัดแย้ง การยืนยันเอกสาร" },
+        { path: "curriculum/workbook-compare", label: "เทียบไฟล์โครงสร้างกับระบบ", icon: GitCompareArrows, hint: "อ่านไฟล์ Excel ที่โรงเรียนยืนยัน แล้วเทียบกับทะเบียน (ไม่แก้ข้อมูล)" },
+        { path: "curriculum/mapping", label: "เปรียบเทียบหลักสูตร (Mapping)", icon: GitCompareArrows, hint: "เทียบหลักสูตรโรงเรียนกับหลักสูตรแกนกลาง" },
+        { path: "curriculum/coverage", label: "ความครอบคลุมมาตรฐาน", icon: ListChecks, hint: "มาตรฐานใดครอบคลุมแล้ว/ต้องตรวจ" },
         { path: "curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", icon: ShieldCheck, hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
         { path: "curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", icon: FileSpreadsheet, hint: "อัปโหลด PDF/Excel ต้นฉบับ" },
         { path: "curriculum/workbench", label: "ตรวจข้อมูลหลักสูตร", icon: ClipboardCheck, hint: "ตรวจความครบถ้วนของข้อมูลที่นำเข้า" },

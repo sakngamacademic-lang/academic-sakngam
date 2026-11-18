@@ -30,6 +30,7 @@ const Viewer = page(() => import("./pages/CurriculumStructureViewer"), "Curricul
 const Coverage = page(() => import("@/features/mapping/CoveragePage"), "CoveragePage");
 const Present = page(() => import("./presentation/PresentationPage"), "PresentationPage");
 const InternalReview = page(() => import("./presentation/InternalReviewPage"), "InternalReviewPage");
+const WorkbookCompare = page(() => import("./pages/WorkbookComparePage"), "WorkbookComparePage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
@@ -61,6 +62,7 @@ export const curriculumPages: Record<string, ReactElement> = {
   "curriculum/present": wrap(<Present />),
   "curriculum/coverage": wrap(<Coverage />),
   "curriculum/internal-review": wrap(<InternalReview />),
+  "curriculum/workbook-compare": wrap(<WorkbookCompare />),
 };
 
 /** แยกหน้าที่อยู่ในเมนู (ส่งให้ buildPortalRoutes) กับหน้าย่อย (route ปกติ) — ไม่สร้าง route ซ้ำ */

@@ -50,6 +50,7 @@ export const officePortal: PortalConfig = {
       title: "หลักสูตรโรงเรียน",
       items: [
         { path: "curriculum", label: "โครงสร้างหลักสูตร 2569", icon: BookOpen, hint: "เลือกชั้น → แผนการเรียน → ภาคเรียน → ดูรายวิชา" },
+        { path: "curriculum/structure-review", label: "ตรวจทานโครงสร้าง 2569 (ตัวอย่าง)", icon: ClipboardCheck, hint: "หัวหน้ากลุ่มสาระตรวจรายวิชาของกลุ่มตนเอง", roles: ACADEMIC },
         { path: "curriculum/structure", label: "รายวิชาในแต่ละชั้น", icon: ListChecks, hint: "วิชาที่เรียนในแต่ละชั้นและภาคเรียน" },
         { path: "curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", icon: BookOpen, hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
         { path: "curriculum/indicators", label: "มาตรฐานและตัวชี้วัด", icon: Target, hint: "สิ่งที่นักเรียนต้องรู้และทำได้" },

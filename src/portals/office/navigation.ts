@@ -76,6 +76,7 @@ export const officePortal: PortalConfig = {
       title: "ตรวจหลักสูตรและข้อมูล",
       tools: true,
       items: [
+        { path: "curriculum/internal-review", label: "ตรวจสอบภายใน", icon: ClipboardCheck, hint: "ข้อสังเกต ข้อขัดแย้ง การยืนยันเอกสาร" },
         { path: "curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", icon: ShieldCheck, hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
         { path: "curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", icon: FileSpreadsheet, hint: "อัปโหลด PDF/Excel ต้นฉบับ" },
         { path: "curriculum/workbench", label: "ตรวจข้อมูลหลักสูตร", icon: ClipboardCheck, hint: "ตรวจความครบถ้วนของข้อมูลที่นำเข้า" },

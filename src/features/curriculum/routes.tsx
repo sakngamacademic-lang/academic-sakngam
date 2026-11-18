@@ -26,6 +26,8 @@ const Syllabi = page(() => import("@/features/syllabus/SyllabusPage"), "Syllabus
 const LessonPlans = page(() => import("@/features/lesson-plans/LessonPlanPage"), "LessonPlanPage");
 const Readiness = page(() => import("./pages/ReadinessPage"), "ReadinessPage");
 const Mapping = page(() => import("@/features/mapping/MappingPage"), "MappingPage");
+const Present = page(() => import("./presentation/PresentationPage"), "PresentationPage");
+const InternalReview = page(() => import("./presentation/InternalReviewPage"), "InternalReviewPage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
@@ -50,6 +52,8 @@ export const curriculumPages: Record<string, ReactElement> = {
   "curriculum/lesson-plans": wrap(<LessonPlans />),
   "curriculum/readiness": wrap(<Readiness />),
   "curriculum/mapping": wrap(<Mapping />),
+  "curriculum/present": wrap(<Present />),
+  "curriculum/internal-review": wrap(<InternalReview />),
 };
 
 /** แยกหน้าที่อยู่ในเมนู (ส่งให้ buildPortalRoutes) กับหน้าย่อย (route ปกติ) — ไม่สร้าง route ซ้ำ */

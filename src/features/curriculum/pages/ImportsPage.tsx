@@ -308,7 +308,7 @@ function BatchDialog({ open, onClose, onDone, sources, versions }: {
  * ปุ่มเปิด/ดาวน์โหลดไฟล์ต้นทาง — ขอ presigned URL (5 นาที) จาก storage-download-url ทุกครั้ง
  * (ฐานข้อมูลตรวจสิทธิ์ + บันทึก log; bucket ยังเป็น private) · เปิด PDF แบบ inline ตรงหน้าที่ระบุได้
  */
-function SourceFileActions({ doc }: { doc: SourceDocument }) {
+export function SourceFileActions({ doc }: { doc: SourceDocument }) {
   const [page, setPage] = useState("");
   const [busy, setBusy] = useState<"open" | "download" | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CategorySection } from "../categories/CategorySection";
-import { AlertTriangle, BookOpen, ClipboardCheck, Inbox, Layers, ListChecks, Target } from "lucide-react";
+import { AlertTriangle, BookOpen, ClipboardCheck, Inbox, Layers, ListChecks, MonitorPlay, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared";
 import { DashSection, KpiCard, LiveBadge } from "@/components/dashboard";
 import { dbErrorMessage } from "@/lib/db-errors";
@@ -28,7 +29,11 @@ export function CurriculumDashboardPage() {
 
   return (
     <>
-      <PageHeader title="หลักสูตรสถานศึกษา" description="Curriculum Intelligence — ข้อมูลทุกค่าต้องมาจากเอกสารต้นทางที่ลงทะเบียนและผ่านการตรวจโดยคน" />
+      <PageHeader title="ภาพรวมหลักสูตร" description="ข้อมูลทุกค่ามาจากเอกสารต้นทางที่ลงทะเบียนและผ่านการตรวจโดยคน"
+        actions={!noData && <span className="flex flex-wrap gap-2">
+          <Button asChild><Link to="/office/curriculum/present"><MonitorPlay /> นำเสนอหลักสูตร</Link></Button>
+          <Button asChild variant="outline"><Link to="/office/curriculum/internal-review"><ClipboardCheck /> ตรวจสอบภายใน</Link></Button>
+        </span>} />
       <CurriculumNav />
       <SetupChecklist />
       {counts.error && <p role="alert" className="mb-4 text-sm text-destructive">{dbErrorMessage(counts.error)}</p>}

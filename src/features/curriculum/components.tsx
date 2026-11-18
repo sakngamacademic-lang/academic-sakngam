@@ -28,6 +28,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     { to: "/office/curriculum/reports", label: "รายงานและดาวน์โหลด", hint: "ส่งออก PDF / Excel" },
     { to: "/office/curriculum/readiness", label: "ความคืบหน้าภาพรวม", hint: "งานที่ทำแล้ว/ยังค้าง" }] },
   { label: "เครื่องมือฝ่ายวิชาการ", items: [
+    { to: "/office/curriculum/internal-review", label: "ตรวจสอบภายใน", hint: "ข้อสังเกต CF เกณฑ์ และการยืนยันเอกสาร" },
     { to: "/office/curriculum/versions", label: "ประกาศใช้หลักสูตร (ฉบับทางการ)", hint: "ส่งตรวจ อนุมัติ และเปิดใช้หลักสูตร" },
     { to: "/office/curriculum/subjects", label: "แก้ไขข้อมูลรายวิชา", hint: "รหัส ชื่อ หน่วยกิต ชั่วโมง" },
     { to: "/office/curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", hint: "อัปโหลด PDF/Excel ต้นฉบับ" },

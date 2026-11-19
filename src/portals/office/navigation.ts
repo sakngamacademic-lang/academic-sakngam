@@ -11,6 +11,7 @@ import {
   ClipboardCheck,
   FolderOpen,
   LayoutList,
+  FileDown,
   FileSpreadsheet,
   FileText,
   FolderLock,
@@ -49,9 +50,21 @@ export const officePortal: PortalConfig = {
       ],
     },
     {
-      // เมนูหลักสูตรทั้งหมดรวมในกลุ่มเดียว (Accordion) — จัดกลุ่มใน UI ด้วย group เท่านั้น route และสิทธิ์เดิมคงไว้ทุกรายการ
+      // Curriculum V2 — 5 เมนูหลัก (ข้อมูลแยกจากระบบเดิม)
       title: "หลักสูตรสถานศึกษา",
       accordion: { icon: FolderOpen },
+      items: [
+        { path: "curriculum-v2", label: "ภาพรวมหลักสูตร", icon: LayoutDashboard, hint: "ปีหลักสูตร แหล่งข้อมูล และประเด็นที่ต้องตรวจ", roles: ACADEMIC_AND_EXEC },
+        { path: "curriculum-v2/import", label: "นำเข้าหลักสูตร", icon: FileSpreadsheet, hint: "XLSX / DOCX / PDF → ตรวจตัวอย่าง → ยืนยัน", roles: ["academic_head", "academic_staff"] },
+        { path: "curriculum-v2/structure", label: "โครงสร้างและรายวิชา", icon: LayoutList, hint: "ปี → ชั้น → แผน → ภาคเรียน", roles: ACADEMIC_AND_EXEC },
+        { path: "curriculum-v2/compare", label: "เปรียบเทียบหลักสูตร", icon: GitCompareArrows, hint: "2568 ↔ 2569: เพิ่ม/ลด/เปลี่ยน", roles: ACADEMIC_AND_EXEC },
+        { path: "curriculum-v2/reports", label: "รายงานและส่งออก", icon: FileDown, hint: "Excel / Word / PDF", roles: ACADEMIC_AND_EXEC },
+      ],
+    },
+    {
+      // ระบบหลักสูตรเดิม (Legacy) — route และสิทธิ์เดิมครบ ใช้อ้างอิง/ย้อนกลับ ไม่แสดงในเมนูหลัก
+      title: "หลักสูตรเดิม (Legacy · ขั้นสูง)",
+      tools: true,
       items: [
         { path: "curriculum", label: "โครงสร้างหลักสูตร 2569", icon: LayoutList, group: "โครงสร้างหลักสูตร 2569", hint: "เลือกชั้น → แผนการเรียน → ภาคเรียน → ดูรายวิชา" },
         { path: "curriculum/overview", label: "ภาพรวมและเครื่องมือ", icon: LayoutDashboard, group: "โครงสร้างหลักสูตร 2569", hint: "วิเคราะห์ จัดหมวด เกณฑ์ประเมิน นำเสนอ" },

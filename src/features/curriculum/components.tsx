@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, FileSearch, Info, Loader2, Wrench } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,10 @@ export function CurriculumNav() {
   }, [openGroup]);
   return (
     <nav aria-label="เมนูหลักสูตร" className="mb-5">
+      <p role="note" className="mb-3 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+        ระบบหลักสูตรเดิม (Legacy) — เก็บไว้เพื่ออ้างอิงและย้อนกลับ ข้อมูลส่วนนี้ไม่ถูกนำไปแสดงในระบบใหม่ ·{" "}
+        <Link className="font-medium text-primary underline-offset-4 hover:underline" to="/office/curriculum-v2">ไปหลักสูตรสถานศึกษา V2</Link>
+      </p>
       <div className="md:hidden">
         <label htmlFor="curnav-select" className="mb-1 block text-xs font-medium text-muted-foreground">ไปที่หน้า</label>
         <select id="curnav-select" className="h-11 w-full rounded-xl border bg-card px-3 text-base shadow-card" value={current?.to ?? ""} onChange={(e) => navigate(e.target.value)}>

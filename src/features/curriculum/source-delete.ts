@@ -47,5 +47,32 @@ export function deletePlan(results: RefResult[]): DeletePlan {
   return { mode, referenced, unchecked, total };
 }
 
-/** Backend ที่ต้องมีก่อนเปิดใช้ปุ่มจริง (ยังไม่มีในระบบ — ตารางไม่มีสิทธิ์ DELETE และคอลัมน์ status แก้จากหน้าเว็บไม่ได้) */
-export const BACKEND_READY = false;
+/** ป้ายภาษาไทยของตาราง/คอลัมน์ที่อ้างอิง (จากผลของฐานข้อมูล) */
+export const refLabel = (table: string, column: string) =>
+  SOURCE_REFERENCES.find((r) => r.table === table.replace(/^public\./, "") && r.column === column)?.label ?? `${table}.${column}`;
+
+/** ผลจาก RPC ฝั่งฐานข้อมูล (migration 20261206000100) */
+export interface ServerRef { table: string; column: string; count: number }
+export interface ActionResult { result: "archived" | "deleted" | "rejected"; cause?: "referenced" | "reference_check_failed" | "already_archived"; references?: ServerRef[]; file_id?: string | null }
+
+/** แปลงผลเป็นข้อความ — สำเร็จเฉพาะเมื่อฐานข้อมูลยืนยัน archived/deleted เท่านั้น */
+export function resultMessage(r: ActionResult): { ok: boolean; text: string } {
+  if (r.result === "archived") return { ok: true, text: "เก็บเข้าคลังแล้ว — ความสัมพันธ์กับหลักฐานเดิมยังอยู่ครบ" };
+  if (r.result === "deleted") return { ok: true, text: "ลบรายการทะเบียนแล้ว — ไฟล์ใน Storage ไม่ถูกลบ" };
+  if (r.cause === "referenced") return { ok: false, text: `ลบไม่ได้: มีการอ้างอิง ${(r.references ?? []).map((x) => `${refLabel(x.table, x.column)} ${x.count}`).join(", ")} — ใช้การเก็บเข้าคลังแทน` };
+  if (r.cause === "reference_check_failed") return { ok: false, text: "ลบไม่ได้: ระบบตรวจการอ้างอิงไม่สำเร็จ จึงไม่ลบเพื่อความปลอดภัย" };
+  if (r.cause === "already_archived") return { ok: false, text: "เอกสารนี้อยู่ในคลังแล้ว" };
+  return { ok: false, text: "ดำเนินการไม่สำเร็จ (ผลจากเซิร์ฟเวอร์ไม่ชัดเจน) — ยังไม่มีการเปลี่ยนแปลง" };
+}
+
+/** ผลที่ไม่ตรงรูปแบบ → ถือว่าไม่สำเร็จ (ไม่แสดงว่าสำเร็จทั้งที่ยังไม่ได้ลบ) */
+export function parseActionResult(x: unknown): ActionResult {
+  const r = x as Partial<ActionResult> | null;
+  if (r && (r.result === "archived" || r.result === "deleted" || r.result === "rejected")) return r as ActionResult;
+  return { result: "rejected" };
+}
+
+export function serverPlan(refs: ServerRef[]): DeletePlan {
+  const referenced = refs.filter((r) => r.count > 0).map((r) => ({ table: r.table, column: r.column, label: refLabel(r.table, r.column), count: r.count }));
+  return { mode: referenced.length ? "archive" : "delete", referenced, unchecked: [], total: referenced.reduce((n, r) => n + (r.count ?? 0), 0) };
+}

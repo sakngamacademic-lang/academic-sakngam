@@ -1,4 +1,5 @@
 import {
+  Archive,
   BarChart3,
   BookOpen,
   BookText,
@@ -61,6 +62,7 @@ export const officePortal: PortalConfig = {
         { path: "curriculum/workbench", label: "ตรวจข้อมูลหลักสูตร", icon: ClipboardCheck, group: "ตรวจทานหลักสูตร", hint: "ตรวจความครบถ้วนของข้อมูลที่นำเข้า" },
         { path: "curriculum/workbook-compare", label: "เทียบไฟล์โครงสร้างกับระบบ", icon: GitCompareArrows, group: "ตรวจทานหลักสูตร", hint: "อ่านไฟล์ Excel ที่โรงเรียนยืนยัน แล้วเทียบกับทะเบียน (ไม่แก้ข้อมูล)" },
         { path: "curriculum/imports", label: "นำเข้าเอกสารหลักสูตร", icon: FileSpreadsheet, group: "ตรวจทานหลักสูตร", hint: "อัปโหลด PDF/Excel ต้นฉบับ" },
+        { path: "curriculum/source-archive", label: "เอกสารที่เก็บเข้าคลัง", icon: Archive, group: "ตรวจทานหลักสูตร", hint: "เอกสารต้นทางที่เลิกใช้งาน และประวัติการลบ" },
         { path: "curriculum/registry", label: "รายชื่อรายวิชาทั้งหมด", icon: BookOpen, group: "รายวิชาและคำอธิบาย", hint: "ค้นหารายวิชา รหัส หน่วยกิต" },
         { path: "curriculum/structure", label: "รายวิชาในแต่ละชั้น", icon: ListChecks, group: "รายวิชาและคำอธิบาย", hint: "วิชาที่เรียนในแต่ละชั้นและภาคเรียน" },
         { path: "curriculum/syllabi", label: "คำอธิบายรายวิชา", icon: BookText, group: "รายวิชาและคำอธิบาย", hint: "เลือกวิชา → เลือกตัวชี้วัด → เขียน → บันทึก" },

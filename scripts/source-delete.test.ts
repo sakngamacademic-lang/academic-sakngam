@@ -17,3 +17,19 @@ Deno.test("no references and fully checked → delete registry row only", () => 
 Deno.test("covers every FK to source_documents (24 on Staging)", () => {
   assertEquals(SOURCE_REFERENCES.length, 24);
 });
+
+import { parseActionResult, resultMessage, serverPlan } from "../src/features/curriculum/source-delete.ts";
+Deno.test("server results: success only when DB confirms archived/deleted", () => {
+  assertEquals(resultMessage(parseActionResult({ result: "deleted", file_id: "f" })).ok, true);
+  assertEquals(resultMessage(parseActionResult({ result: "archived" })).ok, true);
+  const rej = resultMessage(parseActionResult({ result: "rejected", cause: "referenced", references: [{ table: "subjects", column: "source_document_id", count: 3 }] }));
+  assertEquals([rej.ok, rej.text.includes("รายวิชา 3")], [false, true]);
+  assertEquals(resultMessage(parseActionResult({ result: "rejected", cause: "reference_check_failed" })).ok, false);
+  assertEquals(resultMessage(parseActionResult(null)).ok, false);
+  assertEquals(resultMessage(parseActionResult({ ok: true })).ok, false);
+});
+Deno.test("server plan from DB references", () => {
+  assertEquals(serverPlan([]).mode, "delete");
+  const p = serverPlan([{ table: "public.source_documents", column: "parent_id", count: 6 }]);
+  assertEquals([p.mode, p.total, p.referenced[0]!.label], ["archive", 6, "เอกสารย่อย (เช่น SRC-01-P1…P6)"]);
+});

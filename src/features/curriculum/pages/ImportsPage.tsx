@@ -30,7 +30,8 @@ import {
   type SourceDocument,
 } from "../api";
 import { startAnalysis } from "../analysis-api";
-import { BACKEND_READY, deletePlan, SOURCE_REFERENCES, type RefResult } from "../source-delete";
+import { deletePlan, parseActionResult, resultMessage, serverPlan, SOURCE_REFERENCES, type DeletePlan, type ServerRef } from "../source-delete";
+import { isMissing } from "../categories/api";
 import { fileErrorMessage, isPdfName, parsePdfPage, pdfPageUrl } from "../source-file";
 import { CurriculumNav, EmptyState, formatLocator, Notice } from "../components";
 
@@ -49,6 +50,9 @@ export function ImportsPage() {
   const [deleting, setDeleting] = useState<SourceDocument | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: curriculumKey });
   const docCode = useMemo(() => new Map(sources.data?.map((d) => [d.id, d.register_code])), [sources.data]);
+  // เอกสารที่เก็บเข้าคลังไม่แสดงในตารางใช้งานและตัวเลือกใหม่ (ยังอ่านได้ในหน้าคลังและในหลักฐานเดิม)
+  const active = useMemo(() => sources.data?.filter((d) => d.status !== "archived"), [sources.data]);
+  const archivedCount = (sources.data?.length ?? 0) - (active?.length ?? 0);
   const versionLabel = new Map(allVersions(curricula.data).map((v) => [v.id, v.version_label]));
 
   const parse = async (b: ImportBatch) => {
@@ -69,10 +73,10 @@ export function ImportsPage() {
         actions={canManage && <Button onClick={() => setDialog("source")}><FileUp /> ลงทะเบียนเอกสาร</Button>} />
       <CurriculumNav />
 
-      <DashSection id="sources" title={<span className="flex items-center gap-2">ทะเบียนเอกสารต้นทาง <LiveBadge /></span>} meta={`${sources.data?.length ?? 0} รายการ`}>
+      <DashSection id="sources" title={<span className="flex items-center gap-2">ทะเบียนเอกสารต้นทาง <LiveBadge /></span>} meta={<span className="flex items-center gap-3">{active?.length ?? 0} รายการ<Link className="text-primary underline-offset-4 hover:underline" to="/office/curriculum/source-archive">เอกสารที่เก็บเข้าคลัง ({archivedCount})</Link></span>}>
         <DataTable<SourceDocument>
           caption="เอกสารต้นทาง"
-          rows={sources.data}
+          rows={active}
           loading={sources.isPending}
           error={sources.error ? dbErrorMessage(sources.error) : null}
           emptyText="ยังไม่มีเอกสารต้นทาง — ลงทะเบียนพร้อมแนบไฟล์ PDF/Excel"
@@ -92,7 +96,7 @@ export function ImportsPage() {
         />
       </DashSection>
 
-      {deleting && <SourceDeleteDialog doc={deleting} onClose={() => setDeleting(null)} />}
+      {deleting && <SourceDeleteDialog doc={deleting} onClose={() => setDeleting(null)} onDone={refresh} />}
 
       <DashSection id="conflicts" className="mt-4" title="ข้อขัดแย้งระหว่างเอกสาร"
         meta={`${conflicts.data?.filter((c) => c.status !== "resolved").length ?? 0} ยังไม่ตัดสิน · ${conflicts.data?.length ?? 0} ทั้งหมด`}
@@ -128,8 +132,8 @@ export function ImportsPage() {
       </DashSection>
 
       <SourceDialog open={dialog === "source"} onClose={() => setDialog(null)} onDone={refresh} />
-      <ConflictDialog open={dialog === "conflict"} onClose={() => setDialog(null)} onDone={refresh} sources={sources.data ?? []} />
-      <BatchDialog open={dialog === "batch"} onClose={() => setDialog(null)} onDone={refresh} sources={sources.data ?? []}
+      <ConflictDialog open={dialog === "conflict"} onClose={() => setDialog(null)} onDone={refresh} sources={active ?? []} />
+      <BatchDialog open={dialog === "batch"} onClose={() => setDialog(null)} onDone={refresh} sources={active ?? []}
         versions={allVersions(curricula.data).filter((v) => v.status === "draft")} />
     </>
   );
@@ -379,27 +383,56 @@ export function SourceFileActions({ doc }: { doc: SourceDocument }) {
   );
 }
 
-/** ยืนยันการลบ: ตรวจการอ้างอิงแบบอ่านอย่างเดียวก่อน · มีการอ้างอิง → เสนอเก็บเข้าคลัง · ไม่ลบไฟล์จริงใน Storage */
-function SourceDeleteDialog({ doc, onClose }: { doc: SourceDocument; onClose: () => void }) {
-  const [results, setResults] = useState<RefResult[] | null>(null);
+/**
+ * เก็บเข้าคลัง / ลบรายการทะเบียน
+ * - ตรวจการอ้างอิงจากฐานข้อมูล (RPC source_document_reference_summary) — ถ้ายังไม่ติดตั้ง migration ใช้การนับฝั่ง client เพื่อแสดงผลเท่านั้น และปิดปุ่ม
+ * - ดำเนินการผ่าน RPC ที่ล็อกแถวและตรวจการอ้างอิงซ้ำในธุรกรรมเดียวกัน · ไม่ลบไฟล์ใน Storage
+ * - แสดงว่าสำเร็จเฉพาะเมื่อฐานข้อมูลตอบ archived/deleted เท่านั้น
+ */
+function SourceDeleteDialog({ doc, onClose, onDone }: { doc: SourceDocument; onClose: () => void; onDone: () => Promise<unknown> | void }) {
+  const [plan, setPlan] = useState<DeletePlan | null>(null);
+  const [backend, setBackend] = useState<"ready" | "missing" | null>(null);
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [confirmCode, setConfirmCode] = useState("");
+  const [busy, setBusy] = useState<"archive" | "delete" | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
   const check = async () => {
-    setResults(null); setCheckError(null);
+    setPlan(null); setCheckError(null);
+    const sb = requireSupabase();
+    const r = await sb.rpc("source_document_reference_summary", { p_id: doc.id });
+    if (!r.error) { setBackend("ready"); setPlan(serverPlan(((r.data as { references?: ServerRef[] })?.references) ?? [])); return; }
+    if (!isMissing(r.error)) { setBackend("ready"); setCheckError(dbErrorMessage(r.error)); return; }
+    // ยังไม่ติดตั้ง migration: ตรวจแบบอ่านอย่างเดียวฝั่ง client เพื่อแสดงผล (ไม่มีปุ่มดำเนินการ)
+    setBackend("missing");
     try {
-      const sb = requireSupabase();
-      const rs = await Promise.all(SOURCE_REFERENCES.map(async (r) => {
-        const { count, error } = await sb.from(r.table).select("id", { count: "exact", head: true }).eq(r.column, doc.id);
-        // ไม่มีจำนวนกลับมา (error หรือ header หาย) = ตรวจไม่ได้ → ไม่สรุปว่าลบได้
-        return { ...r, count: error || count == null ? null : count };
+      const rs = await Promise.all(SOURCE_REFERENCES.map(async (x) => {
+        const { count, error } = await sb.from(x.table).select("id", { count: "exact", head: true }).eq(x.column, doc.id);
+        return { ...x, count: error || count == null ? null : count };   // ไม่มีจำนวนกลับมา = ตรวจไม่ได้
       }));
-      setResults(rs);
+      setPlan(deletePlan(rs));
     } catch (e) { setCheckError(dbErrorMessage(e)); }
   };
   useEffect(() => { void check(); }, [doc.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const plan = results ? deletePlan(results) : null;
+
+  const run = async (kind: "archive" | "delete") => {
+    setBusy(kind); setFailure(null);
+    try {
+      const { data, error } = await requireSupabase().rpc(kind === "archive" ? "source_document_archive" : "source_document_delete", { p_id: doc.id, p_reason: reason.trim() });
+      if (error) { setFailure(dbErrorMessage(error)); return; }
+      const res = parseActionResult(data); const msg = resultMessage(res);
+      if (!msg.ok) { setFailure(msg.text); if (res.cause === "referenced") void check(); return; }
+      toast.success(`${doc.register_code}: ${msg.text}`);
+      await onDone(); onClose();
+    } catch (e) { setFailure(dbErrorMessage(e)); }
+    finally { setBusy(null); }
+  };
+  const ready = backend === "ready" && !!plan && !checkError;
+  const reasonOk = reason.trim().length > 0;
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="ลบรายการทะเบียนเอกสาร" description="ตรวจการอ้างอิงก่อนลบ — ระบบจะไม่ลบไฟล์จริงใน Storage" role="alertdialog">
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent title="ลบหรือเก็บเข้าคลังรายการทะเบียน" description="ระบบตรวจการอ้างอิงก่อนดำเนินการ และจะไม่ลบไฟล์จริงใน Storage" role="alertdialog">
         <div className="space-y-3 text-sm">
           <div className="rounded-xl border bg-muted/40 p-3">
             <p className="text-xs text-muted-foreground">รหัสเอกสาร</p>
@@ -413,21 +446,40 @@ function SourceDeleteDialog({ doc, onClose }: { doc: SourceDocument; onClose: ()
             <div role="status" className="rounded-xl border border-warning/40 bg-warning/10 p-3">
               <p className="font-medium">มีการอ้างอิงอยู่ {plan.total} รายการ — ลบถาวรไม่ได้</p>
               <ul className="mt-1 list-disc pl-5">{plan.referenced.map((r) => <li key={r.table + r.column}>{r.label}: {r.count}</li>)}</ul>
-              <p className="mt-2">เสนอให้ <b>เก็บเข้าคลัง/เลิกใช้งาน</b> แทน เพื่อไม่ให้หลักฐานเดิมสูญหาย</p>
+              <p className="mt-2">เก็บเข้าคลัง/เลิกใช้งานได้ หลักฐานเดิมยังอยู่ครบ</p>
             </div>
           )}
-          {plan?.mode === "delete" && <p role="status" className="rounded-xl border bg-success/10 p-3">ไม่พบการอ้างอิง — ลบได้เฉพาะ <b>รายการทะเบียน</b> ไฟล์จริงใน Storage จะยังอยู่ (ลบแยกต่างหากโดยผู้ดูแลระบบ)</p>}
-          {plan?.mode === "unknown" && (
-            <p role="status" className="rounded-xl border border-warning/40 bg-warning/10 p-3">ตรวจได้ไม่ครบ {plan.unchecked.length} แหล่ง ({plan.unchecked.map((r) => r.label).join(", ")}) — ยังสรุปไม่ได้ จึงไม่ลบ</p>
+          {plan?.mode === "delete" && <p role="status" className="rounded-xl border bg-success/10 p-3">ไม่พบการอ้างอิง — ลบได้เฉพาะ <b>รายการทะเบียน</b> (ไฟล์ใน Storage ยังอยู่) หรือเลือกเก็บเข้าคลังแทน</p>}
+          {plan?.mode === "unknown" && <p role="status" className="rounded-xl border border-warning/40 bg-warning/10 p-3">ตรวจได้ไม่ครบ {plan.unchecked.length} แหล่ง ({plan.unchecked.map((r) => r.label).join(", ")}) — ยังสรุปไม่ได้ จึงไม่ลบ</p>}
+          {backend === "missing" && plan && (
+            <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">ฐานข้อมูลนี้ยังไม่ได้ติดตั้งคำสั่งเก็บเข้าคลัง/ลบ (migration 20261206000100) — แสดงผลการตรวจเท่านั้น ยังดำเนินการไม่ได้</p>
           )}
-          {!BACKEND_READY && plan && (
-            <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">ระบบยังไม่มีคำสั่งลบหรือเก็บเข้าคลังฝั่งฐานข้อมูลที่ปลอดภัย (พร้อม Audit Log) — ปุ่มด้านล่างจะใช้ได้หลังพัฒนาและได้รับอนุมัติ</p>
+          {ready && plan.mode !== "unknown" && (
+            <>
+              <FormField label="เหตุผล (บันทึกใน Audit Log)" htmlFor="src-del-reason">
+                <textarea id="src-del-reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} className="w-full rounded-lg border bg-background px-3 py-2 text-sm" placeholder="เช่น ลงทะเบียนซ้ำ / เอกสารเลิกใช้" />
+              </FormField>
+              {plan.mode === "delete" && (
+                <FormField label={`พิมพ์ ${doc.register_code} เพื่อยืนยันการลบถาวร`} htmlFor="src-del-confirm">
+                  <Input id="src-del-confirm" value={confirmCode} onChange={(e) => setConfirmCode(e.target.value)} placeholder={doc.register_code} />
+                </FormField>
+              )}
+            </>
           )}
+          {failure && <p role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-destructive">{failure}</p>}
         </div>
         <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
-          {plan?.mode === "archive" && <Button variant="outline" disabled={!BACKEND_READY}><Archive /> เก็บเข้าคลัง/เลิกใช้งาน</Button>}
-          {plan?.mode === "delete" && <Button variant="destructive" disabled={!BACKEND_READY}><Trash2 /> ลบรายการทะเบียน</Button>}
+          <Button variant="outline" onClick={onClose} disabled={!!busy}>ยกเลิก</Button>
+          {plan && plan.mode !== "unknown" && (
+            <Button variant="outline" disabled={!ready || !reasonOk || !!busy} onClick={() => void run("archive")}>
+              {busy === "archive" ? <Loader2 className="animate-spin" /> : <Archive />} เก็บเข้าคลัง/เลิกใช้งาน
+            </Button>
+          )}
+          {plan?.mode === "delete" && (
+            <Button variant="destructive" disabled={!ready || !reasonOk || confirmCode.trim() !== doc.register_code || !!busy} onClick={() => void run("delete")}>
+              {busy === "delete" ? <Loader2 className="animate-spin" /> : <Trash2 />} ลบรายการทะเบียน
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

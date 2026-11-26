@@ -61,6 +61,7 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
   const perLevel = data.levels.map((lv) => data.records.filter((r) => r.level === lv).length);
   const maxLevel = Math.max(1, ...perLevel);
   const total = data.records.length;
+  const srcRows = data.meta.source_rows ?? total;
   // แผงรายละเอียดในกรอบเปรียบเทียบ — เปิดเมื่อกดแท่ง (ทั้งกลุ่มสาระ) หรือช่วงสี (เฉพาะระดับชั้น)
   const [peek, setPeek] = useState<{ area: string; level: string } | null>(null);
   // ตัวเลือกระดับของทรีแมป/เรดาร์: 0 = ทุกระดับ
@@ -78,22 +79,37 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
       <p className="visit__lede">สาระท้องถิ่นจังหวัดกำแพงเพชรที่เชื่อมกับตัวชี้วัดและสาระการเรียนรู้แกนกลาง นับ 1 รายการต่อ 1 แถวในเอกสาร</p>
       <div className="grid grid-cols-12 gap-4">
         {/* A · ภาพรวม */}
-        <BentoCard className="col-span-12 flex flex-col gap-5 self-start sm:flex-row lg:col-span-5" aria-label="รายการเชื่อมโยงทั้งหมด">
-          <button type="button" className="shrink-0 text-left" onClick={() => onPick({})}>
+        <BentoCard className={`col-span-12 flex flex-col gap-5 lg:col-span-5${peek ? " lg:self-start" : ""}`} aria-label="รายการเชื่อมโยงทั้งหมด">
+          <button type="button" className="text-left" onClick={() => onPick({})}>
             <span className="block text-[13px] text-muted-foreground">รายการเชื่อมโยงทั้งหมด</span>
-            <span className="mt-2 block text-[52px] font-semibold leading-none tracking-tight sm:text-[60px]"><CountUp value={data.records.length} /></span>
-            <span className="mt-1 block text-[13px] font-semibold text-foreground">ตัวชี้วัดที่พบในหลักสูตร 69 · {pct(total, data.meta.source_rows ?? total)} ของ {(data.meta.source_rows ?? total).toLocaleString("th-TH")} แถวในเอกสาร</span>
-            <span className="mt-2 block text-[13px] text-muted-foreground"><b className="text-foreground"><CountUp value={areasWithData} /></b> กลุ่มสาระ · <b className="text-foreground"><CountUp value={data.tables.length} /></b> ตารางในเอกสาร</span>
+            <span className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
+              <span className="text-[56px] font-semibold leading-none tracking-tight sm:text-[64px]"><CountUp value={total} /></span>
+              <span className="pb-1.5 text-[13px] text-muted-foreground">รายการ · <b className="text-foreground"><CountUp value={areasWithData} /></b> กลุ่มสาระ · <b className="text-foreground"><CountUp value={data.tables.length} /></b> ตาราง</span>
+            </span>
+            {/* สัดส่วนต่อแถวทั้งหมดในเอกสาร */}
+            <span className="mt-4 flex items-baseline justify-between gap-3 text-[13px]">
+              <span className="font-semibold text-foreground">ตัวชี้วัดที่พบในหลักสูตร 69</span>
+              <span className="text-muted-foreground"><b className="text-foreground">{pct(total, srcRows)}</b> ของ {srcRows.toLocaleString("th-TH")} แถว</span>
+            </span>
+            <span className="lc-meter mt-2" aria-hidden="true"><span style={{ width: `${(total / srcRows) * 100}%` }} /></span>
           </button>
-          <div className="flex min-h-[150px] flex-1 items-end gap-2 rounded-[18px] border border-border bg-muted/40 p-3" role="group" aria-label="จำนวนรายการแยกระดับชั้น">
-            {data.levels.map((l, i) => (
-              <button key={l} type="button" onClick={() => onPick({ level: l })} aria-label={`${LEVEL_LABEL[l]} ${perLevel[i]} รายการ`} className="group flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-                <span className="text-sm font-semibold"><CountUp value={perLevel[i] ?? 0} /></span>
-                <span className="text-[11px] text-muted-foreground">{pct(perLevel[i] ?? 0, total)}</span>
-                <span className="lc-vbar w-full rounded-[10px] transition-[filter] group-hover:brightness-110" style={{ height: `${((perLevel[i] ?? 0) / maxLevel) * 70}%`, background: TONES[i] }} />
-                <span className="text-xs text-muted-foreground">{LEVEL_LABEL[l]}</span>
-              </button>
-            ))}
+          <div className="rounded-[18px] border border-border bg-muted/40 p-3 sm:p-4" role="group" aria-label="จำนวนรายการแยกระดับชั้น">
+            <p className="m-0 mb-2 text-[13px] font-semibold">แยกตามระดับชั้น</p>
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+              {data.levels.map((l, i) => {
+                const n = perLevel[i] ?? 0;
+                return (
+                  <button key={l} type="button" onClick={() => onPick({ level: l })} aria-label={`${LEVEL_LABEL[l]} ${n} รายการ ${pct(n, total)}`} className="group flex min-w-0 flex-col items-center gap-1">
+                    <span className="text-[15px] font-semibold leading-none"><CountUp value={n} /></span>
+                    <span className="text-[11px] text-muted-foreground">{pct(n, total)}</span>
+                    <span className="flex h-[120px] w-full items-end justify-center">
+                      <span className="lc-vbar w-full max-w-[56px] rounded-[10px] transition-[filter] group-hover:brightness-110" style={{ height: `${Math.max(6, (n / maxLevel) * 120)}px`, background: TONES[i] }} />
+                    </span>
+                    <span className="text-xs text-muted-foreground">{LEVEL_LABEL[l]}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </BentoCard>
 

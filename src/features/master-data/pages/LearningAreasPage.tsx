@@ -18,12 +18,13 @@ import { FormActions, ReadOnlyNotice, StatusFilter, statusMatches } from "./part
 import { ToggleActiveButton } from "./ToggleActiveButton";
 
 const schema = z.object({
-  code: z.string().trim().regex(/^[A-Za-z0-9_-]{1,16}$/, "รหัสใช้ได้เฉพาะ A–Z, 0–9, - และ _ (ไม่เกิน 16 ตัว)"),
   name_th: z.string().trim().min(1, "กรุณากรอกชื่อกลุ่มสาระ").max(200),
   sort_order: z.coerce.number<number>().int().min(0).max(999),
   is_active: z.boolean(),
 });
 type FormValues = z.infer<typeof schema>;
+/** รหัสภายใน (ฐานข้อมูลบังคับให้มีและไม่ซ้ำ) — ระบบสร้างให้ ผู้ใช้ไม่ต้องกำหนด/ไม่แสดงในหน้าจอ */
+const autoCode = () => `LA${Date.now().toString(36).toUpperCase()}`;
 
 export function LearningAreasPage() {
   const { can, roles } = useAuth();
@@ -62,7 +63,6 @@ export function LearningAreasPage() {
 
   const columns: Column<LearningArea>[] = [
     { key: "order", header: "ลำดับ", cell: (a) => a.sort_order, className: "w-20 tabular-nums" },
-    { key: "code", header: "รหัส", cell: (a) => <code className="text-xs">{a.code}</code> },
     { key: "name", header: "กลุ่มสาระการเรียนรู้", cell: (a) => <span className="font-medium">{a.name_th}</span> },
     ...(canSeeHeads ? [{ key: "heads", header: "หัวหน้ากลุ่มสาระ", cell: (a: LearningArea) => headNames(a.id) }] : []),
     { key: "status", header: "สถานะ", cell: (a) => <ActiveBadge active={a.is_active} /> },
@@ -86,7 +86,7 @@ export function LearningAreasPage() {
       />
       {scopedOnly && <ReadOnlyNotice text="คุณเห็นเฉพาะกลุ่มสาระที่ได้รับมอบหมายเป็นหัวหน้า" />}
       {!scopedOnly && !canManage && <ReadOnlyNotice />}
-      <TableToolbar search={search} onSearch={setSearch} placeholder="ค้นหาชื่อหรือรหัส">
+      <TableToolbar search={search} onSearch={setSearch} placeholder="ค้นหาชื่อกลุ่มสาระ">
         <StatusFilter value={status} onChange={setStatus} />
       </TableToolbar>
       <DataTable
@@ -118,7 +118,7 @@ export function LearningAreasPage() {
       <AreaFormDialog
         open={crud.formOpen}
         editing={crud.editing}
-        defaults={crud.editing ?? { code: "", name_th: "", sort_order: (areas.data?.at(-1)?.sort_order ?? 0) + 1, is_active: true }}
+        defaults={crud.editing ?? { name_th: "", sort_order: (areas.data?.at(-1)?.sort_order ?? 0) + 1, is_active: true }}
         onClose={crud.closeForm}
       />
       <ConfirmDialog
@@ -156,7 +156,7 @@ function AreaFormDialog({ open, editing, defaults, onClose }: { open: boolean; e
     (v: FormValues) =>
       editing
         ? updateRow("learning_areas", editing.id, { name_th: v.name_th, sort_order: v.sort_order, is_active: v.is_active })
-        : insertRows("learning_areas", v),
+        : insertRows("learning_areas", { ...v, code: autoCode() }),
     { success: editing ? "บันทึกการแก้ไขเรียบร้อย" : "เพิ่มกลุ่มสาระเรียบร้อย", invalidate: [mdKey("learning_areas")] },
   );
   const { errors, isSubmitting } = form.formState;
@@ -167,14 +167,9 @@ function AreaFormDialog({ open, editing, defaults, onClose }: { open: boolean; e
           <FormField label="ชื่อกลุ่มสาระการเรียนรู้" htmlFor="name_th" error={errors.name_th?.message}>
             <Input id="name_th" {...form.register("name_th")} />
           </FormField>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="รหัส" htmlFor="code" error={errors.code?.message} hint={editing ? "แก้ไขรหัสไม่ได้" : "เช่น MA"}>
-              <Input id="code" disabled={!!editing} {...form.register("code")} />
-            </FormField>
-            <FormField label="ลำดับการแสดงผล" htmlFor="sort_order" error={errors.sort_order?.message}>
-              <Input id="sort_order" type="number" inputMode="numeric" {...form.register("sort_order")} />
-            </FormField>
-          </div>
+          <FormField label="ลำดับการแสดงผล" htmlFor="sort_order" error={errors.sort_order?.message}>
+            <Input id="sort_order" type="number" inputMode="numeric" {...form.register("sort_order")} />
+          </FormField>
           <Checkbox label="เปิดใช้งาน" {...form.register("is_active")} />
           <FormActions onCancel={onClose} busy={isSubmitting} />
         </form>

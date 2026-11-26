@@ -19,7 +19,7 @@ export interface LocalRecord {
   not_in_69?: boolean;
 }
 export interface LocalData {
-  meta: { title: string; school: string; source_document: string; extraction: string; extracted_on: string; status: string; check_69?: string };
+  meta: { title: string; school: string; source_document: string; extraction: string; extracted_on: string; status: string; check_69?: string; /** จำนวนแถวทั้งหมดในเอกสาร ก่อนกรอง (ตั้งค่าตอนโหลด) */ source_rows?: number };
   areas: string[];
   levels: string[];
   tables: { table: number; area: string; grade_label: string; heading: string }[];
@@ -27,7 +27,11 @@ export interface LocalData {
 }
 
 /** โหลดแบบแยก chunk (ไฟล์ข้อมูลใหญ่) — อนาคตเปลี่ยนเป็น RPC ของ Supabase ได้ที่จุดนี้จุดเดียว */
-export const loadLocalData = (): Promise<LocalData> => import("./local-curriculum-data.json").then((m) => m.default as LocalData);
+export const loadLocalData = (): Promise<LocalData> => import("./local-curriculum-data.json").then((m) => {
+  const d = m.default as LocalData;
+  // ไม่แสดงแถวที่เอกสารฉบับตรวจทานระบุ “◄ ไม่พบในหลักสูตร 69” (ยังเก็บไว้ใน JSON เพื่ออ้างอิง) — ตัวเลข/ร้อยละทั้งหมดคิดจากแถวที่เหลือ
+  return { ...d, meta: { ...d.meta, source_rows: d.records.length }, records: d.records.filter((r) => !r.not_in_69) };
+});
 
 export const LEVEL_LABEL: Record<string, string> = { "ม.1": "ม.1", "ม.2": "ม.2", "ม.3": "ม.3", "ม.4-6": "ม.4–6" };
 

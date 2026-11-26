@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useSourceDocuments } from "@/features/curriculum/api";
 import { dbErrorMessage } from "@/lib/db-errors";
+import { isMainSite } from "@/lib/env";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { PdfPages, findCodePages, readPlanMeta, type CodeHit } from "../PdfPages";
@@ -43,8 +44,10 @@ type Run = ReturnType<typeof useActions>["run"];
 export function PresentPage() {
   const lib = useLibrary();
   const { can } = useAuth();
-  const canEdit = can("curriculum.edit");
-  const canAdmin = can("curriculum.manage");
+  // แนบ/แก้ไขเอกสารทำได้เฉพาะบนเว็บหลัก — ลิงก์ทดสอบ (Preview) ดูได้อย่างเดียว
+  const main = isMainSite();
+  const canEdit = main && can("curriculum.edit");
+  const canAdmin = main && can("curriculum.manage");
   const [edit, setEdit] = useState(false);
   const [open, setOpen] = useState<{ areaId: string | null; start: number } | null>(null);
   const { busy, run } = useActions();

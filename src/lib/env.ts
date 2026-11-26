@@ -39,3 +39,10 @@ export function supabaseProjectLabel(url = env.VITE_SUPABASE_URL): string | null
     return null;
   }
 }
+
+/**
+ * true = เปิดจากเว็บหลัก (Production URL) หรือเครื่องพัฒนา (local)
+ * false = ลิงก์ทดสอบ (Vercel Preview) ซึ่งต่อฐานข้อมูลเดียวกับเว็บจริง → หน้าจัดการเอกสารปิดการแก้ไข ให้ไปทำที่เว็บหลัก
+ */
+export const isMainSite = (): boolean =>
+  env.VITE_APP_ENV === "local" || (typeof window !== "undefined" && window.location.origin === env.VITE_PUBLIC_SITE_URL.replace(/\/$/, ""));

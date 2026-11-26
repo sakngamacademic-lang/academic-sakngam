@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { callRpc, useMdMutation } from "@/features/master-data/api";
 import { requireSupabase } from "@/lib/supabase";
+import { isMainSite } from "@/lib/env";
 import { allVersions, useCurricula, useSourceDocuments } from "../api";
 import { isMissing } from "../categories/api";
 import { QrSheet } from "./QrSheet";
@@ -21,7 +22,7 @@ const STAGE = { lower: "ม.ต้น (ม.1–3)", upper: "ม.ปลาย (�
 
 export function PublishPage() {
   const { can } = useAuth();
-  const canManage = can("curriculum.manage");
+  const canManage = isMainSite() && can("curriculum.manage");
   const releases = useQuery({
     queryKey: key,
     queryFn: async () => {

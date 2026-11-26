@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TeamLanyardRail, type LanyardMember } from "@/components/ui/team-lanyard-rail";
 import type { PublicVisitData } from "./visit-api";
+import { isPlanDoc } from "./plans/PlanLinks";
 
 /**
  * ราวป้ายเล่มหลักสูตร (หน้าเยี่ยมชม) — 1 ป้าย = 1 เล่มหลักสูตรสถานศึกษา หรือ 1 กลุ่มสาระที่มีเล่มเผยแพร่
@@ -31,7 +32,8 @@ export function VisitRail({ data }: { data: PublicVisitData }) {
   }, [data]);
   const items = useMemo<LanyardMember[]>(() => {
     const inBooks = new Set(data.books.map((b) => b.document_id));
-    const school: LanyardMember[] = data.documents.filter((d) => !inBooks.has(d.id)).map((d) => ({
+    // แผนการสอนที่เผยแพร่ แสดงในส่วน “จากหลักสูตรสู่แผนการสอน” แทน
+    const school: LanyardMember[] = data.documents.filter((d) => !inBooks.has(d.id) && !isPlanDoc(d.title)).map((d) => ({
       id: d.id, name: d.title, role: "เล่มหลักสูตรสถานศึกษา", team: "โรงเรียนสักงามวิทยา", image: "/school-logo.png", imageFit: "contain", tone: 2,
       bio: "เล่มหลักสูตรสถานศึกษาที่อนุมัติให้เผยแพร่ กดเปิดอ่านได้ทันที",
       tags: d.page_count ? [`${d.page_count.toLocaleString("th-TH")} หน้า`] : [],

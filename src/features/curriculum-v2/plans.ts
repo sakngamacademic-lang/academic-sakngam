@@ -43,4 +43,4 @@ export function gradeWarning(p: PlanMeta): string | null {
 }
 
 export const planTitle = (p: PlanMeta, fileName: string) =>
-  p.planNo ? `แผนที่ ${p.planNo}${p.topic ? ` · ${p.topic}` : ""}` : fileName.replace(/\.pdf$/i, "");
+  p.planNo ? `แผนที่ ${p.planNo}${p.code ? ` · ${p.code}` : ""}${p.topic ? ` · ${p.topic}` : ""}` : fileName.replace(/\.pdf$/i, "");

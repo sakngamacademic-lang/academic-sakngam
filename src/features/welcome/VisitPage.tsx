@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { BrandMark } from "./WelcomePage";
 import { VisitRail } from "./VisitRail";
 import { LocalCurriculum } from "./local/LocalCurriculum";
+import { PlanLinks } from "./plans/PlanLinks";
 import { usePublicVisit } from "./visit-api";
 import { isMissing } from "@/features/curriculum/categories/api";
 import "./welcome.css";
@@ -69,6 +70,8 @@ export function VisitPage() {
           )}
         {/* หลักสูตรท้องถิ่น: ข้อมูลจากไฟล์ JSON (ไม่ขึ้นกับฐานข้อมูล) */}
         <div className="section" id="local"><LocalCurriculum /></div>
+        {/* จากหลักสูตรสู่แผนการสอน: ข้อมูลจาก plan-links.json · ลิงก์แผน = เอกสารที่อนุมัติเผยแพร่แล้วเท่านั้น */}
+        <div className="section" id="plans"><PlanLinks visit={q.data} /></div>
       </main>
 
       <footer className="footnote">

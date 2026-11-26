@@ -76,7 +76,7 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
     <section className="lc-block" aria-labelledby="lc-dash">
       <p className="label">Local Curriculum</p>
       <h2 id="lc-dash" className="section__title">หลักสูตรท้องถิ่น <em>ในทุกกลุ่มสาระ</em></h2>
-      <p className="visit__lede">สาระท้องถิ่นจังหวัดกำแพงเพชรที่เชื่อมกับตัวชี้วัดและสาระการเรียนรู้แกนกลาง นับ 1 รายการต่อ 1 แถวในเอกสาร</p>
+      <p className="visit__lede">สาระท้องถิ่นจังหวัดกำแพงเพชรที่เชื่อมกับตัวชี้วัดและสาระการเรียนรู้แกนกลาง และหลักสูตรสถานศึกษาโรงเรียนสักงามวิทยา</p>
       <div className="grid grid-cols-12 gap-4">
         {/* A · ภาพรวม */}
         <BentoCard className={`col-span-12 flex flex-col gap-5 lg:col-span-5${peek ? " lg:self-start" : ""}`} aria-label="รายการเชื่อมโยงทั้งหมด">

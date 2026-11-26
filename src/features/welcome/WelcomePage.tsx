@@ -177,6 +177,7 @@ export function WelcomePage() {
           ))}
         </nav>
         <div className="topbar__end">
+          <Link className="btn btn--ghost btn--sm" to="/visit">เยี่ยมชมข้อมูล</Link>
           <AuthCta className="btn btn--primary btn--sm">
             <span>เข้าสู่ระบบงานวิชาการ</span>
             <ArrowRight aria-hidden="true" />
@@ -271,9 +272,6 @@ export function WelcomePage() {
                       <span>เข้าสู่ระบบงานวิชาการ</span>
                     </AuthCta>
                     <Link className="btn btn--ghost" to="/visit">เยี่ยมชมข้อมูล</Link>
-                    {s.secondaryCta && (
-                      <a className="btn btn--ghost" href="#features">ดูความสามารถ</a>
-                    )}
                   </div>
                   <Panel scene={s} />
                 </article>

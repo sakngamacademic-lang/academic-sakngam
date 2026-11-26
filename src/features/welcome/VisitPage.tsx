@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, FileUp, GitCompareArrows, GraduationCap, LayoutGrid, Lock, ShieldCheck, Target, Users } from "lucide-react";
 import { APP_ROLES, ROLE_LABELS, OFFICE_ROLES, type AppRole } from "@/features/auth/roles";
+import { VisitCurriculum } from "./VisitCurriculum";
 import "./welcome.css";
 
 /**
@@ -55,7 +56,7 @@ export function VisitPage() {
         </Link>
         <div className="topbar__end">
           <Link className="btn btn--ghost btn--sm" to="/"><ArrowLeft aria-hidden="true" /> หน้าแรก</Link>
-          <Link className="btn btn--primary btn--sm" to="/login"><span>เข้าสู่ระบบงานวิชาการ</span><ArrowRight aria-hidden="true" /></Link>
+          <Link className="btn btn--primary btn--sm" to="/login" state={{ from: "/visit" }}><span>เข้าสู่ระบบงานวิชาการ</span><ArrowRight aria-hidden="true" /></Link>
         </div>
       </header>
 
@@ -63,13 +64,18 @@ export function VisitPage() {
         <section className="section" aria-labelledby="visit-title">
           <p className="label">เยี่ยมชมข้อมูล · ไม่ต้องเข้าสู่ระบบ</p>
           <h1 className="section__title visit__title" id="visit-title">ระบบบริหารงานวิชาการ <em>โรงเรียนสักงามวิทยา</em></h1>
-          <p className="visit__lede">หน้านี้แนะนำว่าระบบมีอะไรบ้าง ใครใช้งานส่วนใด และงานหลักสูตรผ่านขั้นตอนอย่างไร ข้อมูลหลักสูตร ครู และนักเรียนจริงเปิดดูได้เฉพาะผู้ที่ได้รับสิทธิ์หลังเข้าสู่ระบบ</p>
+          <p className="visit__lede">หน้านี้แนะนำว่าระบบมีอะไรบ้าง ใครใช้งานส่วนใด และงานหลักสูตรผ่านขั้นตอนอย่างไร คณะกรรมการที่เข้าสู่ระบบด้วยบัญชีที่ได้รับจะเห็นหลักสูตรที่จัดประเภทแล้วแบบอ่านอย่างเดียว ไม่สามารถแก้ไขข้อมูลได้</p>
           <dl className="visit__stats">
             <div><dt>Portal</dt><dd>2 <small>ส่วน</small></dd></div>
             <div><dt>บทบาทผู้ใช้</dt><dd>{APP_ROLES.length} <small>บทบาท</small></dd></div>
             <div><dt>กลุ่มสาระ</dt><dd>{LEARNING_AREAS.length} <small>กลุ่ม</small></dd></div>
             <div><dt>ระดับชั้น</dt><dd>ม.1–6 <small>ต้น / ปลาย</small></dd></div>
           </dl>
+        </section>
+
+        <section className="section" id="curriculum" aria-labelledby="visit-curriculum">
+          <div className="section__head"><div><p className="label">Curriculum</p><h2 className="section__title" id="visit-curriculum">หลักสูตรสถานศึกษาแยกตามประเภท</h2></div></div>
+          <VisitCurriculum />
         </section>
 
         <section className="section" aria-labelledby="visit-modules">
@@ -116,13 +122,13 @@ export function VisitPage() {
               <h3><Lock aria-hidden="true" className="visit__lock" /> ต้องการดูข้อมูลจริง?</h3>
               <p>เข้าสู่ระบบด้วยบัญชีที่ผู้ดูแลระบบสร้างให้ — สิทธิ์ทุกตารางบังคับที่ฐานข้อมูล (RLS)</p>
             </div>
-            <Link className="btn btn--primary btn--lg" to="/login"><span>เข้าสู่ระบบงานวิชาการ</span></Link>
+            <Link className="btn btn--primary btn--lg" to="/login" state={{ from: "/visit" }}><span>เข้าสู่ระบบงานวิชาการ</span></Link>
           </div>
         </section>
       </main>
 
       <footer className="footnote">
-        <ShieldCheck aria-hidden="true" className="visit__lock" /> หน้านี้เป็นข้อมูลแนะนำระบบ ไม่ดึงข้อมูลใด ๆ จากฐานข้อมูล และไม่แสดงข้อมูลส่วนบุคคลหรือข้อมูลหลักสูตรที่ยังไม่ประกาศใช้
+        <ShieldCheck aria-hidden="true" className="visit__lock" /> หน้านี้อ่านอย่างเดียว · ข้อมูลหลักสูตรแสดงเฉพาะผู้ที่เข้าสู่ระบบและมีสิทธิ์ตาม RLS · แสดงเฉพาะรายการที่ผู้ดูแลหลักสูตรยืนยันแล้ว · ไม่แสดงข้อมูลส่วนบุคคล
       </footer>
     </div>
   );

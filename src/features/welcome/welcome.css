@@ -363,3 +363,42 @@
 .welcome .visit__no { display: inline-block; margin-bottom: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; color: var(--accent); }
 .welcome .visit__lock { display: inline; width: 1em; height: 1em; vertical-align: -0.125em; }
 .welcome.visit .section + .section { padding-top: 0; }
+.welcome .visit__muted { color: var(--text-2); font-size: var(--fs-sm); }
+.welcome .visit__empty { padding: var(--sp-6); text-align: center; border: 1px dashed var(--line-strong); border-radius: var(--r-lg); }
+.welcome .visit__spin { animation: visit-spin 1s linear infinite; }
+@keyframes visit-spin { to { transform: rotate(360deg); } }
+.welcome .visit__gate { margin-top: 0; }
+.welcome .visit__tabs { display: flex; gap: var(--sp-2); overflow-x: auto; margin: var(--sp-4) 0 var(--sp-5); padding-bottom: var(--sp-1); scrollbar-width: none; }
+.welcome .visit__tabs button { flex: none; padding: 0.45rem 1rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
+.welcome .visit__tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.welcome .visit__tabs .num { margin-left: 0.35rem; opacity: 0.75; }
+.welcome .visit__stage + .visit__stage { margin-top: var(--sp-6); }
+.welcome .visit__stage h3 { font-size: var(--fs-lg); font-weight: 600; margin-bottom: var(--sp-3); }
+.welcome .visit__stage h3 .num { font-weight: 400; color: var(--text-3); font-size: var(--fs-sm); }
+.welcome .visit__list { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); list-style: none; padding: 0; }
+.welcome .visit__list li { padding: var(--sp-4); border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg-1); }
+.welcome .visit__item { font-weight: 500; }
+.welcome .visit__sub { font-size: var(--fs-xs); color: var(--text-3); }
+/* ผังเชื่อมโยงหลักสูตร */
+.welcome .vmap { margin-bottom: var(--sp-6); }
+.welcome .vmap__cols { display: grid; gap: var(--sp-5); grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; padding: 0; }
+.welcome .vmap__col { position: relative; padding: var(--sp-4) var(--sp-5); border-radius: var(--r-lg); border: 1px solid var(--line-strong); background: var(--bg-1); }
+.welcome .vmap__col:not(:last-child)::after { content: "→"; position: absolute; right: calc(var(--sp-5) * -0.5 - 0.5em); top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; }
+.welcome .vmap__step { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: var(--fs-xs); font-weight: 700; }
+.welcome .vmap__title { margin-top: var(--sp-2); font-weight: 600; }
+.welcome .vmap__note { font-size: var(--fs-xs); color: var(--text-3); }
+.welcome .vmap__n { margin-top: var(--sp-2); font-size: var(--fs-xl); font-weight: 700; }
+.welcome .vmap__n small { font-size: var(--fs-xs); font-weight: 400; color: var(--text-3); }
+.welcome .vmap__bands { display: grid; gap: var(--sp-4); margin-top: var(--sp-5); }
+.welcome .vmap__band { padding: var(--sp-4); border-radius: var(--r-lg); border: 1px dashed var(--line-strong); }
+.welcome .vmap__band--local { --c: var(--mint); }
+.welcome .vmap__band--vocational { --c: var(--amber); }
+.welcome .vmap__bandTitle { font-size: var(--fs-sm); font-weight: 600; margin-bottom: var(--sp-3); color: var(--text-2); }
+.welcome .vmap__boxes { display: flex; flex-wrap: wrap; gap: var(--sp-2); list-style: none; padding: 0; }
+.welcome .vmap__box { text-align: left; padding: 0.5rem 0.8rem; border-radius: var(--r-sm); border: 1px solid color-mix(in oklab, var(--c) 55%, transparent); border-left-width: 4px; background: color-mix(in oklab, var(--c) 8%, transparent); font-size: var(--fs-sm); max-width: 22rem; }
+.welcome .vmap__box[aria-expanded="true"] { background: color-mix(in oklab, var(--c) 18%, transparent); }
+.welcome .vmap__boxMore { display: grid; gap: 0.15rem; margin-top: var(--sp-2); font-size: var(--fs-xs); color: var(--text-2); }
+@media (max-width: 760px) {
+  .welcome .vmap__cols { grid-template-columns: 1fr; gap: var(--sp-4); }
+  .welcome .vmap__col:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: calc(var(--sp-4) * -0.5 - 0.7em); transform: translateX(50%); }
+}

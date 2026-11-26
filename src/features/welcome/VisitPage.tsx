@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { BrandMark } from "./WelcomePage";
 import { VisitRail } from "./VisitRail";
+import { LocalCurriculum } from "./local/LocalCurriculum";
 import { usePublicVisit } from "./visit-api";
 import { isMissing } from "@/features/curriculum/categories/api";
 import "./welcome.css";
@@ -66,6 +67,8 @@ export function VisitPage() {
               <div className="section visit__rail"><VisitRail data={q.data} /></div>
             </>
           )}
+        {/* หลักสูตรท้องถิ่น: ข้อมูลจากไฟล์ JSON (ไม่ขึ้นกับฐานข้อมูล) */}
+        <div className="section" id="local"><LocalCurriculum /></div>
       </main>
 
       <footer className="footnote">

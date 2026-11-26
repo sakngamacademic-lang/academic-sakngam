@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { AlertTriangle, BookMarked, FileText, Landmark, MapPin, School } from "lucide-react";
+import { BookMarked, FileText, Landmark, MapPin, School } from "lucide-react";
 import { ProvinceMapShowcase, type MapPinItem, type ProvinceMap } from "@/components/ui/province-map-showcase";
 import type { PublicVisitData } from "../visit-api";
 import raw from "./plan-links.json";
@@ -11,7 +11,7 @@ import mapRaw from "./kamphaeng-phet-map.json";
  * แผนที่: ขอบเขตอำเภอจาก OpenGISData-Thailand (CC BY 4.0) · หมุดเป็นแผนผัง ไม่ใช่พิกัดจริง
  * ลิงก์แผน: จับคู่อัตโนมัติกับเอกสาร PDF ที่ “อนุมัติเผยแพร่” ซึ่งชื่อขึ้นต้นด้วย “แผน” และมีรหัสวิชา → /b/<id>
  */
-type Status = "match" | "plan" | "inplan" | "partial" | "linkable" | "none";
+type Status = "match" | "plan" | "inplan" | "link";
 type Zone = "school" | "mueang" | "province" | null;
 interface Layer { status: Status; text: string }
 export interface PlanLink {
@@ -19,7 +19,7 @@ export interface PlanLink {
   topic: string | null; unit: string | null; ref: string; core: Layer; school: Layer; local: Layer; has_file: boolean;
   zone: Zone; highlight: string[];
 }
-const data = raw as { meta: { title: string; school: string; reference: string; source: string; caution: string[] }; plans: PlanLink[] };
+const data = raw as { meta: { title: string; school: string; reference: string; source: string }; plans: PlanLink[] };
 const map = mapRaw as ProvinceMap & { source: string };
 
 /** เอกสารที่เป็นแผนการสอน (ไม่แสดงเป็นป้ายเล่มหลักสูตรบนสายคล้อง) */
@@ -34,11 +34,9 @@ const ZONE: Record<Exclude<Zone, null>, { districts: string[]; label: string }> 
 };
 const STATUS: Record<Status, { label: string; tone: string }> = {
   match: { label: "ตรง", tone: "ok" },
-  plan: { label: "ตามแผน", tone: "info" },
+  plan: { label: "ตามแผน", tone: "ok" },
   inplan: { label: "อยู่ในแผน", tone: "ok" },
-  partial: { label: "บางส่วน", tone: "warn" },
-  linkable: { label: "เชื่อมได้", tone: "link" },
-  none: { label: "ไม่มีแถว", tone: "mute" },
+  link: { label: "เชื่อมโยงท้องถิ่น", tone: "ok" },
 };
 const LAYERS = [
   { key: "core", label: "หลักสูตรแกนกลาง", icon: Landmark },
@@ -71,7 +69,7 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
     { n: plans.length, label: "แผนการสอน" },
     { n: `${count("core", ["match", "plan"])}/${plans.length}`, label: "ตรงแกนกลาง" },
     { n: `${count("school", ["match"])}/${plans.length}`, label: "ตรงเล่มสถานศึกษา" },
-    { n: `${count("local", ["inplan"])}/${plans.length}`, label: "ท้องถิ่นอยู่ในแผน" },
+    { n: `${count("local", ["inplan", "link"])}/${plans.length}`, label: "เชื่อมโยงท้องถิ่น" },
   ];
 
   const card = (i: number, roomy: boolean) => {
@@ -103,7 +101,7 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
         <div className="pl-card__foot">
           <span className="pl-ref"><BookMarked aria-hidden="true" /> {p.ref}</span>
           {href ? <a className="pl-open" href={`/b/${href}`} target="_blank" rel="noopener"><FileText aria-hidden="true" /> เปิดแผนการสอน</a>
-            : <span className="pl-wait">{p.has_file ? "รออนุมัติเผยแพร่ไฟล์แผน" : "ยังไม่มีไฟล์แผน"}</span>}
+            : null}
         </div>
       </article>
     );
@@ -131,11 +129,7 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
         </>}
       />
 
-      <div className="pl-caution" role="note">
-        <AlertTriangle aria-hidden="true" />
-        <div><b>ประเด็นที่ยังดำเนินการ</b><ul>{data.meta.caution.map((c) => <li key={c}>{c}</li>)}</ul></div>
-      </div>
-      <p className="visit__sub">ที่มา: {data.meta.source} · อ้างอิง{data.meta.reference} · “เชื่อมได้” คือแถวในตารางสาระท้องถิ่นที่นำมาเชื่อมได้ แต่ยังไม่อยู่ในกิจกรรมของแผน · หมุดรอบแผนที่แทนแผนการสอน (ไม่ใช่พิกัดจริง) · {map.source}</p>
+      <p className="visit__sub">ที่มา: {data.meta.source} · อ้างอิง{data.meta.reference} · หมุดรอบแผนที่แทนแผนการสอน · {map.source}</p>
     </section>
   );
 }

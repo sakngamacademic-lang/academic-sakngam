@@ -5,9 +5,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { requireSupabase } from "@/lib/supabase";
 import { callPublicFunction } from "@/lib/storage";
-import { schoolGrade } from "@/features/mapping/match";
 import { isMissing } from "@/features/curriculum/categories/api";
-import { stageOf, type Category, type Stage } from "@/features/curriculum/categories/classify";
+import type { Category } from "@/features/curriculum/categories/classify";
 
 export interface PublicItem {
   category: Category; target_type: "subject" | "program" | "activity"; target_id: string;
@@ -35,15 +34,6 @@ export function usePublicVisit() {
     staleTime: 60_000,
     retry: (n, e) => !isMissing(e) && n < 2,
   });
-}
-
-export const gradeOf = (i: PublicItem) => schoolGrade(i.grade_code);
-export const itemStage = (i: PublicItem): Stage => stageOf(gradeOf(i), i.program_stage);
-
-/** หน้าแรกของ locator แบบ pdf:N (หรือ pdf:N-M) — ไม่มีคืน null */
-export function pdfPage(locator: string | null | undefined): number | null {
-  const m = /(?:^|;)pdf:(\d+)/.exec(locator ?? "");
-  return m ? Number(m[1]) : null;
 }
 
 /** เปิด PDF ที่อนุมัติเผยแพร่ (presigned URL อายุสั้น) ไปยังหน้าที่ระบุ */

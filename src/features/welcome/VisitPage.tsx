@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { BrandMark } from "./WelcomePage";
-import { VisitCurriculum } from "./VisitCurriculum";
 import { VisitBooks } from "./VisitBooks";
 import { usePublicVisit } from "./visit-api";
 import { isMissing } from "@/features/curriculum/categories/api";
@@ -64,10 +63,6 @@ export function VisitPage() {
           )
           : (
             <>
-              <section className="section" id="curriculum" aria-labelledby="visit-curriculum">
-                <div className="section__head"><div><p className="label">Curriculum</p><h2 className="section__title" id="visit-curriculum">หลักสูตรแยกตามประเภท</h2></div></div>
-                <VisitCurriculum data={q.data} />
-              </section>
               <section className="section" id="books" aria-labelledby="visit-books">
                 <div className="section__head"><div><p className="label">Books</p><h2 className="section__title" id="visit-books">เล่มหลักสูตรกลุ่มสาระการเรียนรู้</h2></div></div>
                 <VisitBooks data={q.data} />

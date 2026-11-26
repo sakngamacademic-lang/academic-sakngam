@@ -1,6 +1,7 @@
-import { BookOpen } from "lucide-react";
-import { PdfButton } from "./VisitCurriculum";
-import type { PublicVisitData } from "./visit-api";
+import { useState } from "react";
+import { BookOpen, FileText, Loader2 } from "lucide-react";
+import { toast } from "@/lib/toast";
+import { openPublicPdf, type PublicVisitData } from "./visit-api";
 
 /**
  * เล่มหลักสูตรกลุ่มสาระ (สาธารณะ · อ่านอย่างเดียว)
@@ -56,5 +57,20 @@ export function VisitBooks({ data }: { data: PublicVisitData }) {
       ))}
     </ul>
     </>
+  );
+}
+
+/** เปิด PDF ที่อนุมัติเผยแพร่ (presigned URL อายุสั้นจาก Edge Function public-document-url) */
+export function PdfButton({ docId, page, label, big }: { docId: string; page?: number | null; label?: string; big?: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try { await openPublicPdf(docId, page); } catch (e) { toast.error(e instanceof Error ? e.message : "เปิดเอกสารไม่สำเร็จ"); } finally { setBusy(false); }
+  };
+  return (
+    <button type="button" className={big ? "btn btn--primary btn--sm" : "visit__pdf"} onClick={go} disabled={busy}>
+      {busy ? <Loader2 className="visit__lock visit__spin" aria-hidden="true" /> : <FileText className="visit__lock" aria-hidden="true" />}
+      {label ?? (page ? `เปิด PDF หน้า ${page}` : "เปิด PDF")}
+    </button>
   );
 }

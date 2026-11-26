@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, Globe, Loader2 } from "lucide-react";
@@ -18,7 +17,6 @@ import { isMissing } from "../categories/api";
 interface Release { id: string; target_type: "curriculum_version" | "source_document"; target_id: string; learning_area_id: string | null; book_stage: "lower" | "upper" | null; status: string; published_at: string; note: string | null }
 const key = ["public-releases"] as const;
 const STAGE = { lower: "ม.ต้น (ม.1–3)", upper: "ม.ปลาย (ม.4–6)" } as const;
-const sel = "h-9 w-full rounded-lg border bg-background px-2 text-sm";
 
 export function PublishPage() {
   const { can } = useAuth();
@@ -43,15 +41,8 @@ export function PublishPage() {
   const curricula = useCurricula();
   const docs = useSourceDocuments();
   const versions = allVersions(curricula.data).filter((v) => v.status !== "retired");
-  const pdfDocs = (docs.data ?? []).filter((d) => d.file_id && d.status !== "archived" && d.doc_type !== "structure_workbook");
-  const publish = useMdMutation((a: { type: string; id: string; area?: string | null; stage?: string | null }) =>
-    callRpc("public_release_publish", { p_target_type: a.type, p_target_id: a.id, p_learning_area_id: a.area ?? null, p_book_stage: a.stage ?? null }), { success: "อนุมัติเผยแพร่แล้ว", invalidate: [key] });
   const withdraw = useMdMutation((a: { id: string; reason: string }) => callRpc("public_release_withdraw", { p_id: a.id, p_reason: a.reason }), { success: "ถอนการเผยแพร่แล้ว", invalidate: [key] });
 
-  const [ver, setVer] = useState("");
-  const [doc, setDoc] = useState("");
-  const [area, setArea] = useState("");
-  const [stage, setStage] = useState("");
 
   if (releases.isError && isMissing(releases.error)) {
     return <><PageHeader title="อนุมัติเผยแพร่ (หน้าเยี่ยมชม)" icon={Globe} /><p className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">ฐานข้อมูลนี้ยังไม่ได้ติดตั้ง migration <code>20261208000100_public_visit_releases</code> — ผู้ดูแลระบบต้องรันใน SQL Editor ก่อน</p></>;
@@ -64,7 +55,7 @@ export function PublishPage() {
 
   return (
     <>
-      <PageHeader title="อนุมัติเผยแพร่ (หน้าเยี่ยมชม)" description="เลือกข้อมูลที่บุคคลภายนอกและคณะกรรมการเห็นได้โดยไม่ต้องเข้าสู่ระบบ — แยกจากการยืนยันความถูกต้อง" icon={Globe}
+      <PageHeader title="อนุมัติเผยแพร่ (หน้าเยี่ยมชม)" description="รายการเล่มที่บุคคลภายนอกและคณะกรรมการเห็นได้โดยไม่ต้องเข้าสู่ระบบ · ถอนการเผยแพร่ได้ที่นี่" icon={Globe}
         actions={<Button asChild variant="outline" size="sm"><Link to="/visit" target="_blank" rel="noopener"><ExternalLink /> เปิดหน้าเยี่ยมชม</Link></Button>} />
       <div className="space-y-4">
         <section className="rounded-2xl border bg-card p-4 shadow-card">
@@ -85,48 +76,9 @@ export function PublishPage() {
           )}
         </section>
 
-        {canManage ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-2xl border bg-card p-4 shadow-card">
-              <h2 className="font-semibold">เผยแพร่ฉบับหลักสูตร</h2>
-              <p className="text-xs text-muted-foreground">หน้าเยี่ยมชมแสดงเฉพาะรายการจัดประเภทที่ “ยืนยันแล้ว” ของฉบับนี้</p>
-              <label className="mt-3 block text-sm">ฉบับหลักสูตร
-                <select className={sel} value={ver} onChange={(e) => setVer(e.target.value)}>
-                  <option value="">— เลือก —</option>
-                  {versions.map((v) => <option key={v.id} value={v.id}>{v.curriculum_name} {v.version_label} ({v.status})</option>)}
-                </select>
-              </label>
-              <Button className="mt-3" size="sm" disabled={!ver || publish.isPending} onClick={() => publish.mutate({ type: "curriculum_version", id: ver }, { onSuccess: () => setVer("") })}>อนุมัติเผยแพร่</Button>
-            </section>
-            <section className="rounded-2xl border bg-card p-4 shadow-card">
-              <h2 className="font-semibold">เผยแพร่เอกสาร PDF / เล่มกลุ่มสาระ</h2>
-              <p className="text-xs text-muted-foreground">เผยแพร่ได้เฉพาะ PDF ที่อัปโหลดในระบบแล้ว · ถ้าเป็นเล่มกลุ่มสาระ ให้เลือกกลุ่มสาระและระดับเอง</p>
-              <label className="mt-3 block text-sm">เอกสาร
-                <select className={sel} value={doc} onChange={(e) => setDoc(e.target.value)}>
-                  <option value="">— เลือก —</option>
-                  {pdfDocs.map((d) => <option key={d.id} value={d.id}>{d.register_code} {d.title}{d.page_count ? ` (${d.page_count} หน้า)` : ""}</option>)}
-                </select>
-              </label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="block text-sm">กลุ่มสาระ (ถ้าเป็นเล่ม)
-                  <select className={sel} value={area} onChange={(e) => setArea(e.target.value)}>
-                    <option value="">— ไม่ใช่เล่มกลุ่มสาระ —</option>
-                    {(areas.data ?? []).map((a) => <option key={a.id} value={a.id}>{a.name_th}</option>)}
-                  </select>
-                </label>
-                <label className="block text-sm">ระดับ
-                  <select className={sel} value={stage} onChange={(e) => setStage(e.target.value)} disabled={!area}>
-                    <option value="">— เลือก —</option>
-                    <option value="lower">{STAGE.lower}</option>
-                    <option value="upper">{STAGE.upper}</option>
-                  </select>
-                </label>
-              </div>
-              <Button className="mt-3" size="sm" disabled={!doc || (!!area && !stage) || publish.isPending}
-                onClick={() => publish.mutate({ type: "source_document", id: doc, area: area || null, stage: area ? stage : null }, { onSuccess: () => { setDoc(""); setArea(""); setStage(""); } })}>อนุมัติเผยแพร่</Button>
-            </section>
-          </div>
-        ) : <p className="text-sm text-muted-foreground">เฉพาะผู้ดูแลหลักสูตรอนุมัติหรือถอนการเผยแพร่ได้</p>}
+        <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
+          เผยแพร่เล่มหลักสูตรได้ที่ <Link to="/office/curriculum-v2/present" className="font-medium text-primary hover:underline">นำเสนอเล่มหลักสูตร</Link> → “จัดการเล่ม / แนบไฟล์” → ปุ่ม “เผยแพร่” ข้างไฟล์ (แยก ม.ต้น / ม.ปลาย)
+        </p>
       </div>
     </>
   );

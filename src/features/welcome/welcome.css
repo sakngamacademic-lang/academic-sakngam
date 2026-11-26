@@ -444,7 +444,6 @@
 .welcome .lc-block { display: grid; gap: var(--sp-4); }
 .welcome .lc-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out); }
 .welcome .lc-reveal.is-on { opacity: 1; transform: none; }
-.welcome .lc-anchor { scroll-margin-top: calc(var(--topbar-h) + 12px); }
 .welcome .lc-stats { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); }
 .welcome .lc-stat { display: grid; gap: 2px; padding: var(--sp-4) var(--sp-4) var(--sp-3); text-align: left; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg-1); transition: transform var(--dur-fast), border-color var(--dur-fast); }
 .welcome .lc-stat:hover { transform: translateY(-2px); border-color: var(--line-strong); }
@@ -468,7 +467,6 @@
 .welcome .lc-69 { display: grid; gap: 2px; font-size: 12px; color: var(--text-2); }
 .welcome .lc-69 b { color: var(--text-1); }
 .welcome .lc-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #7b2f3e; background: color-mix(in oklab, #7b2f3e 12%, transparent); white-space: nowrap; }
-.welcome .lc-code .lc-tag { margin: 6px 0 0; }
 .welcome .lc-peek { margin-top: var(--sp-3); border: 1px solid var(--line); border-radius: 18px; background: color-mix(in oklab, var(--surface-hover) 55%, transparent); padding: var(--sp-3); animation: lc-peek-in 0.35s var(--ease-out) both; }
 @keyframes lc-peek-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .welcome .lc-peek__head { display: flex; justify-content: space-between; gap: var(--sp-3); align-items: flex-start; }
@@ -490,6 +488,13 @@
 .welcome .lc-peek__core { color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .welcome .lc-peek__core span, .welcome .lc-peek__local span { display: block; font-size: 11px; font-weight: 600; color: var(--text-3); }
 .welcome .lc-peek__local span { color: var(--lc-3); }
+.welcome .lc-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; background: rgba(15, 27, 48, 0.45); backdrop-filter: blur(4px); animation: lc-fade 0.2s ease both; }
+@keyframes lc-fade { from { opacity: 0; } to { opacity: 1; } }
+.welcome .lc-modal__box { width: min(760px, 100%); max-height: calc(100dvh - 32px); display: flex; }
+.welcome .lc-peek--modal { margin: 0; width: 100%; display: flex; flex-direction: column; min-height: 0; background: #fff; box-shadow: 0 24px 60px rgba(15, 27, 48, 0.28); padding: var(--sp-4); }
+.welcome .lc-peek--modal .lc-peek__list { max-height: none; flex: 1; min-height: 0; }
+.welcome .lc-peek__topic { display: inline-block; margin-left: 8px; font-size: 12px; }
+.welcome .lc-peek__item .lc-ref { margin-top: 6px; }
 .welcome .lc-peek__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); font-size: 12px; color: var(--text-3); }
 @keyframes lc-grow { from { transform: scaleX(0); } }
 .welcome .lc-note { display: flex; gap: 8px; align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: color-mix(in oklab, var(--lc-2) 10%, var(--bg-1)); border: 1px solid color-mix(in oklab, var(--lc-2) 30%, transparent); font-size: var(--fs-sm); color: var(--text-2); }
@@ -515,35 +520,20 @@
 .welcome .lc-node-t { font: 600 13px var(--font); fill: #142b4e; }
 .welcome .lc-center circle { fill: #142b4e; filter: drop-shadow(0 10px 24px rgba(20, 43, 78, 0.35)); }
 .welcome .lc-center-t { margin: 0; color: #fff; text-align: center; font: 600 13px/1.35 var(--font); }
-.welcome .lc-filters { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.welcome .lc-filters select, .welcome .lc-search { height: 2.6rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--bg-1); padding: 0 0.9rem; font-size: var(--fs-sm); color: var(--text-1); }
-.welcome .lc-search { display: flex; align-items: center; gap: 8px; flex: 1 1 16rem; }
-.welcome .lc-search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font: inherit; color: inherit; }
-.welcome .lc-result { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--text-2); }
 .welcome .lc-chip { padding: 2px 10px; border-radius: var(--r-pill); background: color-mix(in oklab, var(--lc-2) 14%, transparent); color: var(--text-1); font-size: var(--fs-xs); }
 .welcome .lc-clear { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); color: var(--text-2); text-decoration: underline; }
-.welcome .lc-table { display: grid; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--bg-1); }
-.welcome .lc-tr { display: grid; grid-template-columns: minmax(9rem, 0.7fr) 1fr 1fr; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--line); font-size: var(--fs-sm); white-space: pre-line; }
-.welcome .lc-th { border-top: 0; background: #142b4e; color: #fff; font-weight: 600; white-space: normal; }
-.welcome .lc-code b { display: block; color: var(--text-1); }
-.welcome .lc-code small, .welcome .lc-ref { display: block; margin-top: 4px; font-size: var(--fs-xs); color: var(--text-3); white-space: normal; }
-.welcome .lc-local { color: var(--text-1); }
-.welcome .lc-more { justify-self: center; }
+.welcome .lc-ref { display: block; margin-top: 4px; font-size: var(--fs-xs); color: var(--text-3); white-space: normal; }
 .welcome .lc-source { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-xs); color: var(--text-3); }
 .welcome .lc-source .visit__lock { margin-top: 3px; flex: none; }
 @media (max-width: 760px) {
   .welcome .lc-bar { grid-template-columns: 1fr 2.6rem; }
   .welcome .lc-bar__name { grid-column: 1 / -1; }
-  .welcome .lc-th { display: none; }
-  .welcome .lc-tr { grid-template-columns: 1fr; gap: var(--sp-2); }
-  .welcome .lc-tr [data-label]::before { content: attr(data-label); display: block; font-size: var(--fs-xs); font-weight: 600; color: var(--text-3); }
   .welcome .lc-map { padding: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .welcome .lc-reveal { opacity: 1; transform: none; transition: none; }
-  .welcome .lc-bar__seg, .welcome .lc-line, .welcome .lc-peek { animation: none; stroke-dashoffset: 0; }
+  .welcome .lc-bar__seg, .welcome .lc-line, .welcome .lc-peek, .welcome .lc-modal { animation: none; stroke-dashoffset: 0; }
 }
-.welcome.visit.is-present .lc-tr { font-size: 1rem; }
 /* Bento: แท่งแนวตั้งรายระดับชั้นโตขึ้นจากฐาน */
 .welcome .lc-vbar { min-height: 6px; transform-origin: bottom; animation: lc-rise 1.1s var(--ease-out) both; }
 @keyframes lc-rise { from { transform: scaleY(0); } }

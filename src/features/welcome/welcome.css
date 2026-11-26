@@ -494,42 +494,16 @@
 .welcome .lc-peek__item .lc-ref { margin-top: 6px; }
 .welcome .lc-peek__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); font-size: 12px; color: var(--text-3); }
 @keyframes lc-grow { from { transform: scaleX(0); } }
-.welcome .lc-note { display: flex; gap: 8px; align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: color-mix(in oklab, var(--lc-2) 10%, var(--bg-1)); border: 1px solid color-mix(in oklab, var(--lc-2) 30%, transparent); font-size: var(--fs-sm); color: var(--text-2); }
-.welcome .lc-note .visit__lock { margin-top: 4px; flex: none; }
-.welcome .lc-topics { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-.welcome .lc-topics button { flex: none; padding: 0.45rem 0.95rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
-.welcome .lc-topics button[aria-selected="true"] { background: #142b4e; border-color: #142b4e; color: #fff; }
-.welcome .lc-topics .num { margin-left: 4px; opacity: 0.7; }
-.welcome .lc-map { border-radius: var(--r-lg); border: 1px solid var(--line); background: radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--lc-2) 8%, var(--bg-1)), var(--bg-1) 70%); padding: var(--sp-3); }
-.welcome .lc-map svg { display: block; width: 100%; height: auto; max-height: 70vh; margin: 0 auto; }
-.welcome .lc-line { stroke: var(--lc-1); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 260; stroke-dashoffset: 260; animation: lc-draw 1s var(--ease-out) forwards; opacity: 0.55; }
-.welcome .lc-hit { stroke: transparent; stroke-width: 22; }
-.welcome .lc-link { cursor: pointer; transition: opacity var(--dur-fast); }
-.welcome .lc-link.is-off { cursor: default; opacity: 0.35; }
-.welcome .lc-link.is-off .lc-line { stroke-dasharray: 4 6; animation: none; stroke-dashoffset: 0; opacity: 0.6; }
-.welcome .lc-link.is-hot .lc-line, .welcome .lc-link:focus-visible .lc-line { opacity: 1; stroke-width: 3.5; stroke: var(--lc-2); }
-.welcome .lc-link:focus-visible { outline: none; }
-.welcome .lc-link.is-hot .lc-node, .welcome .lc-link:focus-visible .lc-node { stroke: var(--lc-2); stroke-width: 2.5; }
-@keyframes lc-draw { to { stroke-dashoffset: 0; } }
-.welcome .lc-count { fill: #fff; stroke: var(--lc-1); stroke-width: 1.5; }
-.welcome .lc-count-t { font: 600 13px var(--font); fill: var(--lc-1); }
-.welcome .lc-node { fill: #fff; stroke: color-mix(in oklab, var(--lc-1) 35%, transparent); stroke-width: 1.5; filter: drop-shadow(0 4px 10px rgba(20, 43, 78, 0.12)); }
-.welcome .lc-node-t { font: 600 13px var(--font); fill: #142b4e; }
-.welcome .lc-center circle { fill: #142b4e; filter: drop-shadow(0 10px 24px rgba(20, 43, 78, 0.35)); }
-.welcome .lc-center-t { margin: 0; color: #fff; text-align: center; font: 600 13px/1.35 var(--font); }
-.welcome .lc-chip { padding: 2px 10px; border-radius: var(--r-pill); background: color-mix(in oklab, var(--lc-2) 14%, transparent); color: var(--text-1); font-size: var(--fs-xs); }
-.welcome .lc-clear { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); color: var(--text-2); text-decoration: underline; }
 .welcome .lc-ref { display: block; margin-top: 4px; font-size: var(--fs-xs); color: var(--text-3); white-space: normal; }
 .welcome .lc-source { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-xs); color: var(--text-3); }
 .welcome .lc-source .visit__lock { margin-top: 3px; flex: none; }
 @media (max-width: 760px) {
   .welcome .lc-bar { grid-template-columns: 1fr 2.6rem; }
   .welcome .lc-bar__name { grid-column: 1 / -1; }
-  .welcome .lc-map { padding: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .welcome .lc-reveal { opacity: 1; transform: none; transition: none; }
-  .welcome .lc-bar__seg, .welcome .lc-line, .welcome .lc-peek, .welcome .lc-modal { animation: none; stroke-dashoffset: 0; }
+  .welcome .lc-bar__seg, .welcome .lc-peek, .welcome .lc-modal { animation: none; stroke-dashoffset: 0; }
 }
 /* Bento: แท่งแนวตั้งรายระดับชั้นโตขึ้นจากฐาน */
 .welcome .lc-vbar { min-height: 6px; transform-origin: bottom; animation: lc-rise 1.1s var(--ease-out) both; }

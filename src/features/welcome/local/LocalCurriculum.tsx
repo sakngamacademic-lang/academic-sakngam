@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Info, Loader2, X } from "lucide-react";
 import { BentoCard, CountUp, RadarChart, Segmented, Treemap } from "@/components/ui/analytics-bento";
-import { ALL_TOPICS, countBy, LEVEL_LABEL, loadLocalData, sourceText, topicsOf, type LocalData } from "./data";
+import { countBy, LEVEL_LABEL, loadLocalData, sourceText, type LocalData } from "./data";
 
 /**
- * นิทรรศการหลักสูตรท้องถิ่น (หน้าเยี่ยมชม) — 2 ส่วน: สถิติ · ผังเชื่อมโยง · กดแล้วรายละเอียดเด้งขึ้นในหน้าต่าง (ไม่เลื่อนหน้า)
+ * นิทรรศการหลักสูตรท้องถิ่น (หน้าเยี่ยมชม) — สถิติแบบ Bento · กดแล้วรายละเอียดเด้งขึ้นในหน้าต่าง (ไม่เลื่อนหน้า)
  * ตัวเลขทั้งหมดคำนวณจาก JSON ขณะแสดงผล · ร้อยละ = สัดส่วนต่อจำนวนรายการทั้งหมดในเอกสาร (ไม่ใช่ร้อยละการบูรณาการ)
- * ไม่แสดงแถวที่เอกสารฉบับตรวจทานระบุ “ไม่พบในหลักสูตร 69” (กรองใน data.ts) · หมวดหัวข้อท้องถิ่น = การสังเคราะห์ (ระบุบนหน้าจอ)
+ * ไม่แสดงแถวที่เอกสารฉบับตรวจทานระบุ “ไม่พบในหลักสูตร 69” (กรองใน data.ts)
  */
-type Filter = { area: string; level: string; topic: string };
-const EMPTY: Filter = { area: "", level: "", topic: "" };
+type Filter = { area: string; level: string };
+const EMPTY: Filter = { area: "", level: "" };
 const TONES = ["var(--lc-1)", "var(--lc-2)", "var(--lc-3)", "var(--lc-4)"];
 /** ร้อยละทศนิยม 1 ตำแหน่ง */
 const pct = (n: number, d: number) => `${(d ? (n / d) * 100 : 0).toLocaleString("th-TH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
@@ -41,7 +41,6 @@ export function LocalCurriculum() {
   return (
     <div className="lc">
       <Reveal><Dashboard data={data} onPick={pick} /></Reveal>
-      <Reveal><IntegrationMap data={data} onPick={pick} /></Reveal>
       {pop && <PeekModal onClose={() => setPop(null)}><Peek data={data} f={pop} setLevel={(level) => setPop({ ...pop, level })} onClose={() => setPop(null)} modal /></PeekModal>}
       <p className="lc-source"><Info className="visit__lock" aria-hidden="true" /><span>แหล่งข้อมูล: {data.meta.source_document} · {data.meta.extraction}</span></p>
     </div>
@@ -154,24 +153,21 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
   );
 }
 
-// ------------------------------------------------------------------ ส่วนที่ 2 · ผังเชื่อมโยง
 /** แผงรายละเอียด: ตัวชี้วัด · สาระแกนกลาง (ใช้เป็นคำอธิบายโดยย่อ) · การเชื่อมโยงท้องถิ่น ตามกลุ่มสาระ/ระดับ/หัวข้อที่เลือก */
 function Peek({ data, f, setLevel, onClose, modal = false }: { data: LocalData; f: Filter; setLevel: (l: string) => void; onClose: () => void; modal?: boolean }) {
-  const topic = ALL_TOPICS.find((t) => t.key === f.topic);
-  const base = data.records.filter((r) => (!f.area || r.area === f.area) && (!f.topic || topicsOf(r).includes(f.topic)));
+  const base = data.records.filter((r) => (!f.area || r.area === f.area));
   const rs = f.level ? base.filter((r) => r.level === f.level) : base;
   const total = data.records.length;
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.scrollTo({ top: 0 }); }, [f.area, f.level, f.topic]);
+  useEffect(() => { ref.current?.scrollTo({ top: 0 }); }, [f.area, f.level]);
   const title = f.area || "ทุกกลุ่มสาระ";
   return (
     <div id={modal ? undefined : "lc-peek"} className={`lc-peek${modal ? " lc-peek--modal" : ""}`} role={modal ? undefined : "region"} aria-label={`ตัวชี้วัด ${title} ${f.level ? LEVEL_LABEL[f.level] : "ทุกระดับ"}`}>
       <div className="lc-peek__head">
         <div>
           <b id={modal ? "lc-pop-title" : undefined}>{title}</b> <span className="text-muted-foreground">· {f.level ? LEVEL_LABEL[f.level] : "ทุกระดับชั้น"}</span>
-          {topic && <span className="lc-chip lc-peek__topic">หัวข้อ (สังเคราะห์): {topic.label}</span>}
           <p className="lc-peek__stat"><b className="num">{rs.length.toLocaleString("th-TH")}</b> รายการ = <b>{pct(rs.length, total)}</b> ของหลักสูตรท้องถิ่นทั้งหมด
-            {f.area && f.level && !topic && <> · {pct(rs.length, base.length)} ของกลุ่มสาระนี้</>}</p>
+            {f.area && f.level && <> · {pct(rs.length, base.length)} ของกลุ่มสาระนี้</>}</p>
         </div>
         <button type="button" className="lc-peek__x" onClick={onClose} aria-label="ปิดรายละเอียด" data-autofocus><X className="visit__lock" aria-hidden="true" /></button>
       </div>
@@ -214,54 +210,5 @@ function PeekModal({ children, onClose }: { children: ReactNode; onClose: () => 
     <div className="lc-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={ref} className="lc-modal__box" role="dialog" aria-modal="true" aria-labelledby="lc-pop-title">{children}</div>
     </div>
-  );
-}
-
-function IntegrationMap({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filter>) => void }) {
-  const tagged = useMemo(() => data.records.map((r) => ({ r, t: topicsOf(r) })), [data]);
-  const topicCount = useMemo(() => ALL_TOPICS.map((t) => ({ ...t, n: tagged.filter((x) => x.t.includes(t.key)).length })).filter((t) => t.n > 0), [tagged]);
-  const [topic, setTopic] = useState(() => [...topicCount].filter((t) => t.key !== "other").sort((a, b) => b.n - a.n)[0]?.key ?? "other");
-  const [hover, setHover] = useState<string | null>(null);
-  const links = useMemo(() => data.areas.map((area) => ({ area, n: tagged.filter((x) => x.r.area === area && x.t.includes(topic)).length })), [data, tagged, topic]);
-  const cur = ALL_TOPICS.find((t) => t.key === topic)!;
-  const W = 640, H = 460, cx = W / 2, cy = H / 2, R = 182;
-  return (
-    <section className="lc-block" aria-labelledby="lc-map">
-      <p className="label">Integration Map</p>
-      <h2 id="lc-map" className="section__title">ผังเชื่อมโยง <em>หัวข้อท้องถิ่น × กลุ่มสาระ</em></h2>
-      <p className="lc-note"><Info className="visit__lock" aria-hidden="true" /><span>หมวดหัวข้อท้องถิ่นเป็น<b>การสังเคราะห์ข้อมูล</b>จากคำสำคัญในช่อง “สาระการเรียนรู้ท้องถิ่น” ของเอกสาร ไม่ใช่หมวดที่เอกสารกำหนด · 1 รายการอยู่ได้มากกว่า 1 หัวข้อ · ตัวเลขบนเส้นคือจำนวนรายการ ไม่ใช่ร้อยละการบูรณาการ</span></p>
-      <div className="lc-topics" role="tablist" aria-label="หัวข้อท้องถิ่น">
-        {topicCount.map((t) => <button key={t.key} type="button" role="tab" aria-selected={t.key === topic} onClick={() => setTopic(t.key)}>{t.label} <span className="num">{t.n}</span></button>)}
-      </div>
-      <div className="lc-map">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`ผังเชื่อมโยงหัวข้อ ${cur.label} กับกลุ่มสาระ`}>
-          {links.map((l, i) => {
-            const a = (-90 + (360 / links.length) * i) * (Math.PI / 180);
-            const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a) * 0.86;
-            const on = l.n > 0, hot = hover === l.area;
-            const mx = (cx + x) / 2, my = (cy + y) / 2;
-            return (
-              <g key={`${topic}-${l.area}`} className={`lc-link${on ? "" : " is-off"}${hot ? " is-hot" : ""}`} onMouseEnter={() => setHover(l.area)} onMouseLeave={() => setHover(null)}
-                onClick={() => on && onPick({ topic, area: l.area })} role={on ? "button" : undefined} tabIndex={on ? 0 : -1} aria-label={on ? `${l.area} ${l.n} รายการ — ดูหลักฐาน` : `${l.area} ไม่มีรายการในหัวข้อนี้`}
-                onKeyDown={(e) => { if (on && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onPick({ topic, area: l.area }); } }}>
-                <line x1={cx} y1={cy} x2={x} y2={y} className="lc-line" style={{ animationDelay: `${i * 70}ms` }} />
-                <line x1={cx} y1={cy} x2={x} y2={y} className="lc-hit" />
-                {on && <g transform={`translate(${mx} ${my})`}><circle r="15" className="lc-count" /><text dy="5" textAnchor="middle" className="lc-count-t">{l.n}</text></g>}
-                <g transform={`translate(${x} ${y})`}>
-                  <rect x={-74} y={-20} width={148} height={40} rx={20} className="lc-node" />
-                  <text dy="5" textAnchor="middle" className="lc-node-t">{l.area.length > 16 ? `${l.area.slice(0, 15)}…` : l.area}</text>
-                </g>
-              </g>
-            );
-          })}
-          <g transform={`translate(${cx} ${cy})`} className="lc-center">
-            <circle r="74" />
-            <image href="/school-logo.png" x={-17} y={-60} width={34} height={42} />
-            <foreignObject x={-66} y={-14} width={132} height={70}><p className="lc-center-t">{cur.label}</p></foreignObject>
-          </g>
-        </svg>
-      </div>
-      <p className="visit__sub">กดเส้นหรือกลุ่มสาระเพื่อดูหลักฐานการเชื่อมโยงจากเอกสาร</p>
-    </section>
   );
 }

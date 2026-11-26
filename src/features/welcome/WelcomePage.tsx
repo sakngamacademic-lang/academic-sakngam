@@ -217,19 +217,7 @@ export function WelcomePage() {
                       <span className="t1" style={{ "--chars": s.title[0].chars } as CSSProperties}>{s.title[0].text}</span>
                       <span className="t2" style={{ "--chars": s.title[1].chars } as CSSProperties}>{s.title[1].text}</span>
                     </TitleTag>
-                    <p className="lede">{s.lede}</p>
                   </header>
-                  <dl className="kpis">
-                    {s.kpis.map((k, ki) => (
-                      <div className="kpi" key={k.label} style={{ "--i": ki } as CSSProperties}>
-                        <dt>{k.label}</dt>
-                        <dd>
-                          {k.value}
-                          {k.unit && <small>{k.unit}</small>}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
                   <div className="scene__actions">
                     <AuthCta className="btn btn--primary btn--lg">
                       <span>เข้าสู่ระบบงานวิชาการ</span>

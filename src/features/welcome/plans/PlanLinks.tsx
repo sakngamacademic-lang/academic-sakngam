@@ -8,7 +8,7 @@ import raw from "./plan-links.json";
  * ข้อมูลการเชื่อมโยง: plan-links.json (ถ้อยคำตามรายงานการตรวจของฝ่ายวิชาการ ไม่แต่งเพิ่ม · ไม่มีชื่อบุคคล)
  * ลิงก์แผน: จับคู่อัตโนมัติกับเอกสาร PDF ที่ “อนุมัติเผยแพร่” ซึ่งชื่อขึ้นต้นด้วย “แผน” และมีรหัสวิชา → /b/<id>
  */
-type Status = "match" | "plan" | "partial" | "linkable" | "none";
+type Status = "match" | "plan" | "inplan" | "partial" | "linkable" | "none";
 interface Layer { status: Status; text: string }
 export interface PlanLink {
   id: string; code: string; grade: string; area: string; subject: string | null; plan_no: number | null;
@@ -23,6 +23,7 @@ const norm = (s: string) => s.replace(/\s+/g, "");
 const STATUS: Record<Status, { label: string; tone: string }> = {
   match: { label: "ตรง", tone: "ok" },
   plan: { label: "ตามแผน", tone: "info" },
+  inplan: { label: "อยู่ในแผน", tone: "ok" },
   partial: { label: "บางส่วน", tone: "warn" },
   linkable: { label: "เชื่อมได้", tone: "link" },
   none: { label: "ไม่มีแถว", tone: "mute" },
@@ -45,7 +46,7 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
   const steps = [
     { icon: Landmark, label: "แกนกลาง", n: `${count("core", ["match", "plan"])}/${plans.length}`, note: "แผนระบุตัวชี้วัด/ผลการเรียนรู้" },
     { icon: School, label: "สถานศึกษา", n: `${count("school", ["match"])}/${plans.length}`, note: `ตรงกับ${data.meta.reference}` },
-    { icon: MapPin, label: "ท้องถิ่น", n: `${count("local", ["linkable"])}`, note: `แผนที่เชื่อมได้ · บางส่วน ${count("local", ["partial"])} · ไม่มีแถว ${count("local", ["none"])}` },
+    { icon: MapPin, label: "ท้องถิ่น", n: `${count("local", ["inplan"])}/${plans.length}`, note: `อยู่ในแผน · บางส่วน ${count("local", ["partial"])} · เชื่อมได้ ${count("local", ["linkable"])} · ไม่มีแถว ${count("local", ["none"])}` },
     { icon: FileText, label: "แผนการสอน", n: `${linked}/${plans.length}`, note: "เปิดอ่านไฟล์แผนได้" },
   ];
   return (
@@ -100,9 +101,9 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
 
       <div className="pl-caution" role="note">
         <AlertTriangle aria-hidden="true" />
-        <div><b>ข้อควรระวัง</b><ul>{data.meta.caution.map((c) => <li key={c}>{c}</li>)}</ul></div>
+        <div><b>ประเด็นที่ยังดำเนินการ</b><ul>{data.meta.caution.map((c) => <li key={c}>{c}</li>)}</ul></div>
       </div>
-      <p className="visit__sub">ที่มา: {data.meta.source} · สถานะ “เชื่อมได้” คือแถวในตารางสาระท้องถิ่นที่นำมาเชื่อมได้ แต่ยังไม่อยู่ในกิจกรรมของแผน</p>
+      <p className="visit__sub">ที่มา: {data.meta.source} · “เชื่อมได้” คือแถวในตารางสาระท้องถิ่นที่นำมาเชื่อมได้ แต่ยังไม่อยู่ในกิจกรรมของแผน</p>
     </section>
   );
 }

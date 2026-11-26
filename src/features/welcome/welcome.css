@@ -514,17 +514,7 @@
 
 /* ---------------------------------------------------------------- จากหลักสูตรสู่แผนการสอน */
 .welcome .pl { --pl-ok: #1f6f68; --pl-info: #1f3f77; --pl-warn: #b98a2f; --pl-link: #7b2f3e; --pl-mute: #6b7489; display: grid; gap: var(--sp-5); }
-.welcome .pl-flow { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
-.welcome .pl-flow__step { position: relative; display: grid; gap: 4px; padding: var(--sp-4); border-radius: 22px; background: #fff; border: 1px solid var(--line); box-shadow: 0 10px 30px -22px rgba(20, 43, 78, 0.45); }
-.welcome .pl-flow__icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: #142b4e; color: #f3d38b; }
-.welcome .pl-flow__icon svg { width: 20px; height: 20px; }
-.welcome .pl-flow__label { margin-top: 6px; font-size: 13px; color: var(--text-2); }
-.welcome .pl-flow__n { font-size: 34px; font-weight: 600; line-height: 1.1; color: var(--text-1); }
-.welcome .pl-flow__note { font-size: 12px; color: var(--text-3); line-height: 1.45; }
-.welcome .pl-flow__arrow { position: absolute; right: -15px; top: 50%; width: 22px; height: 22px; margin-top: -11px; padding: 3px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--text-3); z-index: 1; }
-.welcome .pl-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--sp-4); }
 .welcome .pl-card { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) var(--sp-4) var(--sp-3); border-radius: 24px; background: #fff; border: 1px solid var(--line); box-shadow: 0 14px 34px -26px rgba(20, 43, 78, 0.5); transition: transform 0.25s var(--ease-out), box-shadow 0.25s; }
-.welcome .pl-card:hover { transform: translateY(-3px); box-shadow: 0 22px 40px -26px rgba(20, 43, 78, 0.55); }
 .welcome .pl-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .welcome .pl-code { padding: 3px 12px; border-radius: 999px; background: #142b4e; color: #fff; font-weight: 600; font-size: 13px; letter-spacing: 0.02em; }
 .welcome .pl-meta { font-size: 12px; color: var(--text-3); }
@@ -549,6 +539,15 @@
 .welcome .pl-caution { display: flex; gap: 12px; padding: var(--sp-4); border-radius: 20px; background: color-mix(in oklab, #b98a2f 10%, #fff); border: 1px solid color-mix(in oklab, #b98a2f 30%, transparent); font-size: 13.5px; color: var(--text-1); }
 .welcome .pl-caution > svg { flex: none; width: 20px; height: 20px; color: #b98a2f; margin-top: 2px; }
 .welcome .pl-caution ul { margin: 4px 0 0; padding-left: 1.1rem; line-height: 1.7; }
-@media (max-width: 900px) { .welcome .pl-flow { grid-template-columns: repeat(2, 1fr); } .welcome .pl-flow__step:nth-child(2) .pl-flow__arrow { display: none; } }
-@media (max-width: 480px) { .welcome .pl-flow__n { font-size: 26px; } .welcome .pl-flow__step { padding: var(--sp-3); } .welcome .pl-flow__arrow { display: none; } }
 @media (prefers-reduced-motion: reduce) { .welcome .pl-card, .welcome .pl-open { transition: none; } }
+.welcome .pl-card.is-roomy { padding: var(--sp-5) var(--sp-5) var(--sp-4); }
+.welcome .pl-card.is-roomy .pl-card__title { font-size: 21px; }
+.welcome .pl-lede { max-width: 34rem; }
+.welcome .pl-mark { padding: 0.05em 0.3em; border-radius: 6px; color: inherit; background: linear-gradient(transparent 12%, #f7dc8f 12%, #f7dc8f 92%, transparent 92%); box-decoration-break: clone; -webkit-box-decoration-break: clone; font-weight: 600; }
+.welcome .pl-stats { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-4) 0 0; }
+.welcome .pl-stats > div { display: grid; gap: 1px; min-width: 5.6rem; padding: 8px 14px; border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+.welcome .pl-stats dd { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.2; color: var(--text-1); }
+.welcome .pl-stats dt { font-size: 12px; color: var(--text-3); }
+.welcome .pl-layer.is-key { border-width: 1.5px; border-color: color-mix(in oklab, var(--c) 38%, transparent); box-shadow: 0 8px 20px -16px var(--c); }
+.welcome .pl-zone { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--c); }
+.welcome .pl-zone svg { width: 13px; height: 13px; }

@@ -15,9 +15,11 @@ export interface LocalRecord {
   core: string;
   local: string;
   source: { table: number; row: number };
+  /** เอกสารฉบับตรวจทานทำเครื่องหมาย “◄ ไม่พบในหลักสูตร 69” ที่รหัสตัวชี้วัดนี้ */
+  not_in_69?: boolean;
 }
 export interface LocalData {
-  meta: { title: string; school: string; source_document: string; extraction: string; extracted_on: string; status: string };
+  meta: { title: string; school: string; source_document: string; extraction: string; extracted_on: string; status: string; check_69?: string };
   areas: string[];
   levels: string[];
   tables: { table: number; area: string; grade_label: string; heading: string }[];

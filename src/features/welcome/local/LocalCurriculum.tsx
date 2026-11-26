@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Info, Loader2, Search, X } from "lucide-react";
+import { ArrowDown, Info, Loader2, Search, X } from "lucide-react";
 import { BentoCard, CountUp, RadarChart, Segmented, Treemap } from "@/components/ui/analytics-bento";
 import { ALL_TOPICS, countBy, LEVEL_LABEL, loadLocalData, sourceText, topicsOf, type LocalData, type LocalRecord } from "./data";
 
 /**
  * นิทรรศการหลักสูตรท้องถิ่น (หน้าเยี่ยมชม) — 3 ส่วน: สถิติ · ผังเชื่อมโยง · รายละเอียดเทียบ 3 คอลัมน์
- * ตัวเลขทั้งหมดคำนวณจาก JSON ขณะแสดงผล · ไม่มีเปอร์เซ็นต์การบูรณาการ · หมวดหัวข้อท้องถิ่น = การสังเคราะห์ (ระบุบนหน้าจอ)
+ * ตัวเลขทั้งหมดคำนวณจาก JSON ขณะแสดงผล · ร้อยละ = สัดส่วนต่อจำนวนรายการทั้งหมดในเอกสาร (ไม่ใช่ร้อยละการบูรณาการ)
+ * “ไม่พบในหลักสูตร 69” มาจากเครื่องหมายในเอกสารฉบับตรวจทาน · หมวดหัวข้อท้องถิ่น = การสังเคราะห์ (ระบุบนหน้าจอ)
  */
 type Filter = { area: string; level: string; topic: string; q: string };
 const EMPTY: Filter = { area: "", level: "", topic: "", q: "" };
 const TONES = ["var(--lc-1)", "var(--lc-2)", "var(--lc-3)", "var(--lc-4)"];
+/** ร้อยละทศนิยม 1 ตำแหน่ง */
+const pct = (n: number, d: number) => `${(d ? (n / d) * 100 : 0).toLocaleString("th-TH", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 
 /** แสดงทีละส่วนเมื่อเลื่อนถึง (ปิดเองเมื่อผู้ใช้ตั้งค่าลดการเคลื่อนไหว) */
 function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -58,6 +61,10 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
   const max = Math.max(1, ...rows.map((r) => r.total));
   const perLevel = data.levels.map((lv) => data.records.filter((r) => r.level === lv).length);
   const maxLevel = Math.max(1, ...perLevel);
+  const total = data.records.length;
+  const flagged = data.records.filter((r) => r.not_in_69).length;
+  // แผงรายละเอียดในกรอบเปรียบเทียบ — เปิดเมื่อกดแท่ง (ทั้งกลุ่มสาระ) หรือช่วงสี (เฉพาะระดับชั้น)
+  const [peek, setPeek] = useState<{ area: string; level: string } | null>(null);
   // ตัวเลือกระดับของทรีแมป/เรดาร์: 0 = ทุกระดับ
   const [lv, setLv] = useState(0);
   const level = lv === 0 ? "" : data.levels[lv - 1]!;
@@ -73,16 +80,19 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
       <p className="visit__lede">สาระท้องถิ่นจังหวัดกำแพงเพชรที่เชื่อมกับตัวชี้วัดและสาระการเรียนรู้แกนกลาง นับ 1 รายการต่อ 1 แถวในเอกสาร</p>
       <div className="grid grid-cols-12 gap-4">
         {/* A · ภาพรวม */}
-        <BentoCard className="col-span-12 flex flex-col gap-5 sm:flex-row lg:col-span-5" aria-label="รายการเชื่อมโยงทั้งหมด">
+        <BentoCard className="col-span-12 flex flex-col gap-5 self-start sm:flex-row lg:col-span-5" aria-label="รายการเชื่อมโยงทั้งหมด">
           <button type="button" className="shrink-0 text-left" onClick={() => onPick({})}>
             <span className="block text-[13px] text-muted-foreground">รายการเชื่อมโยงทั้งหมด</span>
             <span className="mt-2 block text-[52px] font-semibold leading-none tracking-tight sm:text-[60px]"><CountUp value={data.records.length} /></span>
+            <span className="mt-1 block text-[13px] font-semibold text-foreground">= 100% ของหลักสูตรท้องถิ่นทั้งฉบับ</span>
             <span className="mt-2 block text-[13px] text-muted-foreground"><b className="text-foreground"><CountUp value={areasWithData} /></b> กลุ่มสาระ · <b className="text-foreground"><CountUp value={data.tables.length} /></b> ตารางในเอกสาร</span>
+            {flagged > 0 && <span className="lc-69 mt-3"><span><b>{pct(total - flagged, total)}</b> พบตัวชี้วัดในหลักสูตร 69 ({(total - flagged).toLocaleString("th-TH")})</span><span><b>{pct(flagged, total)}</b> เอกสารระบุ “ไม่พบในหลักสูตร 69” ({flagged.toLocaleString("th-TH")})</span></span>}
           </button>
           <div className="flex min-h-[150px] flex-1 items-end gap-2 rounded-[18px] border border-border bg-muted/40 p-3" role="group" aria-label="จำนวนรายการแยกระดับชั้น">
             {data.levels.map((l, i) => (
               <button key={l} type="button" onClick={() => onPick({ level: l })} aria-label={`${LEVEL_LABEL[l]} ${perLevel[i]} รายการ`} className="group flex h-full flex-1 flex-col items-center justify-end gap-1.5">
                 <span className="text-sm font-semibold"><CountUp value={perLevel[i] ?? 0} /></span>
+                <span className="text-[11px] text-muted-foreground">{pct(perLevel[i] ?? 0, total)}</span>
                 <span className="lc-vbar w-full rounded-[10px] transition-[filter] group-hover:brightness-110" style={{ height: `${((perLevel[i] ?? 0) / maxLevel) * 70}%`, background: TONES[i] }} />
                 <span className="text-xs text-muted-foreground">{LEVEL_LABEL[l]}</span>
               </button>
@@ -99,20 +109,21 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
           <ul className="lc-bars mt-3" aria-label="จำนวนรายการเชื่อมโยงแยกกลุ่มสาระและระดับชั้น">
             {sorted.map((r) => (
               <li key={r.area}>
-                <button type="button" className="lc-bar" onClick={() => onPick({ area: r.area })} aria-label={`${r.area} ${r.total} รายการ`}>
+                <button type="button" className={`lc-bar${peek?.area === r.area ? " is-on" : ""}`} onClick={() => setPeek({ area: r.area, level: "" })} aria-expanded={peek?.area === r.area} aria-controls="lc-peek" aria-label={`${r.area} ${r.total} รายการ ${pct(r.total, total)} — ดูตัวชี้วัด`}>
                   <span className="lc-bar__name">{r.area}</span>
                   <span className="lc-bar__track">
                     {r.byLevel.map((n, i) => n > 0 && (
-                      <span key={i} role="presentation" className="lc-bar__seg" style={{ width: `${(n / max) * 100}%`, background: TONES[i] }}
-                        title={`${LEVEL_LABEL[data.levels[i]!]} ${n} รายการ`} onClick={(e) => { e.stopPropagation(); onPick({ area: r.area, level: data.levels[i]! }); }} />
+                      <span key={i} role="presentation" className={`lc-bar__seg${peek?.area === r.area && peek.level === data.levels[i] ? " is-on" : ""}`} style={{ width: `${(n / max) * 100}%`, background: TONES[i] }}
+                        title={`${LEVEL_LABEL[data.levels[i]!]} ${n} รายการ (${pct(n, total)})`} onClick={(e) => { e.stopPropagation(); setPeek({ area: r.area, level: data.levels[i]! }); }} />
                     ))}
                   </span>
-                  <span className="lc-bar__n num">{r.total.toLocaleString("th-TH")}</span>
+                  <span className="lc-bar__n num">{r.total.toLocaleString("th-TH")}<small>{pct(r.total, total)}</small></span>
                 </button>
               </li>
             ))}
           </ul>
-          <p className="visit__sub">กดแท่งเพื่อดูรายการของกลุ่มสาระ · กดช่วงสีเพื่อดูเฉพาะระดับชั้นนั้น</p>
+          {peek ? <Peek data={data} area={peek.area} level={peek.level} setLevel={(level) => setPeek({ ...peek, level })} onClose={() => setPeek(null)} onOpen={() => onPick({ area: peek.area, level: peek.level })} />
+            : <p className="visit__sub">ร้อยละ = สัดส่วนต่อรายการทั้งหมด {total.toLocaleString("th-TH")} รายการ · กดแท่งเพื่อดูตัวชี้วัดของกลุ่มสาระ · กดช่วงสีเพื่อดูเฉพาะระดับชั้นนั้น</p>}
         </BentoCard>
 
         {/* C · ทรีแมป */}
@@ -146,6 +157,49 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
 }
 
 // ------------------------------------------------------------------ ส่วนที่ 2 · ผังเชื่อมโยง
+/** แผงในกรอบ: ตัวชี้วัด · สาระแกนกลาง (ใช้เป็นคำอธิบายโดยย่อ) · การเชื่อมโยงท้องถิ่น ของกลุ่มสาระ/ระดับที่เลือก */
+function Peek({ data, area, level, setLevel, onClose, onOpen }: { data: LocalData; area: string; level: string; setLevel: (l: string) => void; onClose: () => void; onOpen: () => void }) {
+  const ofArea = data.records.filter((r) => r.area === area);
+  const rs = level ? ofArea.filter((r) => r.level === level) : ofArea;
+  const total = data.records.length;
+  const miss = rs.filter((r) => r.not_in_69).length;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { ref.current?.scrollTo({ top: 0 }); }, [area, level]);
+  return (
+    <div id="lc-peek" className="lc-peek" role="region" aria-label={`ตัวชี้วัด ${area} ${level ? LEVEL_LABEL[level] : "ทุกระดับ"}`}>
+      <div className="lc-peek__head">
+        <div>
+          <b>{area}</b> <span className="text-muted-foreground">· {level ? LEVEL_LABEL[level] : "ทุกระดับชั้น"}</span>
+          <p className="lc-peek__stat"><b className="num">{rs.length.toLocaleString("th-TH")}</b> รายการ = <b>{pct(rs.length, total)}</b> ของหลักสูตรท้องถิ่นทั้งหมด
+            {level && <> · {pct(rs.length, ofArea.length)} ของกลุ่มสาระนี้</>}
+            {miss > 0 && <> · <span className="lc-tag">ไม่พบในหลักสูตร 69 {miss.toLocaleString("th-TH")}</span></>}</p>
+        </div>
+        <button type="button" className="lc-peek__x" onClick={onClose} aria-label="ปิดแผงรายละเอียด"><X className="visit__lock" aria-hidden="true" /></button>
+      </div>
+      <div className="lc-peek__lv" role="group" aria-label="เลือกระดับชั้น">
+        {["", ...data.levels].map((l, i) => {
+          const n = l ? ofArea.filter((r) => r.level === l).length : ofArea.length;
+          return <button key={l || "all"} type="button" disabled={!n} aria-pressed={level === l} onClick={() => setLevel(l)}>
+            {i > 0 && <i style={{ background: TONES[i - 1] }} />}{l ? LEVEL_LABEL[l] : "ทุกระดับ"} <span className="num">{n}</span></button>;
+        })}
+      </div>
+      <div ref={ref} className="lc-peek__list">
+        {rs.map((r) => (
+          <article key={r.id} className="lc-peek__item">
+            <p className="lc-peek__code"><b>{r.indicator}</b><small>{LEVEL_LABEL[r.level] ?? r.level}</small>{r.not_in_69 && <span className="lc-tag">ไม่พบในหลักสูตร 69</span>}</p>
+            <p className="lc-peek__core"><span>สาระแกนกลาง (คำอธิบายโดยย่อ)</span>{r.core}</p>
+            <p className="lc-peek__local"><span>การเชื่อมโยงหลักสูตรท้องถิ่น</span>{r.local}</p>
+          </article>
+        ))}
+      </div>
+      <div className="lc-peek__foot">
+        <small>เอกสารต้นฉบับไม่มีคำอธิบายรายวิชา จึงแสดงสาระการเรียนรู้แกนกลางแทน</small>
+        <button type="button" className="lc-clear" onClick={onOpen}><ArrowDown className="visit__lock" aria-hidden="true" /> ดูในตารางรายละเอียด</button>
+      </div>
+    </div>
+  );
+}
+
 function IntegrationMap({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filter>) => void }) {
   const tagged = useMemo(() => data.records.map((r) => ({ r, t: topicsOf(r) })), [data]);
   const topicCount = useMemo(() => ALL_TOPICS.map((t) => ({ ...t, n: tagged.filter((x) => x.t.includes(t.key)).length })).filter((t) => t.n > 0), [tagged]);
@@ -233,7 +287,7 @@ function Details({ data, f, setF }: { data: LocalData; f: Filter; setF: (f: Filt
 function Row({ r, data }: { r: LocalRecord; data: LocalData }) {
   return (
     <div className="lc-tr" role="row">
-      <span role="cell" className="lc-code"><b>{r.indicator}</b><small>{r.area} · {r.grade_label}</small></span>
+      <span role="cell" className="lc-code"><b>{r.indicator}</b><small>{r.area} · {r.grade_label}</small>{r.not_in_69 && <span className="lc-tag">ไม่พบในหลักสูตร 69</span>}</span>
       <span role="cell" data-label="สาระการเรียนรู้แกนกลาง">{r.core}</span>
       <span role="cell" data-label="สาระการเรียนรู้ท้องถิ่น" className="lc-local">{r.local}<small className="lc-ref">ที่มา: {sourceText(data, r)}</small></span>
     </div>

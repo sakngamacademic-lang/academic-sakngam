@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Info, Loader2, Search, X } from "lucide-react";
+import { BentoCard, CountUp, RadarChart, Segmented, Treemap } from "@/components/ui/analytics-bento";
 import { ALL_TOPICS, countBy, LEVEL_LABEL, loadLocalData, sourceText, topicsOf, type LocalData, type LocalRecord } from "./data";
 
 /**
@@ -25,33 +26,6 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
   return <div ref={ref} className={`lc-reveal${on ? " is-on" : ""} ${className}`}>{children}</div>;
 }
 
-function useInView<T extends Element>() {
-  const ref = useRef<T>(null);
-  const [seen, setSeen] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => { if (e?.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0.3 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return [ref, seen] as const;
-}
-
-function CountUp({ value }: { value: number }) {
-  const [ref, seen] = useInView<HTMLSpanElement>();
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!seen) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setN(value); return; }
-    let raf = 0; const t0 = performance.now(); const dur = 1100;
-    const tick = (t: number) => { const p = Math.min(1, (t - t0) / dur); setN(Math.round(value * (1 - Math.pow(1 - p, 3)))); if (p < 1) raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [seen, value]);
-  return <span ref={ref} className="num">{n.toLocaleString("th-TH")}</span>;
-}
-
 export function LocalCurriculum() {
   const [data, setData] = useState<LocalData | null>(null);
   const [err, setErr] = useState(false);
@@ -71,42 +45,102 @@ export function LocalCurriculum() {
   );
 }
 
-// ------------------------------------------------------------------ ส่วนที่ 1 · สถิติ
+// ------------------------------------------------------------------ ส่วนที่ 1 · สถิติแบบ Bento
+/** สีประจำกลุ่มสาระ (เรียงตามลำดับใน JSON) — โทนเดียวกับสายคล้องป้าย */
+const AREA_TONES: { color: string; ink?: "dark" | "light" }[] = [
+  { color: "#1f3f77" }, { color: "#b98a2f", ink: "dark" }, { color: "#1f6f68" }, { color: "#7b2f3e" },
+  { color: "#55627a" }, { color: "#d9b56a", ink: "dark" }, { color: "#3f8f86" }, { color: "#2f5aa8" },
+];
 function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filter>) => void }) {
-  const rows = useMemo(() => countBy(data.records, data.areas, data.levels).sort((a, b) => b.total - a.total), [data]);
+  const rows = useMemo(() => countBy(data.records, data.areas, data.levels), [data]);
+  const sorted = useMemo(() => [...rows].sort((a, b) => b.total - a.total), [rows]);
   const areasWithData = rows.filter((r) => r.total > 0).length;
   const max = Math.max(1, ...rows.map((r) => r.total));
   const perLevel = data.levels.map((lv) => data.records.filter((r) => r.level === lv).length);
+  const maxLevel = Math.max(1, ...perLevel);
+  // ตัวเลือกระดับของทรีแมป/เรดาร์: 0 = ทุกระดับ
+  const [lv, setLv] = useState(0);
+  const level = lv === 0 ? "" : data.levels[lv - 1]!;
+  const valueOf = (r: (typeof rows)[number]) => (lv === 0 ? r.total : r.byLevel[lv - 1] ?? 0);
+  const tone = (area: string) => AREA_TONES[data.areas.indexOf(area) % AREA_TONES.length]!;
+  const ranked = [...rows].sort((a, b) => valueOf(b) - valueOf(a));
+  const top = ranked[0], low = ranked.filter((r) => valueOf(r) > 0).at(-1);
+  const seg = ["ทุกระดับ", ...data.levels.map((l) => LEVEL_LABEL[l] ?? l)];
   return (
     <section className="lc-block" aria-labelledby="lc-dash">
       <p className="label">Local Curriculum</p>
       <h2 id="lc-dash" className="section__title">หลักสูตรท้องถิ่น <em>ในทุกกลุ่มสาระ</em></h2>
       <p className="visit__lede">สาระท้องถิ่นจังหวัดกำแพงเพชรที่เชื่อมกับตัวชี้วัดและสาระการเรียนรู้แกนกลาง นับ 1 รายการต่อ 1 แถวในเอกสาร</p>
-      <div className="lc-stats">
-        <button type="button" className="lc-stat" onClick={() => onPick({})}><strong><CountUp value={areasWithData} /></strong><span>กลุ่มสาระการเรียนรู้</span></button>
-        <button type="button" className="lc-stat lc-stat--main" onClick={() => onPick({})}><strong><CountUp value={data.records.length} /></strong><span>รายการเชื่อมโยง</span></button>
-        {data.levels.map((lv, i) => (
-          <button key={lv} type="button" className="lc-stat" onClick={() => onPick({ level: lv })}><strong><CountUp value={perLevel[i] ?? 0} /></strong><span>{LEVEL_LABEL[lv]}</span></button>
-        ))}
+      <div className="grid grid-cols-12 gap-4">
+        {/* A · ภาพรวม */}
+        <BentoCard className="col-span-12 flex flex-col gap-5 sm:flex-row lg:col-span-5" aria-label="รายการเชื่อมโยงทั้งหมด">
+          <button type="button" className="shrink-0 text-left" onClick={() => onPick({})}>
+            <span className="block text-[13px] text-muted-foreground">รายการเชื่อมโยงทั้งหมด</span>
+            <span className="mt-2 block text-[52px] font-semibold leading-none tracking-tight sm:text-[60px]"><CountUp value={data.records.length} /></span>
+            <span className="mt-2 block text-[13px] text-muted-foreground"><b className="text-foreground"><CountUp value={areasWithData} /></b> กลุ่มสาระ · <b className="text-foreground"><CountUp value={data.tables.length} /></b> ตารางในเอกสาร</span>
+          </button>
+          <div className="flex min-h-[150px] flex-1 items-end gap-2 rounded-[18px] border border-border bg-muted/40 p-3" role="group" aria-label="จำนวนรายการแยกระดับชั้น">
+            {data.levels.map((l, i) => (
+              <button key={l} type="button" onClick={() => onPick({ level: l })} aria-label={`${LEVEL_LABEL[l]} ${perLevel[i]} รายการ`} className="group flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                <span className="text-sm font-semibold"><CountUp value={perLevel[i] ?? 0} /></span>
+                <span className="lc-vbar w-full rounded-[10px] transition-[filter] group-hover:brightness-110" style={{ height: `${((perLevel[i] ?? 0) / maxLevel) * 70}%`, background: TONES[i] }} />
+                <span className="text-xs text-muted-foreground">{LEVEL_LABEL[l]}</span>
+              </button>
+            ))}
+          </div>
+        </BentoCard>
+
+        {/* B · แท่งเทียบกลุ่มสาระ × ระดับชั้น */}
+        <BentoCard className="col-span-12 lg:col-span-7" aria-label="เปรียบเทียบกลุ่มสาระ">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="m-0 text-[17px] font-semibold">เปรียบเทียบแต่ละกลุ่มสาระ</h3>
+            <div className="lc-legend" aria-hidden="true">{data.levels.map((l, i) => <span key={l}><i style={{ background: TONES[i] }} />{LEVEL_LABEL[l]}</span>)}</div>
+          </div>
+          <ul className="lc-bars mt-3" aria-label="จำนวนรายการเชื่อมโยงแยกกลุ่มสาระและระดับชั้น">
+            {sorted.map((r) => (
+              <li key={r.area}>
+                <button type="button" className="lc-bar" onClick={() => onPick({ area: r.area })} aria-label={`${r.area} ${r.total} รายการ`}>
+                  <span className="lc-bar__name">{r.area}</span>
+                  <span className="lc-bar__track">
+                    {r.byLevel.map((n, i) => n > 0 && (
+                      <span key={i} role="presentation" className="lc-bar__seg" style={{ width: `${(n / max) * 100}%`, background: TONES[i] }}
+                        title={`${LEVEL_LABEL[data.levels[i]!]} ${n} รายการ`} onClick={(e) => { e.stopPropagation(); onPick({ area: r.area, level: data.levels[i]! }); }} />
+                    ))}
+                  </span>
+                  <span className="lc-bar__n num">{r.total.toLocaleString("th-TH")}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="visit__sub">กดแท่งเพื่อดูรายการของกลุ่มสาระ · กดช่วงสีเพื่อดูเฉพาะระดับชั้นนั้น</p>
+        </BentoCard>
+
+        {/* C · ทรีแมป */}
+        <BentoCard className="col-span-12 lg:col-span-7" aria-label="สัดส่วนตามกลุ่มสาระ">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="m-0 text-[17px] font-semibold">พื้นที่ตามจำนวนรายการของแต่ละกลุ่มสาระ</h3>
+            <Segmented label="ระดับชั้น" items={seg} value={lv} onChange={setLv} />
+          </div>
+          <Treemap label={`จำนวนรายการแยกกลุ่มสาระ ${seg[lv]}`} unit="รายการ" onPick={(area) => onPick({ area, level })}
+            items={rows.map((r) => ({ id: r.area, name: r.area, value: valueOf(r), ...tone(r.area) }))} />
+          <p className="visit__sub mt-3">ขนาดกล่อง = จำนวนรายการ (แถวในเอกสาร) · กดกล่องเพื่อดูรายละเอียด</p>
+        </BentoCard>
+
+        {/* D · เรดาร์ */}
+        <BentoCard className="col-span-12 lg:col-span-5" aria-label="เรดาร์กลุ่มสาระ">
+          <h3 className="m-0 text-[17px] font-semibold">การกระจายใน 8 กลุ่มสาระ <span className="font-normal text-muted-foreground">· {seg[lv]}</span></h3>
+          <RadarChart label={`จำนวนรายการของแต่ละกลุ่มสาระ ${seg[lv]}`} unit="รายการ" axis={data.areas} values={rows.map(valueOf)} color="#1f3f77" onPick={(i) => onPick({ area: data.areas[i]!, level })} />
+          <div className="mt-1 grid grid-cols-2 gap-3">
+            {[["มากที่สุด", top], ["น้อยที่สุด", low]].map(([label, r]) => r && typeof r !== "string" && (
+              <button key={label as string} type="button" className="text-left" onClick={() => onPick({ area: r.area, level })}>
+                <span className="block text-[13px] text-muted-foreground">{label as string}</span>
+                <span className="mt-1 block text-[28px] font-semibold leading-none"><CountUp value={valueOf(r)} /></span>
+                <span className="mt-1 block truncate text-xs text-muted-foreground">{r.area}</span>
+              </button>
+            ))}
+          </div>
+        </BentoCard>
       </div>
-      <div className="lc-legend" aria-hidden="true">{data.levels.map((lv, i) => <span key={lv}><i style={{ background: TONES[i] }} />{LEVEL_LABEL[lv]}</span>)}</div>
-      <ul className="lc-bars" aria-label="จำนวนรายการเชื่อมโยงแยกกลุ่มสาระและระดับชั้น">
-        {rows.map((r) => (
-          <li key={r.area}>
-            <button type="button" className="lc-bar" onClick={() => onPick({ area: r.area })} aria-label={`${r.area} ${r.total} รายการ`}>
-              <span className="lc-bar__name">{r.area}</span>
-              <span className="lc-bar__track">
-                {r.byLevel.map((n, i) => n > 0 && (
-                  <span key={i} role="presentation" className="lc-bar__seg" style={{ width: `${(n / max) * 100}%`, background: TONES[i] }}
-                    title={`${LEVEL_LABEL[data.levels[i]!]} ${n} รายการ`} onClick={(e) => { e.stopPropagation(); onPick({ area: r.area, level: data.levels[i]! }); }} />
-                ))}
-              </span>
-              <span className="lc-bar__n num">{r.total.toLocaleString("th-TH")}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p className="visit__sub">กดแท่งเพื่อดูรายการของกลุ่มสาระ · กดช่วงสีเพื่อดูเฉพาะระดับชั้นนั้น</p>
     </section>
   );
 }

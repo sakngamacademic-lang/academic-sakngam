@@ -5,6 +5,7 @@ import { BrandMark } from "./WelcomePage";
 import { VisitCurriculum } from "./VisitCurriculum";
 import { VisitBooks } from "./VisitBooks";
 import { usePublicVisit } from "./visit-api";
+import { isMissing } from "@/features/curriculum/categories/api";
 import "./welcome.css";
 
 /**
@@ -54,7 +55,13 @@ export function VisitPage() {
         </section>
 
         {q.isPending ? <p className="section visit__muted"><Loader2 className="visit__lock visit__spin" aria-hidden="true" /> กำลังโหลดข้อมูล…</p>
-          : q.isError || !q.data ? <p className="section visit__muted">ยังโหลดข้อมูลที่เผยแพร่ไม่ได้ — ลองใหม่ภายหลัง</p>
+          : q.isError || !q.data ? (
+            <div className="section"><p className="visit__muted visit__empty">
+              {q.isError && isMissing(q.error)
+                ? "หน้าเยี่ยมชมยังไม่เปิดใช้งานบนเซิร์ฟเวอร์นี้ — รอผู้ดูแลระบบติดตั้งระบบอนุมัติเผยแพร่ (migration 20261208000100)"
+                : "ยังโหลดข้อมูลที่เผยแพร่ไม่ได้ — ลองใหม่ภายหลัง"}
+            </p></div>
+          )
           : (
             <>
               <section className="section" id="curriculum" aria-labelledby="visit-curriculum">

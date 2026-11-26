@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { requireSupabase } from "@/lib/supabase";
 import { callPublicFunction } from "@/lib/storage";
 import { schoolGrade } from "@/features/mapping/match";
+import { isMissing } from "@/features/curriculum/categories/api";
 import { stageOf, type Category, type Stage } from "@/features/curriculum/categories/classify";
 
 export interface PublicItem {
@@ -32,6 +33,7 @@ export function usePublicVisit() {
       return data as PublicVisitData;
     },
     staleTime: 60_000,
+    retry: (n, e) => !isMissing(e) && n < 2,
   });
 }
 

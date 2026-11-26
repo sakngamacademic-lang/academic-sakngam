@@ -403,15 +403,6 @@
   .welcome .vmap__col:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: calc(var(--sp-4) * -0.5 - 0.7em); transform: translateX(50%); }
 }
 
-/* ===== หน้าแรกแบบเรียบ ===== */
-.welcome .home { position: relative; isolation: isolate; display: grid; place-items: center; min-height: calc(100svh - var(--topbar-h)); padding: var(--sp-7) var(--gutter); overflow: hidden; --px: 0; --py: 0; --sy: 0; }
-.welcome .home__inner { text-align: center; max-width: 48rem; }
-.welcome .home__title { display: grid; line-height: var(--lh-display); }
-.welcome .home__t1 { font-size: clamp(2.4rem, 1.4rem + 5vw, 5.5rem); font-weight: 200; }
-.welcome .home__t2 { font-size: clamp(2.6rem, 1.5rem + 5.6vw, 6.25rem); font-weight: 700; }
-.welcome .home__sub { margin-top: var(--sp-3); font-size: var(--fs-lg); color: var(--text-2); }
-.welcome .home__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin-top: var(--sp-6); }
-@media (max-width: 480px) { .welcome .home__actions .btn { width: 100%; } }
 /* ปุ่ม PDF + เล่มกลุ่มสาระ + โหมดนำเสนอ */
 .welcome .visit__pdf { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.25rem; padding: 0.1rem 0.55rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); color: var(--text-1); font-size: var(--fs-xs); }
 .welcome .visit__pdf:hover { background: var(--surface-hover); }

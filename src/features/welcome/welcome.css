@@ -402,3 +402,34 @@
   .welcome .vmap__cols { grid-template-columns: 1fr; gap: var(--sp-4); }
   .welcome .vmap__col:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: calc(var(--sp-4) * -0.5 - 0.7em); transform: translateX(50%); }
 }
+
+/* ===== หน้าแรกแบบเรียบ ===== */
+.welcome .home { position: relative; isolation: isolate; display: grid; place-items: center; min-height: calc(100svh - var(--topbar-h)); padding: var(--sp-7) var(--gutter); overflow: hidden; --px: 0; --py: 0; --sy: 0; }
+.welcome .home__inner { text-align: center; max-width: 48rem; }
+.welcome .home__title { display: grid; line-height: var(--lh-display); }
+.welcome .home__t1 { font-size: clamp(2.4rem, 1.4rem + 5vw, 5.5rem); font-weight: 200; }
+.welcome .home__t2 { font-size: clamp(2.6rem, 1.5rem + 5.6vw, 6.25rem); font-weight: 700; }
+.welcome .home__sub { margin-top: var(--sp-3); font-size: var(--fs-lg); color: var(--text-2); }
+.welcome .home__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin-top: var(--sp-6); }
+@media (max-width: 480px) { .welcome .home__actions .btn { width: 100%; } }
+/* ปุ่ม PDF + เล่มกลุ่มสาระ + โหมดนำเสนอ */
+.welcome .visit__pdf { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.25rem; padding: 0.1rem 0.55rem; border-radius: var(--r-pill); border: 1px solid var(--line-strong); color: var(--text-1); font-size: var(--fs-xs); }
+.welcome .visit__pdf:hover { background: var(--surface-hover); }
+.welcome .vmap__boxes li.is-open { flex-basis: 100%; }
+.welcome .vmap__boxMore { margin-top: var(--sp-2); padding: var(--sp-3); border-radius: var(--r-sm); background: var(--bg-1); border: 1px solid var(--line); }
+.welcome .vbooks { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); list-style: none; padding: 0; }
+.welcome .vbooks__area { padding: var(--sp-4); border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg-1); }
+.welcome .vbooks__name { font-weight: 600; margin-bottom: var(--sp-3); }
+.welcome .vbooks__levels { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.welcome .vbooks__slot { display: grid; align-content: start; gap: var(--sp-1); padding: var(--sp-3); border-radius: var(--r-md); border: 1px dashed var(--line-strong); min-width: 0; }
+.welcome .vbooks__slot.is-ready { border-style: solid; border-color: color-mix(in oklab, var(--accent) 45%, transparent); }
+.welcome .vbooks__level { font-weight: 600; }
+.welcome .vbooks__level small { font-weight: 400; color: var(--text-3); }
+.welcome .vbooks__title { font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.welcome .vbooks__slot .btn { justify-self: start; margin-top: var(--sp-1); }
+.welcome.visit .topbar__end { gap: var(--sp-2); }
+@media (max-width: 480px) { .welcome .visit__hideSm { display: none; } }
+.welcome.visit.is-present { font-size: 1.25rem; }
+.welcome.visit.is-present .section { max-width: none; }
+.welcome.visit.is-present .visit__sub, .welcome.visit.is-present .vmap__note { font-size: 0.9rem; }
+.welcome.visit.is-present .visit__muted, .welcome.visit.is-present .vmap__box, .welcome.visit.is-present .visit__tabs button { font-size: 1.05rem; }

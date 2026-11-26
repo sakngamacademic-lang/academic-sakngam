@@ -29,6 +29,7 @@ const Mapping = page(() => import("@/features/mapping/MappingPage"), "MappingPag
 const Viewer = page(() => import("./pages/CurriculumStructureViewer"), "CurriculumStructureViewer");
 const Coverage = page(() => import("@/features/mapping/CoveragePage"), "CoveragePage");
 const Present = page(() => import("./presentation/PresentationPage"), "PresentationPage");
+const Publish = page(() => import("./presentation/PublishPage"), "PublishPage");
 const InternalReview = page(() => import("./presentation/InternalReviewPage"), "InternalReviewPage");
 const WorkbookCompare = page(() => import("./pages/WorkbookComparePage"), "WorkbookComparePage");
 const StructureReview = page(() => import("./pages/StructureReviewPage"), "StructureReviewPage");
@@ -72,6 +73,7 @@ export const curriculumPages: Record<string, ReactElement> = {
   "curriculum/workbook-compare": wrap(<WorkbookCompare />),
   "curriculum/structure-review": wrap(<StructureReview />),
   "curriculum/source-archive": wrap(<SourceArchive />),
+  "curriculum/publish": wrap(<Publish />),
   // Curriculum V2 (แยกจากข้อมูลหลักสูตรเดิม)
   "curriculum-v2": wrap(<V2Overview />),
   "curriculum-v2/import": wrap(<V2Import />),

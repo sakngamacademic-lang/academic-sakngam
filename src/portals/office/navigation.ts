@@ -1,5 +1,6 @@
 import {
   Archive,
+  Globe,
   BarChart3,
   BookOpen,
   BookText,
@@ -59,6 +60,7 @@ export const officePortal: PortalConfig = {
         { path: "curriculum-v2/structure", label: "โครงสร้างและรายวิชา", icon: LayoutList, hint: "ปี → ชั้น → แผน → ภาคเรียน", roles: ACADEMIC_AND_EXEC },
         { path: "curriculum-v2/compare", label: "เปรียบเทียบหลักสูตร", icon: GitCompareArrows, hint: "2568 ↔ 2569: เพิ่ม/ลด/เปลี่ยน", roles: ACADEMIC_AND_EXEC },
         { path: "curriculum-v2/reports", label: "รายงานและส่งออก", icon: FileDown, hint: "Excel / Word / PDF", roles: ACADEMIC_AND_EXEC },
+        { path: "curriculum/publish", label: "อนุมัติเผยแพร่ (หน้าเยี่ยมชม)", icon: Globe, hint: "เลือกข้อมูลและเล่ม PDF ที่บุคคลภายนอกเห็นได้", roles: ["academic_head"] },
       ],
     },
     {

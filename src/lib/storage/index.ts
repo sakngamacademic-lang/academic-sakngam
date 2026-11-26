@@ -58,6 +58,27 @@ export async function callFunction<T>(name: string, body: unknown): Promise<T> {
   return json as T;
 }
 
+/**
+ * เรียก Edge Function สาธารณะ (ไม่ต้องเข้าสู่ระบบ) ด้วย anon key — ใช้กับ public-document-url เท่านั้น
+ * ฐานข้อมูลตรวจสถานะ "อนุมัติให้เผยแพร่" ฝั่งเซิร์ฟเวอร์เสมอ
+ */
+export async function callPublicFunction<T>(name: string, body: unknown): Promise<T> {
+  const key = env.VITE_SUPABASE_ANON_KEY ?? "";
+  let res: Response;
+  try {
+    res = await fetch(`${functionsBase()}/${name}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, apikey: key, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new StorageError("ไม่สามารถเชื่อมต่อระบบเปิดเอกสารได้ กรุณาลองใหม่");
+  }
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new StorageError(json.error ?? "คำขอไม่สำเร็จ");
+  return json as T;
+}
+
 /** ตรวจเบื้องต้นฝั่ง client (ฝั่ง server ตรวจซ้ำเสมอ รวม magic bytes) */
 export const MAX_SOURCE_BYTES = 100 * 1024 * 1024;
 

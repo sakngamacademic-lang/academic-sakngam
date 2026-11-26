@@ -34,8 +34,6 @@ async function expectNoHorizontalOverflow(page: Page) {
 const keyframeAnimations = (page: Page) =>
   page.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSAnimation).map((a) => (a as CSSAnimation).animationName));
 
-const statusText = (page: Page) => page.locator("[data-status]");
-const activeScene = (page: Page) => page.locator(".scene.is-active");
 
 /** องค์ประกอบที่ให้ผู้ใช้เลือกบทบาทเอง (ต้องไม่มี) — ตรวจองค์ประกอบจริง ไม่ใช่ข้อความ */
 async function roleSelectors(page: Page) {
@@ -59,17 +57,15 @@ async function roleSelectors(page: Page) {
 }
 
 test.describe("Welcome Page", () => {
-  test("ยังไม่ login: แสดง Hero และปุ่มเข้าสู่ระบบทุกปุ่มไป /login", async ({ page }) => {
+  test("ยังไม่ login: มีเพียงปุ่มเข้าสู่ระบบ (/login) และเยี่ยมชมข้อมูล (/visit)", async ({ page }) => {
     await page.goto("/");
-    // ครั้งแรก dev server อาจกำลังเตรียม chunk ของหน้า Welcome (lazy) จึงเผื่อเวลา
     await expect(page.getByRole("heading", { level: 1, name: /ระบบบริหาร\s*งานวิชาการ/ })).toBeVisible({ timeout: 20_000 });
-    const ctas = page.locator("[data-auth-cta]");
-    expect(await ctas.count()).toBeGreaterThanOrEqual(3);
-    for (const href of await ctas.evaluateAll((els) => els.map((e) => e.getAttribute("href")))) expect(href).toBe("/login");
+    await expect(page.locator("main a")).toHaveCount(2);
+    await expect(page.locator("[data-auth-cta]")).toHaveAttribute("href", "/login");
+    await expect(page.locator("[data-visit-cta]")).toHaveAttribute("href", "/visit");
     expect(await roleSelectors(page)).toEqual([]);
-    await page.locator(".topbar [data-auth-cta]").click();
+    await page.locator("[data-auth-cta]").click();
     await expect(page).toHaveURL(/\/login$/);
-    // หน้า Login: มีแค่อีเมล + รหัสผ่าน ไม่มีตัวเลือกบทบาท
     await expect(page.locator("form input:not([type=hidden])")).toHaveCount(2);
     expect(await roleSelectors(page)).toEqual([]);
   });
@@ -77,8 +73,8 @@ test.describe("Welcome Page", () => {
   test("login อยู่แล้ว: ปุ่มพาไป Dashboard ตามบทบาท (ครู → /teacher, ฝ่ายวิชาการ → /office)", async ({ page }) => {
     await signIn(page, "teacher1@snw.test");
     await page.goto("/");
-    await expect(page.locator(".topbar [data-auth-cta]")).toHaveAttribute("href", "/teacher");
-    await page.locator(".scene.is-active [data-auth-cta]").click();
+    await expect(page.locator("[data-auth-cta]")).toHaveAttribute("href", "/teacher");
+    await page.locator("[data-auth-cta]").click();
     await expect(page).toHaveURL(/\/teacher$/);
     await expect(page.getByRole("heading", { name: /^สวัสดี/ })).toBeVisible();
 
@@ -86,95 +82,14 @@ test.describe("Welcome Page", () => {
     await expect(page).toHaveURL(/\/login$/);
     await signIn(page, "head@snw.test"); // มีทั้งบทบาทวิชาการและครู → office ก่อน (defaultPortalPath เดิม)
     await page.goto("/");
-    await expect(page.locator("#features [data-auth-cta]")).toHaveAttribute("href", "/office");
+    await expect(page.locator("[data-auth-cta]")).toHaveAttribute("href", "/office");
   });
 
-  test("Carousel: ลูกศร, thumbnail, indicator, เมนูบน, คีย์บอร์ด, ลากเมาส์, autoplay", async ({ page }) => {
-    await page.setViewportSize(VIEWPORTS.desktop);
-    await page.goto("/");
-    await expect(statusText(page)).toHaveText(/ฉากที่ 1 จาก 5/);
-
-    await page.getByRole("button", { name: "ฉากถัดไป" }).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 2 จาก 5: หลักสูตรและข้อมูลพื้นฐาน/);
-    // transition: ฉากเดิมออก ฉากใหม่เข้า แล้วล้าง class ภายใน 2.3s (spec 2.2s)
-    await expect(page.locator(".scene.is-entering")).toHaveCount(1);
-    await page.waitForTimeout(2300);
-    await expect(page.locator(".scene.is-leaving, .scene.is-entering")).toHaveCount(0);
-    // ฉากที่ไม่แสดงเป็น inert
-    expect(await page.locator(".scene[inert]").count()).toBe(4);
-
-    await page.getByRole("button", { name: "ฉากก่อนหน้า" }).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 1 จาก 5/);
-    await page.locator(".thumb").nth(3).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 4 จาก 5/);
-    await page.getByRole("button", { name: /^ฉากที่ 5 / }).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 5 จาก 5/);
-    await page.getByRole("navigation", { name: "ความสามารถของระบบ" }).getByRole("button", { name: "วัดผล" }).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 3 จาก 5/);
-
-    const hero = page.locator(".hero");
-    await hero.focus();
-    await page.keyboard.press("End");
-    await expect(statusText(page)).toHaveText(/ฉากที่ 5 จาก 5/);
-    await page.keyboard.press("ArrowRight");
-    await expect(statusText(page)).toHaveText(/ฉากที่ 1 จาก 5/); // วนรอบ
-    await page.keyboard.press("ArrowLeft");
-    await expect(statusText(page)).toHaveText(/ฉากที่ 5 จาก 5/);
-    await page.keyboard.press("Home");
-    await expect(statusText(page)).toHaveText(/ฉากที่ 1 จาก 5/);
-
-    const box = (await activeScene(page).locator(".scene__visual").boundingBox())!;
-    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width * 0.2, box.y + box.height / 2, { steps: 6 });
-    await page.mouse.up();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 2 จาก 5/);
-
-    const toggle = page.getByRole("button", { name: "เล่นอัตโนมัติ" });
-    await expect(toggle).toHaveAttribute("aria-pressed", "false"); // ปิดเป็นค่าเริ่มต้น
-    await toggle.click();
-    await expect(page.getByRole("button", { name: "หยุดเล่นอัตโนมัติ" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "หยุดเล่นอัตโนมัติ" }).click();
-
-    // ไม่ดักการเลื่อนหน้า: เลื่อนลงได้ปกติและฉากไม่เปลี่ยน
-    await page.mouse.wheel(0, 900);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-    await expect(statusText(page)).toHaveText(/ฉากที่ 2 จาก 5/);
-    await expect(page.locator("#features .reveal.is-visible").first()).toBeVisible();
-  });
-
-  test("Reduced motion: เปลี่ยนฉากทันที ไม่มี animation และซ่อน autoplay", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "เล่นอัตโนมัติ" })).toHaveCount(0);
-    await page.getByRole("button", { name: "ฉากถัดไป" }).click();
-    await expect(statusText(page)).toHaveText(/ฉากที่ 2 จาก 5/);
-    await expect(page.locator(".scene.is-leaving, .scene.is-entering")).toHaveCount(0);
-    await page.waitForTimeout(300);
-    const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").length);
-    expect(running).toBe(0);
-    expect(await page.locator("#features .reveal:not(.is-visible)").count()).toBe(0);
-  });
-
-  test("มือถือ: ปัดนิ้วเปลี่ยนฉาก และหัวเรื่องทุกฉากไม่ล้นจอ", async ({ browser }) => {
+  test("มือถือ: หัวเรื่องและปุ่มไม่ล้นจอ", async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: VIEWPORTS.mobile, hasTouch: true, isMobile: true, locale: "th-TH" });
     const page = await ctx.newPage();
     await page.goto("/");
-    for (let i = 0; i < 5; i++) {
-      const overflow = await activeScene(page).evaluate((s) => {
-        const col = s.querySelector(".scene__head")!.getBoundingClientRect();
-        return Math.max(...[...s.querySelectorAll(".title span")].map((t) => t.getBoundingClientRect().right - col.right));
-      });
-      expect(overflow, `หัวเรื่องฉาก ${i + 1}`).toBeLessThanOrEqual(1);
-      // มือถือ: ลูกศรถูกซ่อน ใช้ thumbnail / ปัดนิ้วแทน
-      if (i < 4) await page.locator(".thumb").nth(i + 1).click();
-      await page.waitForTimeout(700);
-    }
-    const stage = (await page.locator(".stage").boundingBox())!;
-    const y = stage.y + 120;
-    await page.locator(".stage").dispatchEvent("pointerdown", { clientX: stage.x + 320, clientY: y, pointerType: "touch", isPrimary: true });
-    await page.locator(".stage").dispatchEvent("pointerup", { clientX: stage.x + 60, clientY: y + 10, pointerType: "touch", isPrimary: true });
-    await expect(statusText(page)).toHaveText(/ฉากที่ 1 จาก 5/); // จากฉากที่ 5 ปัดไปข้างหน้า → วนกลับฉากแรก
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
     await expectNoHorizontalOverflow(page);
     await ctx.close();
   });
@@ -238,7 +153,10 @@ test.describe("Responsive: ไม่มี scroll แนวนอน", () => {
     test(`${name} ${vp.width}×${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await page.goto("/");
-      await expect(statusText(page)).toHaveText(/ฉากที่ 1/);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+      await page.goto("/visit");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await page.goto("/login");
       await expectNoHorizontalOverflow(page);

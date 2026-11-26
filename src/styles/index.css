@@ -145,6 +145,12 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* โทนสายคล้อง/แถบป้าย (team-lanyard-rail): กรมท่า · ทอง · เขียวหม่น · แดงเลือดหมู · เทาน้ำเงิน */
+  --color-chart-1: #1f3f77;
+  --color-chart-2: #b98a2f;
+  --color-chart-3: #1f6f68;
+  --color-chart-4: #7b2f3e;
+  --color-chart-5: #55627a;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

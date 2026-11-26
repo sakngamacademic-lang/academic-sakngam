@@ -435,3 +435,6 @@
 .welcome .logo-mini { width: 100%; height: 100%; object-fit: contain; }
 .welcome .vbooks--school { margin-bottom: var(--sp-4); }
 .welcome .vbooks__open { margin-top: var(--sp-3); }
+/* ราวป้ายเล่มหลักสูตร (หน้าเยี่ยมชม) */
+.welcome .visit__rail { padding-top: 0; padding-bottom: var(--sp-6); }
+.welcome .visit-rail h2 { font-weight: 600; }

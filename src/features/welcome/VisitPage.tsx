@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { BrandMark } from "./WelcomePage";
 import { VisitBooks } from "./VisitBooks";
+import { VisitRail } from "./VisitRail";
 import { usePublicVisit } from "./visit-api";
 import { isMissing } from "@/features/curriculum/categories/api";
 import "./welcome.css";
@@ -63,8 +64,9 @@ export function VisitPage() {
           )
           : (
             <>
+              <div className="section visit__rail"><VisitRail data={q.data} /></div>
               <section className="section" id="books" aria-labelledby="visit-books">
-                <div className="section__head"><div><p className="label">Books</p><h2 className="section__title" id="visit-books">เล่มหลักสูตรกลุ่มสาระการเรียนรู้</h2></div></div>
+                <div className="section__head"><div><p className="label">All books</p><h2 className="section__title" id="visit-books">รายการเล่มทั้งหมด</h2></div></div>
                 <VisitBooks data={q.data} />
               </section>
             </>

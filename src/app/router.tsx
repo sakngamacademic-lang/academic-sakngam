@@ -12,6 +12,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 // หน้า Welcome (public) แยก chunk: CSS/JS ของ animation โหลดเฉพาะหน้านี้ ไม่ทำให้ Dashboard หนักขึ้น
 const WelcomePage = lazy(() => import("@/features/welcome/WelcomePage"));
 const VisitPage = lazy(() => import("@/features/welcome/VisitPage"));
+const BookRedirect = lazy(() => import("@/features/welcome/BookRedirect"));
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,15 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>
         <VisitPage />
+      </Suspense>
+    ),
+  },
+  {
+    // ลิงก์จาก QR Code: เปิด PDF เล่มที่อนุมัติเผยแพร่ทันที (ไม่ต้อง Login)
+    path: "/b/:docId",
+    element: (
+      <Suspense fallback={<FullPageSpinner label="กำลังเปิดเล่ม…" />}>
+        <BookRedirect />
       </Suspense>
     ),
   },

@@ -11,6 +11,8 @@ const envSchema = z.object({
   VITE_APP_ENV: z.enum(["local", "staging"]).default("local"),
   /** ที่อยู่ Edge Functions (ไม่ใช่ secret) — ค่าเริ่มต้น `${VITE_SUPABASE_URL}/functions/v1` */
   VITE_FUNCTIONS_URL: z.url().optional().or(z.literal("")),
+  /** URL ถาวรของเว็บ (ใช้สร้าง QR Code ให้ชี้ Production เสมอ แม้สร้างจาก Preview) */
+  VITE_PUBLIC_SITE_URL: z.url().default("https://academic-sakngam.vercel.app"),
 });
 
 const parsed = envSchema.safeParse(import.meta.env);

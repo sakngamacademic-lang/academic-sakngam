@@ -8,6 +8,7 @@ import { callRpc, useMdMutation } from "@/features/master-data/api";
 import { requireSupabase } from "@/lib/supabase";
 import { allVersions, useCurricula, useSourceDocuments } from "../api";
 import { isMissing } from "../categories/api";
+import { QrSheet } from "./QrSheet";
 
 /**
  * อนุมัติให้เผยแพร่ (หน้าเยี่ยมชม /visit) — แยกจากการยืนยันความถูกต้องของข้อมูล
@@ -76,6 +77,7 @@ export function PublishPage() {
           )}
         </section>
 
+        <QrSheet />
         <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
           เผยแพร่เล่มหลักสูตรได้ที่ <Link to="/office/curriculum-v2/present" className="font-medium text-primary hover:underline">นำเสนอเล่มหลักสูตร</Link> → “จัดการเล่ม / แนบไฟล์” → ปุ่ม “เผยแพร่” ข้างไฟล์ (แยก ม.ต้น / ม.ปลาย)
         </p>

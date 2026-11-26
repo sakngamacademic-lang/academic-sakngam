@@ -45,7 +45,8 @@ function Svg({ viewBox, label, className, children }: { viewBox: string; label?:
 const pick = (colors: readonly string[] | undefined, i: number) => colors?.[i] ?? CHART_PALETTE[i % CHART_PALETTE.length]!;
 
 /** วงแหวนซ้อน: ค่าร้อยละหลายตัว */
-export function RingsChart({ values, label, mini, className, center, colors }: BaseProps & { center?: string; colors?: readonly string[] }) {
+/** logo: ถ้ากำหนด แสดงภาพ (เช่น ตราโรงเรียน) ตรงกลางแทนตัวเลขเปอร์เซ็นต์ */
+export function RingsChart({ values, label, mini, className, center, colors, logo }: BaseProps & { center?: string; colors?: readonly string[]; logo?: string }) {
   const sw = mini ? 22 : 15;
   const gap = mini ? 30 : 26;
   return (
@@ -60,7 +61,9 @@ export function RingsChart({ values, label, mini, className, center, colors }: B
           </g>
         );
       })}
-      {!mini && (
+      {logo ? (
+        <image href={logo} x={160 - (mini ? 44 : 60)} y={160 - (mini ? 54 : 74)} width={mini ? 88 : 120} height={mini ? 108 : 148} preserveAspectRatio="xMidYMid meet" />
+      ) : !mini && (
         <>
           <text x="160" y="158" textAnchor="middle" fontSize="46" fontWeight="700" fill={TEXT}>{fmt.format(values[0] ?? 0)}%</text>
           <text x="160" y="186" textAnchor="middle" fontSize="15" fill={MUTED}>{center}</text>

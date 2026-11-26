@@ -3,7 +3,7 @@
  * ⚠️ หน้า public: ไม่ดึงข้อมูลจากฐานข้อมูล ตัวเลขเป็นข้อเท็จจริงของระบบ หรือ "ภาพตัวอย่าง" เท่านั้น
  */
 export type SceneChart =
-  | { kind: "rings"; values: number[]; center: string; label: string }
+  | { kind: "rings"; values: number[]; center: string; label: string; logo?: string }
   | { kind: "donut"; values: number[]; center: string; total: string; label: string; colors?: string[] }
   | { kind: "bars"; values: number[]; labels: string[]; label: string }
   | { kind: "gauge"; values: number[]; center: string; label: string };
@@ -48,8 +48,8 @@ export const SCENES: Scene[] = [
       { label: "กลุ่มสาระ", value: "8", unit: "กลุ่ม" },
       { label: "สิทธิ์ข้อมูลทุกตาราง", value: "RLS" },
     ],
-    chart: { kind: "rings", values: [100, 82, 64], center: "ตัวอย่างความคืบหน้า", label: "ภาพตัวอย่าง: วงแหวนความคืบหน้างานวิชาการ" },
-    mini: { kind: "rings", values: [100, 82, 64], center: "", label: "" },
+    chart: { kind: "rings", values: [100, 82, 64], center: "", label: "ตราโรงเรียนสักงามวิทยา", logo: "/school-logo.png" },
+    mini: { kind: "rings", values: [100, 82, 64], center: "", label: "", logo: "/school-logo.png" },
     panel: {
       kind: "rows",
       aria: "ระบบนี้ทำอะไรได้",

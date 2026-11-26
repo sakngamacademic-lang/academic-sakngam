@@ -40,7 +40,7 @@ function AuthCta({ className, children = "เข้าสู่ระบบง�
 function Chart({ chart, mini }: { chart: SceneChart; mini?: boolean }) {
   switch (chart.kind) {
     case "rings":
-      return <RingsChart values={chart.values} center={chart.center} label={chart.label} mini={mini} />;
+      return <RingsChart values={chart.values} center={chart.center} label={chart.label} mini={mini} logo={chart.logo} />;
     case "donut":
       return <DonutChart values={chart.values} center={chart.center} total={chart.total} colors={chart.colors} label={chart.label} mini={mini} />;
     case "bars":

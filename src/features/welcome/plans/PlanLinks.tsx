@@ -116,7 +116,7 @@ export function PlanLinks({ visit }: { visit?: PublicVisitData }) {
         hubLabel="อ.คลองลาน"
         renderCard={card}
         autoplay
-        interval={6000}
+        interval={5000}
         labels={{ previous: "แผนก่อนหน้า", next: "แผนถัดไป", pin: "แสดงการเชื่อมโยงของแผน" }}
         header={<>
           <p className="label">From Curriculum to Classroom</p>

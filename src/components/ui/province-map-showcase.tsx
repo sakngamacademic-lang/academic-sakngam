@@ -35,7 +35,7 @@ export interface ProvinceMapShowcaseProps extends Omit<React.ComponentProps<"sec
   labels?: { previous: string; next: string; pin: string };
 }
 
-const HOLD_MS = 9000;
+const HOLD_MS = 6000;
 const SWAP_MS = 240;
 const SWIPE_MIN = 40;
 const WIDE_MIN = 640;
@@ -58,7 +58,6 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
   const [width, setWidth] = React.useState(0);
   const [active, setActive] = React.useState(0);
   const [pinned, setPinned] = React.useState(false);
-  const [hover, setHover] = React.useState(false);
   const [keyboard, setKeyboard] = React.useState(false);
   const [visible, setVisible] = React.useState(true);
   const [reduced, setReduced] = React.useState(false);
@@ -71,7 +70,8 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
   const pinSize = diameter >= 400 ? 46 : diameter >= 320 ? 40 : 34;
   const gap = width >= 1024 ? 64 : 32;
   const roomy = wide && inner - diameter - gap >= 440;
-  const running = autoplay && !reduced && count > 1 && !pinned && !hover && !keyboard && visible;
+  // เล่นต่อแม้ชี้เมาส์ค้าง — หยุดชั่วคราวเฉพาะเมื่อกดหมุด/ปุ่ม (HOLD_MS) หรือใช้แป้นพิมพ์
+  const running = autoplay && !reduced && count > 1 && !pinned && !keyboard && visible;
   const current = Math.min(active, Math.max(0, count - 1));
   const item = items[current];
 
@@ -184,6 +184,7 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
       onFocus={(e) => { if ((e.target as HTMLElement).matches(":focus-visible")) setKeyboard(true); }}
       onBlur={(e) => { const n = e.relatedTarget as Node | null; if (!n || !e.currentTarget.contains(n)) setKeyboard(false); }}
     >
+      <style>{"@keyframes pms-progress { from { width: 0 } to { width: 100% } }"}</style>
       <div
         ref={stageRef}
         className={cx("relative mx-auto w-full", wide ? "grid items-center gap-y-6" : "flex flex-col items-center gap-5")}
@@ -237,8 +238,7 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
                 className="group/pin absolute -translate-x-1/2 -translate-y-1/2 rounded-full outline-none"
                 style={{ left: `${p.x / 10}%`, top: `${p.y / 10}%`, width: pinSize, height: pinSize, zIndex: on ? 3 : 1 }}
                 onClick={() => press(i)}
-                onPointerEnter={(e) => { if (e.pointerType !== "touch") { setHover(true); go(i); } }}
-                onPointerLeave={(e) => { if (e.pointerType !== "touch") setHover(false); }}
+                onPointerEnter={(e) => { if (e.pointerType !== "touch") { go(i); setPinned(true); } }}
                 onKeyDown={(e) => onPinKey(i, e)}
                 onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) go(i); }}
               >
@@ -250,9 +250,7 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
         </div>
 
         {/* การ์ด */}
-        <div className={cx("relative w-full min-w-0", wide ? "col-start-2 row-start-2 self-start" : "max-w-xl")}
-          onPointerEnter={(e) => { if (e.pointerType !== "touch") setHover(true); }}
-          onPointerLeave={(e) => { if (e.pointerType !== "touch") setHover(false); }}>
+        <div className={cx("relative w-full min-w-0", wide ? "col-start-2 row-start-2 self-start" : "max-w-xl")}>
           <div
             ref={regionRef}
             data-card-region
@@ -276,7 +274,9 @@ export function ProvinceMapShowcase({ map, items, hub, hubLabel, header, renderC
           {count > 1 && (
             <div className="mt-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-1.5" aria-hidden="true">
-                {items.map((it, i) => <span key={it.id} className={cx("h-1.5 rounded-full transition-all duration-300", i === current ? cx("w-6", RING[tone(i)]) : "w-1.5 bg-border")} />)}
+                {items.map((it, i) => i === current
+                  ? <span key={it.id} className="relative h-1.5 w-8 overflow-hidden rounded-full bg-border">{<span key={`${current}-${running}`} className={cx("absolute inset-y-0 left-0 rounded-full", RING[tone(i)])} style={running ? { animation: `pms-progress ${interval}ms linear forwards` } : { width: "100%" }} />}</span>
+                  : <span key={it.id} className="h-1.5 w-1.5 rounded-full bg-border" />)}
               </div>
               <div className="flex items-center gap-0.5">
                 <button type="button" aria-label={text.previous} className={btn} onClick={() => { go(current - 1); setPinned(true); }}><ChevronLeft className="size-4" aria-hidden="true" /></button>

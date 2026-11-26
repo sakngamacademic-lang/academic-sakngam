@@ -39,6 +39,7 @@ const V2Import = page(() => import("@/features/curriculum-v2/pages/ImportPage"),
 const V2Structure = page(() => import("@/features/curriculum-v2/pages/StructurePage"), "StructurePage");
 const V2Compare = page(() => import("@/features/curriculum-v2/pages/ComparePage"), "ComparePage");
 const V2Reports = page(() => import("@/features/curriculum-v2/pages/ReportsPage"), "ReportsPage");
+const V2Present = page(() => import("@/features/curriculum-v2/pages/PresentPage"), "PresentPage");
 const Analysis = page(() => import("./pages/AnalysisPage"), "AnalysisPage");
 
 const wrap = (node: ReactNode) => <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>{node}</Suspense>;
@@ -80,6 +81,7 @@ export const curriculumPages: Record<string, ReactElement> = {
   "curriculum-v2/structure": wrap(<V2Structure />),
   "curriculum-v2/compare": wrap(<V2Compare />),
   "curriculum-v2/reports": wrap(<V2Reports />),
+  "curriculum-v2/present": wrap(<V2Present />),
 };
 
 /** แยกหน้าที่อยู่ในเมนู (ส่งให้ buildPortalRoutes) กับหน้าย่อย (route ปกติ) — ไม่สร้าง route ซ้ำ */

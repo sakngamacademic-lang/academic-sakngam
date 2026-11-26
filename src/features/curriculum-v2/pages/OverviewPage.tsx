@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { GitCompareArrows, LayoutDashboard, ListTree, Upload } from "lucide-react";
+import { GitCompareArrows, LayoutDashboard, ListTree, Presentation, Upload } from "lucide-react";
 import { PageHeader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { gradeLabel } from "../model";
@@ -14,7 +14,7 @@ export function OverviewPage() {
   return (
     <>
       <PageHeader icon={LayoutDashboard} title="ภาพรวมหลักสูตร" description="หลักสูตรสถานศึกษาแต่ละปีที่นำเข้า พร้อมแหล่งข้อมูลและประเด็นที่ต้องตรวจ"
-        actions={can ? <Button asChild><Link to={`${V2}/import`}><Upload /> นำเข้าหลักสูตร</Link></Button> : undefined} />
+        actions={<span className="flex gap-2"><Button asChild variant="outline"><Link to={`${V2}/present`}><Presentation /> นำเสนอเล่ม</Link></Button>{can && <Button asChild><Link to={`${V2}/import`}><Upload /> นำเข้าหลักสูตร</Link></Button>}</span>} />
       <PreviewNotice />
       {!ws.loaded ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : !ws.datasets.length ? (
         <EmptyV2 title="ยังไม่มีข้อมูลหลักสูตรในระบบใหม่" text="เริ่มจากนำเข้าไฟล์โครงสร้างหลักสูตร (XLSX, DOCX หรือ PDF) ของปี 2568 และ 2569 ระบบจะแสดงตัวอย่างและประเด็นที่ต้องตรวจก่อนให้ยืนยัน" />

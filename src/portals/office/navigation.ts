@@ -6,6 +6,7 @@ import {
   BookText,
   GitCompareArrows,
   NotebookPen,
+  Presentation,
   ShieldCheck,
   CalendarDays,
   CalendarRange,
@@ -55,6 +56,7 @@ export const officePortal: PortalConfig = {
       title: "หลักสูตรสถานศึกษา",
       accordion: { icon: FolderOpen },
       items: [
+        { path: "curriculum-v2/present", label: "นำเสนอเล่มหลักสูตร", icon: Presentation, hint: "กดปุ่ม → เปิดเล่มเต็มจอ", roles: ACADEMIC_AND_EXEC },
         { path: "curriculum-v2", label: "ภาพรวมหลักสูตร", icon: LayoutDashboard, hint: "ปีหลักสูตร แหล่งข้อมูล และประเด็นที่ต้องตรวจ", roles: ACADEMIC_AND_EXEC },
         { path: "curriculum-v2/import", label: "นำเข้าหลักสูตร", icon: FileSpreadsheet, hint: "XLSX / DOCX / PDF → ตรวจตัวอย่าง → ยืนยัน", roles: ["academic_head", "academic_staff"] },
         { path: "curriculum-v2/structure", label: "โครงสร้างและรายวิชา", icon: LayoutList, hint: "ปี → ชั้น → แผน → ภาคเรียน", roles: ACADEMIC_AND_EXEC },

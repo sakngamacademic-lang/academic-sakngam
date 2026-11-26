@@ -6,6 +6,7 @@ import { defaultPortalPath } from "@/features/auth/roles";
 import { BarsChart, DonutChart, GaugeChart, RingsChart } from "@/components/charts/charts";
 import { FEATURES, SCENES, type SceneChart } from "./scenes";
 import { useArcBand, useParallax, useReducedMotion, useReveal, useSceneCarousel, useSwipe } from "./motion";
+import { GlassIconReveal } from "@/components/ui/liquid-glass-logo-reveal";
 import "./welcome.css";
 
 /**
@@ -37,10 +38,34 @@ function AuthCta({ className, children = "เข้าสู่ระบบง�
   );
 }
 
+/**
+ * ตราโรงเรียนแบบ Liquid Glass Reveal (WebGL2) — ไม่มีวงกลม/วงแหวน
+ * canvas ระบายสีพื้นเอง จึงใช้สีพื้นตามธีม และ mask ขอบให้กลืนกับพื้นหลังหน้า
+ * เบราว์เซอร์ที่ไม่มี WebGL2 → คอมโพเนนต์แสดงภาพสำรองเอง · ตั้งค่าลดการเคลื่อนไหว → แสดงภาพนิ่ง
+ */
+function Emblem({ src, label }: { src: string; label: string }) {
+  const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  return (
+    <GlassIconReveal
+      logo={src}
+      label={label}
+      look="light"
+      originalColors
+      loop={false}
+      background={dark ? "#0a0d19" : "#f6f8fc"}
+      logoScale={0.78}
+      finalScale={0.92}
+      className="emblem"
+    />
+  );
+}
+
 function Chart({ chart, mini }: { chart: SceneChart; mini?: boolean }) {
   switch (chart.kind) {
     case "rings":
-      return <RingsChart values={chart.values} center={chart.center} label={chart.label} mini={mini} logo={chart.logo} />;
+      return <RingsChart values={chart.values} center={chart.center} label={chart.label} mini={mini} />;
+    case "logo":
+      return <img className="logo-mini" src={chart.src} alt={chart.label} />;
     case "donut":
       return <DonutChart values={chart.values} center={chart.center} total={chart.total} colors={chart.colors} label={chart.label} mini={mini} />;
     case "bars":
@@ -201,11 +226,15 @@ export function WelcomePage() {
                   <div className="scene__visual">
                     <div className="orbit">
                       <div className="orbit__float">
-                        <div className={`disc${s.square ? " disc--square" : ""}`}>
-                          <div className="chart">
-                            <Chart chart={s.chart} />
+                        {s.chart.kind === "logo" ? (
+                          <Emblem src={s.chart.src} label={s.chart.label} />
+                        ) : (
+                          <div className={`disc${s.square ? " disc--square" : ""}`}>
+                            <div className="chart">
+                              <Chart chart={s.chart} />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>

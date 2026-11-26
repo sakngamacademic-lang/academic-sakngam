@@ -424,3 +424,6 @@
 .welcome.visit.is-present .section { max-width: none; }
 .welcome.visit.is-present .visit__sub, .welcome.visit.is-present .vmap__note { font-size: 0.9rem; }
 .welcome.visit.is-present .visit__muted, .welcome.visit.is-present .vmap__box, .welcome.visit.is-present .visit__tabs button { font-size: 1.05rem; }
+/* ตราโรงเรียน (Liquid Glass Reveal) — ไม่มีวงกลม · ขอบ canvas จางหายเข้าพื้นหลัง */
+.welcome .emblem { position: absolute; inset: -12%; background: transparent !important; -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%); mask-image: radial-gradient(closest-side, #000 72%, transparent 100%); }
+.welcome .logo-mini { width: 100%; height: 100%; object-fit: contain; }

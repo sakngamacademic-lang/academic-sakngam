@@ -350,3 +350,16 @@
 :root:not(.dark) .welcome .bg-arc path { opacity: 0.08; }
 :root:not(.dark) .welcome .topbar { background: color-mix(in oklab, #ffffff 85%, transparent); }
 :root:not(.dark) .welcome .pill--demo { color: #92400e; }
+
+/* ===== หน้าเยี่ยมชมข้อมูล (/visit) ===== */
+.welcome .visit__title { font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3rem); margin-top: var(--sp-2); }
+.welcome .visit__lede { max-width: 48rem; margin-top: var(--sp-4); color: var(--text-2); }
+.welcome .visit__stats { display: flex; flex-wrap: wrap; gap: var(--sp-5) var(--sp-7); margin-top: var(--sp-6); }
+.welcome .visit__stats > div { padding-left: var(--sp-4); border-left: 1px solid var(--line-strong); }
+.welcome .visit__stats dt { font-size: var(--fs-xs); color: var(--text-3); }
+.welcome .visit__stats dd { font-size: var(--fs-2xl); font-weight: 700; }
+.welcome .visit__stats small { font-size: var(--fs-sm); font-weight: 400; color: var(--text-2); }
+.welcome .visit__areas, .welcome .visit__steps { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); list-style: none; padding: 0; }
+.welcome .visit__no { display: inline-block; margin-bottom: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; color: var(--accent); }
+.welcome .visit__lock { display: inline; width: 1em; height: 1em; vertical-align: -0.125em; }
+.welcome.visit .section + .section { padding-top: 0; }

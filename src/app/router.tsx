@@ -11,6 +11,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 
 // หน้า Welcome (public) แยก chunk: CSS/JS ของ animation โหลดเฉพาะหน้านี้ ไม่ทำให้ Dashboard หนักขึ้น
 const WelcomePage = lazy(() => import("@/features/welcome/WelcomePage"));
+const VisitPage = lazy(() => import("@/features/welcome/VisitPage"));
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +19,14 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>
         <WelcomePage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/visit",
+    element: (
+      <Suspense fallback={<FullPageSpinner label="กำลังโหลด…" />}>
+        <VisitPage />
       </Suspense>
     ),
   },

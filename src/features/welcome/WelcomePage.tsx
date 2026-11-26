@@ -270,6 +270,7 @@ export function WelcomePage() {
                     <AuthCta className="btn btn--primary btn--lg">
                       <span>เข้าสู่ระบบงานวิชาการ</span>
                     </AuthCta>
+                    <Link className="btn btn--ghost" to="/visit">เยี่ยมชมข้อมูล</Link>
                     {s.secondaryCta && (
                       <a className="btn btn--ghost" href="#features">ดูความสามารถ</a>
                     )}
@@ -368,9 +369,12 @@ export function WelcomePage() {
               <h3>พร้อมเริ่มงานแล้วหรือยัง</h3>
               <p>ระบบจะพาไปยังพื้นที่ทำงานตามบทบาทที่ได้รับจากผู้ดูแลระบบ</p>
             </div>
-            <AuthCta className="btn btn--primary btn--lg">
-              <span>เข้าสู่ระบบงานวิชาการ</span>
-            </AuthCta>
+            <div className="scene__actions">
+              <Link className="btn btn--ghost btn--lg" to="/visit">เยี่ยมชมข้อมูล</Link>
+              <AuthCta className="btn btn--primary btn--lg">
+                <span>เข้าสู่ระบบงานวิชาการ</span>
+              </AuthCta>
+            </div>
           </div>
         </section>
       </main>

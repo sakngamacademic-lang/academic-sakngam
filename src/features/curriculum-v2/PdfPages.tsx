@@ -21,6 +21,11 @@ export async function readPlanMeta(blob: Blob): Promise<PlanMeta> {
     return parsePlanHeader(lines.map((l) => l.sort((a, b) => a.x - b.x).reduce((s, it, k) => s + (k && it.x - (l[k - 1]!.x + l[k - 1]!.w) > 1.5 ? " " : "") + it.str, "")));
   } finally { void doc.destroy(); }
 }
+/** จำนวนหน้าของ PDF (อ่านจากไฟล์จริง) */
+export async function pdfPageCount(blob: Blob): Promise<number> {
+  const doc = await openPdf(blob);
+  try { return doc.numPages; } finally { void doc.destroy(); }
+}
 export interface CodeHit { part: number; page: number; kind: string }
 const KINDS = ["คำอธิบายรายวิชา", "โครงสร้างรายวิชา", "หน่วยการเรียนรู้", "โครงสร้างหลักสูตร"];
 /** หาทุกหน้าในเล่มที่มีรหัสวิชา (ไม่สนช่องว่าง เช่น "ค 21101" = "ค21101") พร้อมชนิดหน้าจากหัวหน้า */

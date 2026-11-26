@@ -1,20 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BookOpen, ExternalLink, FileText, Loader2, Maximize2, Paperclip, Pencil, Plus, Presentation, Search, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CheckCircle2, ExternalLink, FileText, Globe, Loader2, Maximize2, Paperclip, Pencil, Plus, Presentation, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { PageHeader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/form-controls";
 import { cn } from "@/lib/utils";
 import { PdfPages, findCodePages, readPlanMeta, type CodeHit } from "../PdfPages";
-import { addBook, addFiles, addPlans, moveFile, movePlan, removeBook, removeFile, removePlan, renameBook, useBooks, type Book, type PlanFile } from "../books";
+import { addBook, addFiles, addPlans, markFile, moveFile, movePlan, removeBook, removeFile, removePlan, renameBook, replaceFile, setFileStage, useBooks, type Book, type BookFile, type PlanFile, type Stage } from "../books";
+import { publishBookFile, STAGE_TEXT } from "../publish";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { toast } from "@/lib/toast";
 import { gradeWarning, planTitle } from "../plans";
 
 /** นำเสนอเล่มหลักสูตร: กดปุ่ม → เปิดเล่ม (PDF) เต็มจอ · แนบเล่ม/แผนการสอนครั้งเดียว เก็บในเครื่องนี้ */
 export function PresentPage() {
   const { books, plans, loaded } = useBooks();
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<{ id: string; part?: number } | null>(null);
   const [edit, setEdit] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const current = open ? books.find((b) => b.id === open) ?? null : null;
+  const current = open ? books.find((b) => b.id === open.id) ?? null : null;
   const subjectBooks = books.filter((b) => b.group === "subject");
   const unsorted = plans.filter((p) => !p.bookId || !books.some((b) => b.id === p.bookId));
   const onPlans = async (files: File[]) => {
@@ -26,7 +29,7 @@ export function PresentPage() {
   };
   return (
     <>
-      <PageHeader icon={Presentation} title="นำเสนอเล่มหลักสูตร" description="กดปุ่มเพื่อเปิดเล่มเต็มจอ · แนบไฟล์ PDF ของเล่มและแผนการจัดการเรียนรู้ไว้ครั้งเดียว (เก็บในเบราว์เซอร์เครื่องนี้ ไม่อัปโหลด)"
+      <PageHeader icon={Presentation} title="นำเสนอเล่มหลักสูตร" description="กดปุ่มเพื่อเปิดเล่มเต็มจอ · แต่ละกลุ่มสาระแยกเล่ม ม.ต้น / ม.ปลาย · ไฟล์เก็บในเบราว์เซอร์เครื่องนี้ จนกว่าผู้ดูแลกด “เผยแพร่” เพื่อส่งขึ้นหน้าเยี่ยมชม"
         actions={<span className="flex flex-wrap gap-2">
           <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-card px-3 text-sm font-medium hover:bg-muted"><FileText className="size-4" /> แนบแผนการสอน (PDF)
             <input type="file" accept="application/pdf,.pdf" multiple className="sr-only" aria-label="แนบแผนการจัดการเรียนรู้" onChange={(e) => { void onPlans([...(e.target.files ?? [])]); e.target.value = ""; }} /></label>
@@ -36,13 +39,13 @@ export function PresentPage() {
       {!loaded ? <p className="text-sm text-muted-foreground">กำลังโหลด…</p> : (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
-            {books.filter((b) => !b.group).map((b) => <BookCard key={b.id} b={b} plans={[]} edit={edit} onOpen={() => setOpen(b.id)} />)}
+            {books.filter((b) => !b.group).map((b) => <BookCard key={b.id} b={b} plans={[]} edit={edit} onOpen={(part) => setOpen({ id: b.id, part })} />)}
             {edit && <button type="button" onClick={() => addBook()} className="flex min-h-40 items-center justify-center gap-2 rounded-3xl border-2 border-dashed text-muted-foreground hover:border-primary hover:text-primary"><Plus /> เพิ่มปุ่มเล่ม</button>}
           </div>
           <section aria-label="หลักสูตรรายวิชา">
             <h2 className="mb-3 text-xl font-bold">หลักสูตรรายวิชา <span className="text-base font-normal text-muted-foreground">· แยกตามกลุ่มสาระ พร้อมแผนการจัดการเรียนรู้</span></h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {subjectBooks.map((b) => <BookCard key={b.id} b={b} plans={plans.filter((p) => p.bookId === b.id)} edit={edit} small onOpen={() => setOpen(b.id)} />)}
+              {subjectBooks.map((b) => <BookCard key={b.id} b={b} plans={plans.filter((p) => p.bookId === b.id)} edit={edit} small onOpen={(part) => setOpen({ id: b.id, part })} />)}
               {edit && <button type="button" onClick={() => addBook("subject")} className="flex min-h-28 items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-muted-foreground hover:border-primary hover:text-primary"><Plus /> เพิ่มปุ่มรายวิชา</button>}
             </div>
           </section>
@@ -66,16 +69,69 @@ export function PresentPage() {
           )}
         </div>
       )}
-      {current && <Viewer b={current} plans={plans.filter((p) => p.bookId === current.id)} onClose={() => setOpen(null)} />}
+      {current && <Viewer b={current} start={open?.part} plans={plans.filter((p) => p.bookId === current.id)} onClose={() => setOpen(null)} />}
     </>
   );
 }
 
-function BookCard({ b, plans, edit, small, onOpen }: { b: Book; plans: PlanFile[]; edit: boolean; small?: boolean; onOpen: () => void }) {
+const STAGES: Stage[] = ["lower", "upper"];
+const STAGE_SHORT: Record<Stage, string> = { lower: "ม.ต้น", upper: "ม.ปลาย" };
+
+/** การ์ดกลุ่มสาระ: ปุ่ม ม.ต้น / ม.ปลาย แยกกัน — แต่ละระดับแนบ/เปิดได้อิสระ ไม่ทับกัน */
+function SubjectCard({ b, plans, onOpen }: { b: Book; plans: PlanFile[]; onOpen: (part?: number) => void }) {
+  const unstaged = b.files.map((f, i) => [f, i] as const).filter(([f]) => !f.stage);
+  const pill = "inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold";
+  return (
+    <div className="relative flex min-h-28 flex-col justify-end overflow-hidden rounded-2xl p-4 text-white shadow-lg" style={{ background: "linear-gradient(135deg, #1f4278 0%, #142b4e 100%)" }}>
+      <BookOpen className="absolute right-4 top-4 size-8 text-[color:var(--gold)] opacity-90" aria-hidden="true" />
+      <span className="pr-10 text-lg font-bold leading-tight">{b.title}</span>
+      {b.subtitle && <span className="mt-1 text-sm text-white/80">{b.subtitle}</span>}
+      <span className="mt-3 flex flex-wrap gap-1.5">
+        {STAGES.map((st) => {
+          const i = b.files.findIndex((f) => f.stage === st);
+          return i >= 0 ? (
+            <button key={st} type="button" onClick={() => onOpen(i)} aria-label={`เปิดเล่ม ${b.title} ${STAGE_SHORT[st]}`} className={cn(pill, "bg-[color:var(--gold)] text-[#142b4e] hover:brightness-105")}><BookOpen className="size-4" /> {STAGE_SHORT[st]}</button>
+          ) : (
+            <label key={st} className={cn(pill, "cursor-pointer border border-white/40 font-medium text-white/90 hover:bg-white/10")}><Paperclip className="size-4" /> แนบ {STAGE_SHORT[st]}
+              <input type="file" accept="application/pdf,.pdf" className="sr-only" aria-label={`แนบไฟล์ ${b.title} ${STAGE_SHORT[st]}`} onChange={(e) => { addFiles(b.id, [...(e.target.files ?? [])].slice(0, 1), st); e.target.value = ""; }} /></label>
+          );
+        })}
+        {unstaged.length > 0 && <button type="button" onClick={() => onOpen(unstaged[0]![1])} className={cn(pill, "bg-white/15 font-medium")} title="ไฟล์เดิมที่ยังไม่ได้ระบุระดับ — เลือกระดับได้ที่ “จัดการเล่ม”">เปิดเล่ม ({unstaged.length} ส่วน · รอเลือกระดับ)</button>}
+        {plans.length > 0 && <button type="button" onClick={() => onOpen(-1)} className={cn(pill, "bg-white/15 font-medium")}><FileText className="size-4" /> แผนการสอน {plans.length} แผน</button>}
+      </span>
+    </div>
+  );
+}
+
+/** ส่งไฟล์ขึ้นระบบและเผยแพร่บนหน้าเยี่ยมชม (ผู้ดูแลหลักสูตร) */
+function PublishButton({ b, f, i }: { b: Book; f: BookFile; i: number }) {
+  const [busy, setBusy] = useState(false);
+  if (f.published) return <span className="inline-flex items-center gap-1 text-xs text-[var(--tone-green-fg)]"><CheckCircle2 className="size-4" /> เผยแพร่แล้ว</span>;
+  const go = async () => {
+    setBusy(true);
+    try {
+      await publishBookFile({ blob: f.blob, name: f.name, bookTitle: b.title, subject: b.group === "subject", stage: f.stage, docId: f.docId }, (docId) => markFile(b.id, i, { docId }));
+      markFile(b.id, i, { published: true });
+      toast.success(`เผยแพร่ ${b.title}${f.stage ? ` ${STAGE_SHORT[f.stage]}` : ""} บนหน้าเยี่ยมชมแล้ว`);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "เผยแพร่ไม่สำเร็จ"); } finally { setBusy(false); }
+  };
+  return (
+    <button type="button" onClick={() => void go()} disabled={busy || (b.group === "subject" && !f.stage)} title={b.group === "subject" && !f.stage ? "เลือกระดับก่อน" : "อัปโหลดขึ้นระบบและแสดงบนหน้าเยี่ยมชม"}
+      className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:bg-muted disabled:opacity-50">
+      {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Globe className="size-3.5" />} เผยแพร่
+    </button>
+  );
+}
+
+function BookCard({ b, plans, edit, small, onOpen }: { b: Book; plans: PlanFile[]; edit: boolean; small?: boolean; onOpen: (part?: number) => void }) {
   const input = useRef<HTMLInputElement>(null);
+  const { can } = useAuth();
+  const canPublish = can("curriculum.manage");
+  const subject = b.group === "subject";
   const ready = b.files.length > 0 || plans.length > 0;
+  if (!edit && subject) return <SubjectCard b={b} plans={plans} onOpen={onOpen} />;
   if (!edit) return (
-    <button type="button" onClick={() => (ready ? onOpen() : input.current?.click())} aria-label={`เปิดเล่ม ${b.title}`}
+    <button type="button" onClick={() => (ready ? onOpen(b.files.length ? 0 : -1) : input.current?.click())} aria-label={`เปิดเล่ม ${b.title}`}
       className={cn("group relative flex flex-col justify-end overflow-hidden text-left", small ? "min-h-28 rounded-2xl p-4" : "min-h-48 rounded-3xl p-6", "text-white shadow-lg transition-transform hover:-translate-y-0.5 focus-visible:outline-4 focus-visible:outline-[color:var(--gold)]")}
       style={{ background: "linear-gradient(135deg, #1f4278 0%, #142b4e 100%)" }}>
       <BookOpen className={cn("absolute right-4 top-4 text-[color:var(--gold)] opacity-90 transition-transform group-hover:scale-110", small ? "size-8" : "size-14")} />
@@ -96,8 +152,18 @@ function BookCard({ b, plans, edit, small, onOpen }: { b: Book; plans: PlanFile[
       <Input aria-label="คำอธิบายใต้ปุ่ม" value={b.subtitle} onChange={(e) => renameBook(b.id, b.title, e.target.value)} placeholder="คำอธิบายใต้ปุ่ม (ไม่บังคับ)" />
       <ol className="space-y-1 text-sm">
         {b.files.map((f, i) => (
-          <li key={i} className="flex items-center gap-2 rounded-lg bg-muted/50 px-2 py-1">
-            <span className="w-6 text-muted-foreground">{i + 1}.</span><span className="flex-1 truncate">{f.name}</span><span className="text-xs text-muted-foreground">{(f.size / 1048576).toFixed(1)} MB</span>
+          <li key={i} className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-2 py-1">
+            <span className="w-6 text-muted-foreground">{i + 1}.</span><span className="min-w-0 flex-1 truncate" title={f.name}>{f.name}</span><span className="text-xs text-muted-foreground">{(f.size / 1048576).toFixed(1)} MB</span>
+            {subject && (
+              <select aria-label={`ระดับของ ${f.name}`} value={f.stage ?? ""} onChange={(e) => setFileStage(b.id, i, (e.target.value || undefined) as Stage | undefined)}
+                className={cn("h-7 rounded-md border bg-background px-1 text-xs", !f.stage && "border-amber-500 text-amber-700")}>
+                <option value="">— รอเลือกระดับ —</option>
+                {STAGES.filter((st) => st === f.stage || !b.files.some((x) => x.stage === st)).map((st) => <option key={st} value={st}>{STAGE_TEXT[st]}</option>)}
+              </select>
+            )}
+            <label className="cursor-pointer" title="เปลี่ยนไฟล์ (คงระดับเดิม)"><RefreshCw className="size-4" /><span className="sr-only">เปลี่ยนไฟล์ {f.name}</span>
+              <input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => { const x = e.target.files?.[0]; if (x) replaceFile(b.id, i, x); e.target.value = ""; }} /></label>
+            {canPublish && <PublishButton b={b} f={f} i={i} />}
             <button type="button" aria-label="เลื่อนขึ้น" onClick={() => moveFile(b.id, i, -1)}><ArrowUp className="size-4" /></button>
             <button type="button" aria-label="เลื่อนลง" onClick={() => moveFile(b.id, i, 1)}><ArrowDown className="size-4" /></button>
             <button type="button" aria-label={`ลบ ${f.name}`} onClick={() => removeFile(b.id, i)} className="text-destructive"><Trash2 className="size-4" /></button>
@@ -116,8 +182,13 @@ function BookCard({ b, plans, edit, small, onOpen }: { b: Book; plans: PlanFile[
         </ul>
       )}
       <div className="flex flex-wrap gap-2">
-        <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary px-3 text-sm text-primary-foreground"><Paperclip className="size-4" /> แนบไฟล์ PDF (เลือกได้หลายไฟล์)
-          <input type="file" accept="application/pdf,.pdf" multiple className="sr-only" aria-label={`แนบไฟล์ ${b.title}`} onChange={(e) => { addFiles(b.id, [...(e.target.files ?? [])]); e.target.value = ""; }} /></label>
+        {subject ? STAGES.filter((st) => !b.files.some((x) => x.stage === st)).map((st) => (
+          <label key={st} className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary px-3 text-sm text-primary-foreground"><Paperclip className="size-4" /> แนบ {STAGE_TEXT[st]}
+            <input type="file" accept="application/pdf,.pdf" className="sr-only" aria-label={`แนบไฟล์ ${b.title} ${STAGE_SHORT[st]}`} onChange={(e) => { addFiles(b.id, [...(e.target.files ?? [])].slice(0, 1), st); e.target.value = ""; }} /></label>
+        )) : (
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary px-3 text-sm text-primary-foreground"><Paperclip className="size-4" /> แนบไฟล์ PDF (เลือกได้หลายไฟล์)
+            <input type="file" accept="application/pdf,.pdf" multiple className="sr-only" aria-label={`แนบไฟล์ ${b.title}`} onChange={(e) => { addFiles(b.id, [...(e.target.files ?? [])]); e.target.value = ""; }} /></label>
+        )}
         <Button size="sm" variant="outline" className="border-destructive/40 text-destructive" onClick={() => removeBook(b.id)}><Trash2 /> ลบปุ่มนี้</Button>
       </div>
     </div>
@@ -126,8 +197,8 @@ function BookCard({ b, plans, edit, small, onOpen }: { b: Book; plans: PlanFile[
 
 type View = { kind: "part"; i: number } | { kind: "plans" } | { kind: "plan"; id: string };
 
-function Viewer({ b, plans, onClose }: { b: Book; plans: PlanFile[]; onClose: () => void }) {
-  const [view, setView] = useState<View>(b.files.length ? { kind: "part", i: 0 } : { kind: "plans" });
+function Viewer({ b, plans, start, onClose }: { b: Book; plans: PlanFile[]; start?: number; onClose: () => void }) {
+  const [view, setView] = useState<View>(start === -1 || !b.files.length ? { kind: "plans" } : { kind: "part", i: Math.min(start ?? 0, b.files.length - 1) });
   const [pages, setPages] = useState(0);
   const [jump, setJump] = useState("");
   const [goTo, setGoTo] = useState<{ page: number; at: number } | undefined>();
@@ -157,7 +228,7 @@ function Viewer({ b, plans, onClose }: { b: Book; plans: PlanFile[]; onClose: ()
         <BookOpen className="size-5 text-[color:var(--gold)]" />
         <span className="mr-2 font-semibold">{b.title}</span>
         {(b.files.length > 1 || plans.length > 0) && b.files.map((f, i) => (
-          <button key={i} type="button" onClick={() => show({ kind: "part", i })} title={f.name} className={tab(view.kind === "part" && view.i === i)}>{partLabel(f.name, i)}</button>
+          <button key={i} type="button" onClick={() => show({ kind: "part", i })} title={f.name} className={tab(view.kind === "part" && view.i === i)}>{f.stage ? `${STAGE_SHORT[f.stage]} · ` : ""}{partLabel(f.name, i)}</button>
         ))}
         {plans.length > 0 && <button type="button" onClick={() => show({ kind: "plans" })} className={tab(view.kind !== "part")}><FileText className="mr-1 inline size-4" />แผนการจัดการเรียนรู้ ({plans.length})</button>}
         {view.kind !== "plans" && pages > 0 && (

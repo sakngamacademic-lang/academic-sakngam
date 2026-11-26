@@ -427,3 +427,5 @@
 /* ตราโรงเรียน (Liquid Glass Reveal) — ไม่มีวงกลม · ขอบ canvas จางหายเข้าพื้นหลัง */
 .welcome .emblem { position: absolute; inset: -12%; background: transparent !important; -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%); mask-image: radial-gradient(closest-side, #000 72%, transparent 100%); }
 .welcome .logo-mini { width: 100%; height: 100%; object-fit: contain; }
+.welcome .vbooks--school { margin-bottom: var(--sp-4); }
+.welcome .vbooks__open { margin-top: var(--sp-3); }

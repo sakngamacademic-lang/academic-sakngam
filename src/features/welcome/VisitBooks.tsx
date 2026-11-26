@@ -15,7 +15,22 @@ const LEVELS = [
 export function VisitBooks({ data }: { data: PublicVisitData }) {
   if (!data.areas.length) return <p className="visit__muted visit__empty">ยังไม่มีข้อมูลกลุ่มสาระที่เผยแพร่</p>;
   const date = (s: string) => new Date(s).toLocaleDateString("th-TH", { dateStyle: "medium" });
+  // เล่มที่เผยแพร่แต่ไม่ได้ผูกกลุ่มสาระ (เช่น เล่มหลักสูตรสถานศึกษา)
+  const inBooks = new Set(data.books.map((b) => b.document_id));
+  const school = data.documents.filter((d) => !inBooks.has(d.id));
   return (
+    <>
+    {school.length > 0 && (
+      <ul className="vbooks vbooks--school">
+        {school.map((d) => (
+          <li key={d.id} className="vbooks__area">
+            <p className="vbooks__name"><BookOpen className="visit__lock" aria-hidden="true" /> {d.title}</p>
+            <p className="visit__sub">{d.page_count ? `${d.page_count.toLocaleString("th-TH")} หน้า` : "เอกสาร PDF"}</p>
+            <div className="vbooks__open"><PdfButton docId={d.id} label="เปิดอ่าน" big /></div>
+          </li>
+        ))}
+      </ul>
+    )}
     <ul className="vbooks">
       {data.areas.map((a) => (
         <li key={a.id} className="vbooks__area">
@@ -40,5 +55,6 @@ export function VisitBooks({ data }: { data: PublicVisitData }) {
         </li>
       ))}
     </ul>
+    </>
   );
 }

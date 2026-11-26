@@ -4,7 +4,9 @@
 import { useSyncExternalStore } from "react";
 import { areaOfCode, type PlanMeta } from "./plans";
 
-export interface BookFile { name: string; size: number; blob: Blob }
+export type Stage = "lower" | "upper";
+/** stage: ระดับของเล่ม (ไม่ระบุ = ไฟล์เดิมที่ยังไม่รู้ระดับ ให้ผู้ดูแลเลือกเอง — ไม่เดา) · docId/published: สถานะส่งขึ้นระบบเพื่อหน้าเยี่ยมชม */
+export interface BookFile { name: string; size: number; blob: Blob; stage?: Stage; docId?: string; published?: boolean }
 /** แผนการจัดการเรียนรู้ที่แนบ: bookId = ปุ่มกลุ่มสาระ (null = ยังไม่ได้จัดกลุ่ม ให้ผู้ใช้เลือก) */
 export interface PlanFile extends BookFile { id: string; bookId: string | null; meta: PlanMeta }
 export interface Book { id: string; title: string; subtitle: string; files: BookFile[]; group?: "subject" }
@@ -54,8 +56,17 @@ function set(next: Book[]) { books = next; emit(); void persist(); }
 export function useBooks() {
   return useSyncExternalStore((f) => { subs.add(f); if (!loaded) void load(); return () => subs.delete(f); }, () => snap);
 }
-export const addFiles = (id: string, files: File[]) =>
-  set(books.map((b) => (b.id === id ? { ...b, files: [...b.files, ...files.map((f) => ({ name: f.name, size: f.size, blob: f as Blob }))] } : b)));
+/** แนบเพิ่มต่อท้าย (ไม่ทับไฟล์เดิม) · stage = ระดับของไฟล์ที่แนบ */
+export const addFiles = (id: string, files: File[], stage?: Stage) =>
+  set(books.map((b) => (b.id === id ? { ...b, files: [...b.files, ...files.map((f) => ({ name: f.name, size: f.size, blob: f as Blob, ...(stage ? { stage } : {}) }))] } : b)));
+const patchFile = (id: string, i: number, p: Partial<BookFile>) =>
+  set(books.map((b) => (b.id === id ? { ...b, files: b.files.map((f, k) => (k === i ? { ...f, ...p } : f)) } : b)));
+/** เปลี่ยนระดับเฉพาะไฟล์นี้ — ไฟล์อื่นไม่เปลี่ยน */
+export const setFileStage = (id: string, i: number, stage: Stage | undefined) => patchFile(id, i, { stage });
+export const markFile = (id: string, i: number, p: { docId?: string; published?: boolean }) => patchFile(id, i, p);
+/** แทนที่ไฟล์ช่องนี้ด้วยไฟล์ใหม่ (คงระดับเดิม) — สถานะเผยแพร่ของไฟล์เก่าไม่ถูกโอนมา */
+export const replaceFile = (id: string, i: number, f: File) =>
+  set(books.map((b) => (b.id === id ? { ...b, files: b.files.map((x, k) => (k === i ? { name: f.name, size: f.size, blob: f as Blob, stage: x.stage } : x)) } : b)));
 export const removeFile = (id: string, i: number) => set(books.map((b) => (b.id === id ? { ...b, files: b.files.filter((_, k) => k !== i) } : b)));
 export const moveFile = (id: string, i: number, d: -1 | 1) => set(books.map((b) => {
   if (b.id !== id) return b; const f = [...b.files]; const j = i + d; if (j < 0 || j >= f.length) return b; [f[i], f[j]] = [f[j]!, f[i]!]; return { ...b, files: f };

@@ -34,7 +34,7 @@ export function VisitRail({ data }: { data: PublicVisitData }) {
     });
     return [...school, ...areas];
   }, [data]);
-  if (!items.length) return null;
+  if (!items.length) return <p className="visit__muted visit__empty">ยังไม่มีเล่มหลักสูตรที่อนุมัติให้เผยแพร่</p>;
   return (
     <TeamLanyardRail
       items={items}

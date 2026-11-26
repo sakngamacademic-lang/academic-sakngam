@@ -71,6 +71,8 @@ export interface TeamLanyardRailProps extends React.ComponentProps<"section"> {
   flipped?: number | null;
   onFlippedChange?: (index: number | null) => void;
   labels?: TeamLanyardRailLabels;
+  /** Called when a link on the back is clicked; call event.preventDefault() to handle it yourself (e.g. confirm first). */
+  onLinkClick?: (member: LanyardMember, link: LanyardLink, event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 const RATIO = 96 / 62;
@@ -268,7 +270,9 @@ function LinkIcon({ label }: { label: string }) {
   );
 }
 
-const LINK_ROW = "inline-flex items-center gap-[0.3em] rounded-[0.4em] px-[0.3em] py-[0.14em] text-[0.68em] font-medium leading-tight";
+/* ปุ่มลิงก์ด้านหลังป้าย: เต็มความกว้าง เว้นระยะห่างกัน กดง่ายบนมือถือ */
+const LINK_ROW = "flex w-full items-center justify-center gap-[0.35em] rounded-full border border-border bg-muted px-[0.6em] py-[0.45em] text-[0.8em] font-semibold leading-tight";
+const LINK_STACK = "absolute inset-x-[0.7em] bottom-[0.8em] flex flex-col gap-[0.5em]";
 
 function Band({ tone, tall }: { tone: string; tall?: boolean }) {
   return (
@@ -357,7 +361,7 @@ const BadgeFaces = React.memo(function BadgeFaces({ item, tone }: { item: Lanyar
           </span>
         )}
         {links.length > 0 && (
-          <span aria-hidden="true" className="absolute bottom-[0.75em] left-[0.6em] flex flex-col items-start gap-[0.1em] transition-opacity duration-150 motion-reduce:transition-none" style={{ opacity: "var(--drawn, 1)" }}>
+          <span aria-hidden="true" className={`${LINK_STACK} transition-opacity duration-150 motion-reduce:transition-none`} style={{ opacity: "var(--drawn, 1)" }}>
             {links.map((link) => <span key={link.label} className={LINK_ROW}><LinkIcon label={link.label} />{link.label}</span>)}
           </span>
         )}
@@ -384,6 +388,7 @@ export function TeamLanyardRail({
   flipped: flippedProp,
   onFlippedChange,
   labels = DEFAULT_LABELS,
+  onLinkClick,
   className,
   ...rest
 }: TeamLanyardRailProps) {
@@ -1081,9 +1086,9 @@ export function TeamLanyardRail({
                   </span>
                   {isFlipped && links.length > 0 && (
                     <div ref={(node) => { linkLayers.current[i] = node; }} data-links className="pointer-events-none absolute left-0 transition-opacity duration-150 motion-reduce:transition-none" style={{ top: cardOffset, width: W, height: g.H, fontSize: base, opacity: 0, visibility: "hidden" }}>
-                      <div className="absolute bottom-[0.75em] left-[0.6em] flex flex-col items-start gap-[0.1em]">
+                      <div className={LINK_STACK}>
                         {links.map((link) => (
-                          <a key={link.label} href={link.href} target={link.target} rel={link.target === "_blank" ? "noopener" : undefined} onPointerDown={(event) => { event.stopPropagation(); stop(); }} onFocus={stop} className={`${LINK_ROW} pointer-events-auto text-card-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring`}>
+                          <a key={link.label} href={link.href} target={link.target} rel={link.target === "_blank" ? "noopener" : undefined} onPointerDown={(event) => { event.stopPropagation(); stop(); }} onFocus={stop} onClick={(event) => onLinkClick?.(item, link, event)} className={`${LINK_ROW} pointer-events-auto text-card-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring`}>
                             <LinkIcon label={link.label} />
                             {link.label}
                           </a>

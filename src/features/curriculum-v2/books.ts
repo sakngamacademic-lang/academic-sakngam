@@ -1,12 +1,14 @@
 /**
- * เล่มสำหรับนำเสนอ (ปุ่ม → เปิดเล่ม) — เก็บไฟล์ PDF ไว้ในเบราว์เซอร์เครื่องนี้ (IndexedDB) ไม่อัปโหลด ไม่เขียนฐานข้อมูล
+ * ⚠️ ที่เก็บแบบเดิม (Legacy): ไฟล์ PDF ใน IndexedDB ของเบราว์เซอร์ — ผูกกับลิงก์ (origin) และเครื่อง จึง "หาย" เมื่อเปลี่ยนลิงก์/เครื่อง
+ * ตั้งแต่ migration 20261209000100 ที่เก็บหลักคือ Supabase (presentation_items) + Cloudflare R2 (ดู library.ts)
+ * ไฟล์นี้เหลือไว้เพื่อ "อ่าน" ไฟล์เดิมที่ค้างในเบราว์เซอร์แล้วย้ายขึ้นระบบเท่านั้น — ไม่ลบไฟล์เดิมหลังย้าย (ติดธง itemId)
  */
 import { useSyncExternalStore } from "react";
 import { areaOfCode, type PlanMeta } from "./plans";
 
 export type Stage = "lower" | "upper";
 /** stage: ระดับของเล่ม (ไม่ระบุ = ไฟล์เดิมที่ยังไม่รู้ระดับ ให้ผู้ดูแลเลือกเอง — ไม่เดา) · docId/published: สถานะส่งขึ้นระบบเพื่อหน้าเยี่ยมชม */
-export interface BookFile { name: string; size: number; blob: Blob; stage?: Stage; docId?: string; published?: boolean }
+export interface BookFile { name: string; size: number; blob: Blob; stage?: Stage; docId?: string; published?: boolean; itemId?: string }
 /** แผนการจัดการเรียนรู้ที่แนบ: bookId = ปุ่มกลุ่มสาระ (null = ยังไม่ได้จัดกลุ่ม ให้ผู้ใช้เลือก) */
 export interface PlanFile extends BookFile { id: string; bookId: string | null; meta: PlanMeta }
 export interface Book { id: string; title: string; subtitle: string; files: BookFile[]; group?: "subject" }
@@ -63,7 +65,7 @@ const patchFile = (id: string, i: number, p: Partial<BookFile>) =>
   set(books.map((b) => (b.id === id ? { ...b, files: b.files.map((f, k) => (k === i ? { ...f, ...p } : f)) } : b)));
 /** เปลี่ยนระดับเฉพาะไฟล์นี้ — ไฟล์อื่นไม่เปลี่ยน */
 export const setFileStage = (id: string, i: number, stage: Stage | undefined) => patchFile(id, i, { stage });
-export const markFile = (id: string, i: number, p: { docId?: string; published?: boolean }) => patchFile(id, i, p);
+export const markFile = (id: string, i: number, p: { docId?: string; published?: boolean; itemId?: string }) => patchFile(id, i, p);
 /** แทนที่ไฟล์ช่องนี้ด้วยไฟล์ใหม่ (คงระดับเดิม) — สถานะเผยแพร่ของไฟล์เก่าไม่ถูกโอนมา */
 export const replaceFile = (id: string, i: number, f: File) =>
   set(books.map((b) => (b.id === id ? { ...b, files: b.files.map((x, k) => (k === i ? { name: f.name, size: f.size, blob: f as Blob, stage: x.stage } : x)) } : b)));
@@ -90,3 +92,5 @@ export async function addPlans(files: File[], read: (b: Blob) => Promise<PlanMet
 }
 export const movePlan = (id: string, bookId: string | null) => setPlans(plans.map((p) => (p.id === id ? { ...p, bookId } : p)));
 export const removePlan = (id: string) => setPlans(plans.filter((p) => p.id !== id));
+/** ติดธงว่าแผนนี้ย้ายขึ้นระบบแล้ว (ไม่ลบไฟล์เดิม) */
+export const markPlan = (id: string, itemId: string) => setPlans(plans.map((p) => (p.id === id ? { ...p, itemId } : p)));

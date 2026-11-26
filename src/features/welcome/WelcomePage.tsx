@@ -165,7 +165,7 @@ export function WelcomePage() {
           ))}
         </nav>
         <div className="topbar__end">
-          <Link className="btn btn--ghost btn--sm" to="/visit">เยี่ยมชมข้อมูล</Link>
+          <Link className="btn btn--ghost btn--sm topbar__visit" to="/visit">เยี่ยมชมข้อมูล</Link>
           <AuthCta className="btn btn--primary btn--sm">
             <span>เข้าสู่ระบบงานวิชาการ</span>
             <ArrowRight aria-hidden="true" />

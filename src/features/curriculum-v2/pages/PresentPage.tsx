@@ -304,24 +304,26 @@ function Viewer({ title, books, plans, start, onClose }: { title: string; books:
   const tab = (active: boolean) => cn("h-8 rounded-full px-3 text-sm", active ? "bg-[color:var(--gold)] font-semibold text-[#142b4e]" : "bg-white/10 hover:bg-white/20");
   return (
     <div ref={box} role="dialog" aria-modal="true" aria-label={`เล่ม ${title}`} className="fixed inset-0 z-50 flex flex-col bg-[#0f1f3a]">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 text-white">
-        <BookOpen className="size-5 text-[color:var(--gold)]" />
-        <span className="mr-2 font-semibold">{title}</span>
+      <div className="flex items-center gap-1.5 px-2 py-2 text-white sm:gap-2 sm:px-3">
+        <BookOpen className="hidden size-5 text-[color:var(--gold)] sm:block" />
+        <span className="mr-1 max-w-[40vw] truncate font-semibold sm:mr-2 sm:max-w-none">{title}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] sm:gap-2">
         {(books.length > 1 || plans.length > 0) && books.map((b, i) => (
-          <button key={b.id} type="button" onClick={() => show({ kind: "part", i })} title={b.doc.title} className={tab(view.kind === "part" && view.i === i)}>{partLabel(b, i)}</button>
+          <button key={b.id} type="button" onClick={() => show({ kind: "part", i })} title={b.doc.title} className={"shrink-0 " + tab(view.kind === "part" && view.i === i)}>{partLabel(b, i)}</button>
         ))}
-        {plans.length > 0 && <button type="button" onClick={() => show({ kind: "plans" })} className={tab(view.kind !== "part")}><FileText className="mr-1 inline size-4" />แผนการจัดการเรียนรู้ ({plans.length})</button>}
+        {plans.length > 0 && <button type="button" onClick={() => show({ kind: "plans" })} className={"shrink-0 " + tab(view.kind !== "part")}><FileText className="mr-1 inline size-4" />แผนการจัดการเรียนรู้ ({plans.length})</button>}
         {view.kind !== "plans" && pages > 0 && (
-          <form className="flex items-center gap-1 text-sm" onSubmit={(e) => { e.preventDefault(); go(); }}>
-            <span className="text-white/70">ไปหน้า</span>
-            <input aria-label="ไปหน้า" inputMode="numeric" value={jump} onChange={(e) => setJump(e.target.value.replace(/\D/g, ""))} className="h-8 w-14 rounded-md bg-white/10 px-2 text-white" />
+          <form className="flex shrink-0 items-center gap-1 text-sm" onSubmit={(e) => { e.preventDefault(); go(); }}>
+            <span className="hidden text-white/70 sm:inline">ไปหน้า</span>
+            <input aria-label="ไปหน้า" inputMode="numeric" value={jump} onChange={(e) => setJump(e.target.value.replace(/\D/g, ""))} placeholder="หน้า" className="h-8 w-12 rounded-md bg-white/10 px-2 text-white placeholder:text-white/40 sm:w-14" />
             <span className="text-white/70">/ {pages}</span>
           </form>
         )}
-        <span className="ml-auto flex gap-2">
-          {item?.doc.file_id && view.kind !== "plans" && <button type="button" onClick={() => void openInTab(item.doc.file_id!).catch((e) => toast.error(errText(e)))} className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><ExternalLink className="size-4" /> แท็บใหม่</button>}
-          <button type="button" onClick={() => void box.current?.requestFullscreen?.()} className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><Maximize2 className="size-4" /> เต็มจอ</button>
-          <button type="button" onClick={onClose} aria-label="ปิดเล่ม" className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><X className="size-4" /> ปิด</button>
+        </div>
+        <span className="flex shrink-0 gap-1.5 sm:gap-2">
+          {item?.doc.file_id && view.kind !== "plans" && <button type="button" onClick={() => void openInTab(item.doc.file_id!).catch((e) => toast.error(errText(e)))} className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><ExternalLink className="size-4" /><span className="sr-only sm:not-sr-only">แท็บใหม่</span></button>}
+          <button type="button" onClick={() => void box.current?.requestFullscreen?.()} className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><Maximize2 className="size-4" /><span className="sr-only sm:not-sr-only">เต็มจอ</span></button>
+          <button type="button" onClick={onClose} aria-label="ปิดเล่ม" className="inline-flex h-8 items-center gap-1 rounded-md bg-white/10 px-3 text-sm hover:bg-white/20"><X className="size-4" /><span className="sr-only sm:not-sr-only">ปิด</span></button>
         </span>
       </div>
       {plan && (

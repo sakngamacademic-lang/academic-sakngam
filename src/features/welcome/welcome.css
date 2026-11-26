@@ -328,6 +328,12 @@
 .welcome .cta-band p { color: var(--text-2); font-size: var(--fs-sm); }
 .welcome .footnote__review { display: block; margin-top: var(--sp-2); }
 @media (max-width: 767.98px) {
+  /* มือถือ: ปุ่มบนแถบเหลือ "เข้าสู่ระบบ" ปุ่มเดียว บรรทัดเดียว (ปุ่มเยี่ยมชมมีในเนื้อหาอยู่แล้ว) */
+  .welcome .topbar { gap: var(--sp-3); }
+  .welcome .topbar .btn--sm { white-space: nowrap; }
+  .welcome .topbar .topbar__visit { display: none; }
+  .welcome .scene__actions .btn { white-space: nowrap; }
+  .welcome .thumb__name { white-space: nowrap; }
   .welcome .topbar .btn--sm span { font-size: 0; }
   .welcome .topbar .btn--sm span::after { content: "เข้าสู่ระบบ"; font-size: var(--fs-xs); }
   .welcome .topbar .pill--demo { display: none; }

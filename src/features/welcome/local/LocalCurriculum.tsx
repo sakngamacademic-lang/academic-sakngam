@@ -56,7 +56,6 @@ const AREA_TONES: { color: string; ink?: "dark" | "light" }[] = [
 function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filter>) => void }) {
   const rows = useMemo(() => countBy(data.records, data.areas, data.levels), [data]);
   const sorted = useMemo(() => [...rows].sort((a, b) => b.total - a.total), [rows]);
-  const areasWithData = rows.filter((r) => r.total > 0).length;
   const max = Math.max(1, ...rows.map((r) => r.total));
   const perLevel = data.levels.map((lv) => data.records.filter((r) => r.level === lv).length);
   const maxLevel = Math.max(1, ...perLevel);
@@ -84,12 +83,11 @@ function Dashboard({ data, onPick }: { data: LocalData; onPick: (p: Partial<Filt
             <span className="block text-[13px] text-muted-foreground">รายการเชื่อมโยงทั้งหมด</span>
             <span className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
               <span className="text-[56px] font-semibold leading-none tracking-tight sm:text-[64px]"><CountUp value={total} /></span>
-              <span className="pb-1.5 text-[13px] text-muted-foreground">รายการ · <b className="text-foreground"><CountUp value={areasWithData} /></b> กลุ่มสาระ · <b className="text-foreground"><CountUp value={data.tables.length} /></b> ตาราง</span>
             </span>
             {/* สัดส่วนต่อแถวทั้งหมดในเอกสาร */}
-            <span className="mt-4 flex items-baseline justify-between gap-3 text-[13px]">
+            <span className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px]">
               <span className="font-semibold text-foreground">ตัวชี้วัดที่พบในหลักสูตร 69</span>
-              <span className="text-muted-foreground"><b className="text-foreground">{pct(total, srcRows)}</b> ของ {srcRows.toLocaleString("th-TH")} แถว</span>
+              <span className="text-muted-foreground"><b className="text-foreground">{pct(total, srcRows)}</b> เมื่อเทียบกับหลักสูตรท้องถิ่นจังหวัดกำแพงเพชร</span>
             </span>
             <span className="lc-meter mt-2" aria-hidden="true"><span style={{ width: `${(total / srcRows) * 100}%` }} /></span>
           </button>
